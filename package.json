@@ -5,7 +5,7 @@
   "main": "index.js",
   "bin": "bin/www",
   "scripts": {
-    "test": "jest",
+    "test": "jest --runInBand --detectOpenHandles --forceExit",
     "start": "node bin/www",
     "dev": "nodemon bin/www"
   },
