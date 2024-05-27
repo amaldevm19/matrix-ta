@@ -5,7 +5,7 @@ const homeController = {
     getHome: async (req, res) => {
         try {
             await controllerLogger(req)
-            return res.render('home',{page_header:""});
+            return res.render('home',{page_header:"Home"});
         } catch (error) {
             console.log("Error in getHome function : ",error)
             await controllerLogger(req,error);
