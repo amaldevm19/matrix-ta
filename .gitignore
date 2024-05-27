@@ -3,3 +3,6 @@ node_modules
 .env
 matrix-ta.exe
 pkg.json
+git.txt
+logs
+test.js
