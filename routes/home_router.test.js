@@ -6,3 +6,11 @@ describe("Test the root path", () => {
         expect(response.statusCode).toBe(200);
     });
 });
+
+beforeAll(done => {
+    done()
+  })
+  
+  afterAll(done => {
+    done()
+  })
