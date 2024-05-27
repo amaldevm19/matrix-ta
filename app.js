@@ -143,6 +143,6 @@ async function ScheduleCreator() {
 }
 console.log( "Current DateTime: ",new Date().toISOString())
 
-ScheduleCreator();
+//ScheduleCreator();
 
 module.exports = app;
