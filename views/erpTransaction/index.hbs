@@ -1,0 +1,46 @@
+<div class="row">
+    <div class="col-3 mt-3">
+        <div class="card" style="width: 18rem; min-height: 200px;">
+            <div class="card-body">
+                <h5 class="card-title">ERP Timesheet Data Pending</h5>
+                <p class="card-text">Check Timesheet data waiting for ERP sync</p>
+                {{#if session.user.IsAdmin}}
+                    <a href="/erp-transactions/pending-data" class="card-link">Open ERP Timesheet Data</a>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+    <div class="col-3 mt-3">
+        <div class="card" style="width: 18rem; min-height: 200px;">
+            <div class="card-body">
+                <h5 class="card-title">ERP Timesheet Data History</h5>
+                <p class="card-text">Check Timesheet data history after ERP sync</p>
+                {{#if session.user.IsAdmin}}
+                    <a href="/erp-transactions/status" class="card-link">Open ERP Timesheet History</a>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+    <div class="col-3 mt-3">
+        <div class="card" style="width: 18rem; min-height: 200px;">
+            <div class="card-body">
+                <h5 class="card-title">ERP Sync Setting</h5>
+                <p class="card-text">Check and Set ERP synchronization setting</p>
+                {{#if session.user.IsAdmin}}
+                    <a href="/erp-transactions/settings" class="card-link">Open ERP Sync Setting</a>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+    <div class="col-3 mt-3">
+        <div class="card" style="width: 18rem; min-height: 200px;">
+            <div class="card-body">
+                <h5 class="card-title">Push Selected Transaction</h5>
+                <p class="card-text">Push selected transactions to ERP</p>
+                {{#if session.user.IsAdmin}}
+                    <a href="/erp-transactions/push-selected" class="card-link">Open Transaction selection</a>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+</div>

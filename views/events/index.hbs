@@ -1,0 +1,199 @@
+
+<div class="row justify-content-start">
+    <div class="col-2">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#filter_modal">Apply Filter</button>
+    </div>
+    <div class="col-2">
+        <button class="btn btn-outline-success ml-5" type="button" id="download_table">Download Log</button>
+    </div>
+</div>
+
+<div class="mt-2" id="eventsTable"></div>
+<div class="mt-2" id="tempeventsTable" hidden></div>
+
+<input type="text" value="{{session.user.EmployeeId}}" id="employeeId" hidden>
+<input type="text" value="{{session.user.Department}}" id="department" hidden>
+
+<!-- Modal -->
+<div class="modal fade " id="filter_modal" tabindex="-1" aria-labelledby="filter_modal_label" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="filter_modal_label">Filter Event Log</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+          <form class=" my-2 my-lg-0 ">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <input type="text" class="form-control datepicker" id="from_date" placeholder="From">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <input type="text" class="form-control datepicker" id="to_date" placeholder="To">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <select class="form-select" id="event_type" name="EventType">
+                            <option selected value="">Select Event Type</option>
+                            {{#each EventTypeArray}}
+                            <option value="{{this}}">{{this}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <select class="form-select" id="event_category" name="EventCategory">
+                            <option selected value="">Select Event Category</option>
+                            {{#each EventCategoryArray}}
+                            <option value="{{this}}">{{this}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <select class="form-select" id="event_method" name="EventMethod">
+                            <option selected value="">Select Event Method</option>
+                            {{#each EventMethodArray}}
+                            <option value="{{this}}">{{this}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <select class="form-select" id="event_status" name="EventStatus">
+                            <option selected value="">Select Event Status</option>
+                            {{#each EventStatusArray}}
+                            <option value="{{this}}">{{this}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <select class="form-select" id="created_by" name="CreatedBy">
+                            <option selected value="">Select Event By</option>
+                            {{#each UsersArray}}
+                            <option value="{{this.EmployeeId}}">{{this.EmployeeId}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <input type="text" class="form-control mr-sm-2" id="event_ip" placeholder="Event IP Address">
+                    </div>
+                </div>
+            </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="close_modal" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="search_submit" data-bs-dismiss="modal">Apply Filter</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    $(document).ready(async function (){
+        
+        let eventsTable = new Tabulator("#eventsTable", {
+            pagination:true, 
+            paginationMode:"remote", 
+            ajaxURL:"/api/events",
+            ajaxParams: function(){
+                let EventIp = $("#event_ip").val();
+                let EventType=$('#event_type').val();
+                let EventCategory=$('#event_category').val();
+                let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":'';
+                let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":'';
+                let EventMethod=$('#event_method').val();
+                let EventStatus=$('#event_status').val();
+                let CreatedBy = $('#created_by').val();
+                return {EventIp,EventType,EventCategory,FromDate,ToDate,EventMethod,EventStatus,CreatedBy};
+            },
+            paginationSize:31, 
+            paginationInitialPage:1,
+            paginationSizeSelector:[10, 25, 30,31, 50, 100, 500, 1000, 5000],
+            columns:[
+                {title:"Row Num", formatter:"rownum",width:50},
+                {title:"Event Date", field:"EventCreatedAt",hozAlign:"center",mutatorData:function(value, data){
+                    return new Date(value).toISOString().replace("T"," ").slice(0,-8)
+                },},
+                {title:"Event Type", field:"EventType", hozAlign:"center"},
+                {title:"Event Category", field:"EventCategory"},
+                {title:"Event Method", field:"EventMethod"},
+                {title:"Event Status", field:"EventStatus"},
+                {title:"Event Ip", field:"EventIp"},
+                {title:"Event Url", field:"EventUrl"},
+                {title:"Event Text", field:"EventText"},
+                {title:"Event Created By", field:"EventCreatedBy"}
+            ],
+        });
+
+        let tempeventsTable = new Tabulator("#tempeventsTable", {
+            columns:[
+                {title:"Row Num", formatter:"rownum",width:100},
+                {title:"Event Date", field:"EventCreatedAt",hozAlign:"center",mutatorData:function(value, data){
+                    return value.split("T")[0];
+                },},
+                {title:"Event Type", field:"EventType", hozAlign:"center"},
+                {title:"Event Category", field:"EventCategory"},
+                {title:"Event Method", field:"EventMethod"},
+                {title:"Event Status", field:"EventStatus"},
+                {title:"Event Ip", field:"EventIp"},
+                {title:"Event Url", field:"EventUrl"},
+                {title:"Event Text", field:"EventText"},
+                {title:"Event Created By", field:"EventCreatedBy"}
+            ],
+        });
+        
+        $("#search_submit").click(function(e){
+            e.preventDefault();
+            let EventIp = $("#event_ip").val();
+            let EventType=$('#event_type').val();
+            let EventCategory=$('#event_category').val();
+            let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":'';
+            let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":'';
+            let EventMethod=$('#event_method').val();
+            let EventStatus=$('#event_status').val();
+            let CreatedBy = $('#created_by').val();
+            eventsTable.setData("/api/events", 
+                {page:"1", size:"31",EventIp,EventType,EventCategory,FromDate,ToDate,EventMethod,EventStatus,CreatedBy}
+            );
+        });
+
+        $("#download_table").click(function(e){
+            e.preventDefault();
+            let EventIp = $("#event_ip").val();
+            let EventType=$('#event_type').val();
+            let EventCategory=$('#event_category').val();
+            let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":'';
+            let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":'';
+            let EventMethod=$('#event_method').val();
+            let EventStatus=$('#event_status').val();
+            let CreatedBy = $('#created_by').val();
+            $.ajax({
+                url: '/api/events/download',
+                data:{EventIp,EventType,EventCategory,FromDate,ToDate,EventMethod,EventStatus,CreatedBy}
+            }).done(function (data) {
+                if(data.status =="ok"){
+                    tempeventsTable.setData(data.data);
+                    tempeventsTable.download("csv", `Event_History_${new Date().getDate()}${new Date().getMonth()+1}${new Date().getFullYear()}.csv`, {delimiter:","})
+                }else{
+                    alert("Failed to download")
+                }
+                
+            });
+        });
+
+        flatpickr("#from_date", {dateFormat: "Y-m-d"});
+        flatpickr("#to_date", {dateFormat: "Y-m-d"});
+        $('#close_modal').click(()=>{
+            $("#event_ip").val('');
+            $("#event_type").val('');
+            $("#event_category").val('');
+            $("#from_date").val('');
+            $("#to_date").val('');
+            $("#event_method").val('')
+            $('#event_status').val('');
+            $('#employeeId').val('')
+            $('#created_by').val('');
+            $("#search_submit").click()
+        })
+    })
+    
+</script>

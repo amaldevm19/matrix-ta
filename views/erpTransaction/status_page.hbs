@@ -1,0 +1,219 @@
+<div class="row justify-content-start">
+    <div class="col-md-6 ml-auto">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#filter_modal">Apply Filter</button>
+        <button class="btn btn-outline-success ml-5" type="button" id="download_table">Download Table</button>
+    </div>
+</div>
+
+<div class="mt-2" id="statusErpTable"></div>
+<div class="mt-2" id="tempstatusErpTable" hidden></div>
+
+<input type="text" value="{{session.user.EmployeeId}}" id="employeeId" hidden>
+<input type="text" value="{{session.user.Department}}" id="department" hidden>
+
+<!-- Modal -->
+<div class="modal fade " id="filter_modal" tabindex="-1" aria-labelledby="filter_modal_label" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="filter_modal_label">Filter ERP Timesheet Result</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+            <form class=" my-2 my-lg-0 ">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <input type="text" class="form-control mr-sm-2" id="emp_id" placeholder="Emp ID">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <input type="text" class="form-control datepicker" id="from_date" placeholder="From">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <input type="text" class="form-control datepicker" id="to_date" placeholder="To">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <input type="text" class="form-control mr-sm-2" id="job_code" placeholder="Job Code">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <select class="form-select" id="department_id" name="Department">
+                            <option selected value="">Select Department</option>
+                            {{#each Department}}
+                            <option value="{{this.DPTID}}">{{this.Name}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <select class="form-select" id="user_category" name="StaffCategory">
+                            <option selected value="">Select Staff Type</option>
+                            {{#each UserCategory}}
+                            <option value="{{this.CG1ID}}">{{this.Name}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <select class="form-select" id="employee_category" name="Category">
+                            <option selected value="">Select Category</option>
+                            {{#each Category}}
+                            <option value="{{this.CTGID}}">{{this.Name}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <select class="form-select" id="designation_id" name="Category">
+                            <option selected value="">Select Designation</option>
+                            {{#each Designation}}
+                            <option value="{{this.DSGID}}">{{this.Name}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <select class="form-select" id="section_id" name="Section">
+                            <option selected value="">Select Section</option>
+                            {{#each Section}}
+                            <option value="{{this.SECID}}">{{this.Name}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                </div>
+            </form>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id='close_modal' data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="search_submit" data-bs-dismiss="modal">Apply Filter</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    $(document).ready(async function (){
+        let statusErpTable = new Tabulator("#statusErpTable", {
+            pagination:true, //enable pagination
+            paginationMode:"remote", //enable remote pagination
+            ajaxURL:"/api/erp-transaction/status", //ajax URL
+            ajaxParams: function(){
+                let EmployeeId = $("#emp_id").val()
+                let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":''
+                let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":''
+                let JobCode=$('#job_code').val()
+                let DepartmentId=$('#department_id').val()
+                let UserCategoryId=$('#user_category').val()
+                let EmployeeCategoryId=$('#employee_category').val()
+                let DesignationId=$('#designation_id').val()
+                let SectionId=$('#section_id').val()
+                return {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId};
+            },
+            paginationSize:31, //optional parameter to request a certain number of rows per page
+            paginationInitialPage:1,
+            paginationSizeSelector:[10, 25, 30,31, 50, 100, 500, 1000, 5000],
+            columns:[
+                {title:"Sl#", field:"example", formatter:"rownum"},
+                {title:"Employee ID", field:"HcmWorker_PersonnelNumber"},
+                {title:"Attendance Date", field:"TransDate",hozAlign:"center",mutatorData:function(value, data){
+                    return value.split("T")[0];
+                },},
+                {title:"Job Code", field:"projId", hozAlign:"center"},
+                {title:"Total Hours", field:"TotalHours"},
+                {title:"Sync Completed", field:"SyncCompleted"},
+                {title:"Branch", field:"BranchName"},
+                {title:"Department", field:"DepartmentName"},
+                {title:"User Category", field:"UserCategoryName"},
+                {title:"Category", field:"EmployeeCategoryName"},
+                {title:"Designation", field:"DesignationName"},
+                {title:"Section", field:"SectionName"},
+                {title:"Created At", field:"CreatedAt",hozAlign:"center",mutatorData:function(value, data){
+                    return value.split("T")[0];
+                },},
+                {title:"Updated At", field:"UpdatedAt",hozAlign:"center",mutatorData:function(value, data){
+                    return value.split("T")[0];
+                },},
+            ],
+        });
+
+        let tempstatusErpTable = new Tabulator("#tempstatusErpTable", {
+            columns:[
+                {title:"Employee ID", field:"HcmWorker_PersonnelNumber"},
+                {title:"Attendance Date", field:"TransDate",hozAlign:"center",mutatorData:function(value, data){
+                    return value.split("T")[0];
+                },},
+                {title:"Job Code", field:"projId", hozAlign:"center"},
+                {title:"Total Hours", field:"TotalHours"},
+                {title:"Sync Completed", field:"SyncCompleted"},
+                {title:"Branch", field:"BranchName"},
+                {title:"Department", field:"DepartmentName"},
+                {title:"User Category", field:"UserCategoryName"},
+                {title:"Category", field:"EmployeeCategoryName"},
+                {title:"Designation", field:"DesignationName"},
+                {title:"Section", field:"SectionName"},
+                {title:"Created At", field:"CreatedAt",hozAlign:"center",mutatorData:function(value, data){
+                    return value.split("T")[0];
+                },},
+                {title:"Updated At", field:"UpdatedAt",hozAlign:"center",mutatorData:function(value, data){
+                    return value.split("T")[0];
+                },},
+            ],
+        });
+        
+        $("#search_submit").click(function(e){
+            e.preventDefault();
+            let EmployeeId = $("#emp_id").val()
+            let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":''
+            let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":''
+            let JobCode=$('#job_code').val()
+            let DepartmentId=$('#department_id').val()
+            let UserCategoryId=$('#user_category').val()
+            let EmployeeCategoryId=$('#employee_category').val()
+            let DesignationId=$('#designation_id').val()
+            let SectionId=$('#section_id').val()
+            statusErpTable.setData("/api/erp-transaction/status", 
+                {page:"1", pageSize:"31",EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId}
+            );
+        });
+        $("#download_table").click(function(e){
+            e.preventDefault();
+            let EmployeeId = $("#emp_id").val()
+            let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":''
+            let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":''
+            let JobCode=$('#job_code').val()
+            let DepartmentId=$('#department_id').val()
+            let UserCategoryId=$('#user_category').val()
+            let EmployeeCategoryId=$('#employee_category').val()
+            let DesignationId=$('#designation_id').val()
+            let SectionId=$('#section_id').val()
+            $.ajax({
+                url: '/api/erp-transaction/download-status',
+                data:{EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId}
+            }).done(function (data) {
+                if(data.status =="ok"){
+                    tempstatusErpTable.setData(data.data);
+                    tempstatusErpTable.download("csv", "erptimesheet.csv", {delimiter:","})
+                }else{
+                    alert("Failed to download")
+                }
+                
+            });
+        });
+        flatpickr("#from_date", {dateFormat: "Y-m-d"});
+        flatpickr("#to_date", {dateFormat: "Y-m-d"});
+
+         $('#close_modal').click(()=>{
+            $("#emp_id").val('');
+            $("#from_date").val('');
+            $("#to_date").val('');
+            $('#job_code').val('')
+            $("#upload_date").val('')
+            $('#department_id').val('');
+            $('#user_category').val('')
+            $('#employee_category').val('')
+            $('#designation_id').val('')
+            $('#section_id').val('')
+            $("#search_submit").click()
+        })
+    })
+    
+</script>

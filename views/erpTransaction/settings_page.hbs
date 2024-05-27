@@ -1,0 +1,171 @@
+
+<form class="row gy-2 gx-3 align-items-center mb-5">
+    <div class="col-sm-2">
+        <label for="department">Department:</label>
+        <select class="form-select" id="department" name="DepartmentId">
+        <option selected value="0">Select Department</option>
+        {{#each department}}
+        <option value="{{this.DPTID}}">{{this.Name}}</option>
+        {{/each}}
+        </select>
+    </div>
+    <div class="col-sm-2">
+        <label for="user_category">User Category:</label>
+        <select class="form-select" id="user_category" name="UserCategoryId">
+        <option selected value="0">Select User Category</option>
+        {{#each userCategory}}
+        <option value="{{this.CG1ID}}">{{this.Name}}</option>
+        {{/each}}
+        </select>
+    </div>
+    <div class="col-auto">
+        <label for="trigger_date">Trigger Date:</label>
+        <input type="text" class="form-control datepicker" id="trigger_date" name="TriggerDate" placeholder="Select Trigger Date&Time">
+    </div>
+    <div class="col-auto">
+        <label for="from_date">From Date:</label>
+        <input type="text" class="form-control datepicker" id="from_date" name="FromDate" placeholder="Select From Date">
+    </div>
+    <div class="col-auto">
+        <label for="to_date">To Date:</label>
+        <input type="text" class="form-control datepicker" id="to_date" name="ToDate" placeholder="Select To Date">
+    </div>
+    <div class="col-auto">
+        <label for="status"></label>
+        <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="status" name="Status">
+        <label class="form-check-label" for="status">
+            Activate
+        </label>
+        </div>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary" id="new_trigger">Add New</button>
+    </div>
+</form>
+
+<div class="mt-2" id="erpSyncSettingTable"></div>
+
+<input type="text" value="{{session.user.EmployeeId}}" id="employee_id" hidden>
+<input type="text" value="{{session.user.Department}}" id="department" hidden>
+
+
+<script>
+    $(document).ready(async function (){
+        let UpdatedBy = $("#employee_id").val();
+        let erpSyncSettingTable = new Tabulator("#erpSyncSettingTable", {
+            ajaxURL:"/api/erp-transaction/settings",
+            ajaxResponse:function(url, params, response){
+                if(response.status != "ok"){
+                    alert(response.error)
+                }
+                return response.data
+            }, 
+            columns:[ 
+                {title:"Sl#", field:"example", formatter:"rownum"},
+                {title:"Id", field:"Id",visible:false},
+                {title:"Department", field:"Department"},
+                {title:"User Category", field:"UserCategory",resizable:true},
+                {title:"Trigger Date&Time", field:"TriggerDate",hozAlign:"center",resizable:true,mutatorData:function(value, data){
+                    return value.replace("T"," ").slice(0, -8);
+                },editor:"datetime",editorParams:{
+                    format:"yyyy-MM-dd HH:mm",
+                    verticalNavigation:"table",
+                }, cellEdited:async function(cell){
+                    let {Id, TriggerDate, FromDate, ToDate,Status} = cell.getData();
+                    Status=Status?"Active":"Inactive"
+                    let data = {TriggerDate,FromDate,ToDate,Status,UpdatedBy};
+                    await compareSyncDates({data,cell,Id});
+                },},
+                {title:"From Date", field:"FromDate",resizable:true,editor:"date",mutator:function(value, data){
+                    return value.split("T")[0];
+                }, cellEdited:async function(cell){
+                    let {Id, TriggerDate, FromDate, ToDate,Status} = cell.getData();
+                    Status=Status?"Active":"Inactive"
+                    let data = {TriggerDate,FromDate,ToDate,Status,UpdatedBy};
+                    await compareSyncDates({data,cell,Id});
+                },},
+                {title:"To Date", field:"ToDate",resizable:true,editor:"date",mutator:function(value, data){
+                    return value.split("T")[0];
+                }, cellEdited:async function(cell){
+                    let {Id, TriggerDate, FromDate, ToDate,Status} = cell.getData();
+                    Status=Status?"Active":"Inactive"
+                    let data = {TriggerDate,FromDate,ToDate,Status,UpdatedBy};
+                    await compareSyncDates({data,cell,Id});
+                },},
+                {title:"Status", field:"Status",resizable:true,formatter:"tickCross", sorter:"boolean", editor:true, 
+                cellEdited:async function(cell){
+                    let {Id, TriggerDate, FromDate, ToDate,Status} = cell.getData();
+                    Status=Status?"Active":"Inactive"
+                    let data = {TriggerDate,FromDate,ToDate,Status,UpdatedBy};
+                    await compareSyncDates({data,cell,Id});
+                },},
+                {title:"Created By", field:"CreatedBy",hozAlign:"center",resizable:true},
+                {title:"Created At", field:"CreatedAt",hozAlign:"center",resizable:true,mutator:function(value, data){
+                    return value.split("T")[0];
+                },},
+                {title:"Updated At", field:"UpdatedAt",hozAlign:"center",resizable:true,mutator:function(value, data){
+                    return value.split("T")[0];
+                },},
+                {title:"Updated By", field:"UpdatedBy",hozAlign:"center",resizable:true},
+                {title:"Delete",formatter:deleteIcon, width:40, hozAlign:"center", cellClick:async function(e, cell){
+                    let Id = cell.getData().Id;
+                    let response = await fetchHandler(`/api/erp-transaction/settings/${Id}`, {} ,"DELETE")
+                    if(response.status == "ok"){
+                            location.reload(true);
+                    }else{
+                       alert(response.error)
+                    }
+                },},
+            ],
+        });
+
+        flatpickr("#trigger_date", {enableTime: true, dateFormat: "Y-m-d H:i",});
+        flatpickr("#from_date", {dateFormat: "Y-m-d"});
+        flatpickr("#to_date", {dateFormat: "Y-m-d"});
+        $("#new_trigger").click(async(e)=>{
+            e.preventDefault()
+            let DepartmentId = $("#department").val();
+            let UserCategoryId = $("#user_category").val();
+            let TriggerDate = $("#trigger_date").val()+":000";
+            let FromDate = $("#from_date").val()+" 00:00:00.000";
+            let ToDate = $("#to_date").val()+" 00:00:00.000";
+            let Status = $("#status").prop("checked")?1:0;
+            let CreatedBy = $("#employee_id").val();
+            if(DepartmentId =="0" || UserCategoryId =="0" || !TriggerDate || !FromDate || !ToDate){
+                alert("Required All Values");
+                return
+            }
+            let data = {DepartmentId, UserCategoryId, TriggerDate, FromDate, ToDate, Status, CreatedBy }
+            await compareSyncDates({data});
+        })
+
+        let compareSyncDates = async function ({data,cell,Id}){
+            let url='/api/erp-transaction/settings';
+            let method ="POST"
+            if(Id){
+                url=`/api/erp-transaction/settings/${Id}`;
+                method ="PUT"
+            }
+            let DateTime = luxon.DateTime;
+            let luxonNow = luxon.DateTime.now();
+            let luxonTriggerDate = DateTime.fromISO(data.TriggerDate.split(" ")[0]);
+            let luxonfromDate = DateTime.fromISO(data.FromDate.split(" ")[0]);
+            let luxonToDate = DateTime.fromISO(data.ToDate.split(" ")[0]);
+            //if(luxonTriggerDate > luxonToDate && luxonToDate > luxonfromDate && luxonTriggerDate > luxonNow){
+                if(luxonTriggerDate > luxonToDate && luxonToDate > luxonfromDate){
+                let response = await fetchHandler(url, data,method)
+                if(response.status == "not ok"){
+                    alert(response.error);
+                }
+                location.reload(true);
+            }else{
+                alert("Today > Trigger Date > To Date > From Date");
+                cell?.restoreOldValue();
+                return;
+            }
+        }
+
+    })
+    
+</script>

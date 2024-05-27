@@ -1,0 +1,200 @@
+<div class="row justify-content-start mb-3">
+    <div class="col-2">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#filter_modal">Apply Filter</button>
+    </div>
+    <div class="col-2">
+        <button class="btn btn-outline-success mx-2" type="button" id="download_table">Download CSV</button>
+    </div>
+</div>
+<div id="loading-indicator">
+    <div class="spinner-border text-primary" role="status">
+        <span class="sr-only"></span>
+    </div>
+</div>
+
+<div class="mb-5" id="response_table"></div>
+<div class="mt-2" id="temp_response_table" hidden></div>
+
+<input type="text" value="{{session.user.EmployeeId}}" id="employeeId" hidden>
+<input type="text" value="{{session.user.Department}}" id="department" hidden>
+
+<!-- Modal -->
+<div class="modal fade " id="filter_modal" tabindex="-1" aria-labelledby="filter_modal_label" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="filter_modal_label">Filter Job Assignment History</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+            <form class=" my-2 my-lg-0 ">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <input type="text" class="form-control mr-sm-2" id="emp_id" placeholder="Emp ID">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <input type="text" class="form-control mr-sm-2" id="uploaded_by" placeholder="Uploaded By">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <input type="text" class="form-control datepicker" id="from_date" placeholder="Attendance From">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <input type="text" class="form-control datepicker" id="to_date" placeholder="Attendance To">
+                    </div>
+
+                </div>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <input type="text" class="form-control datepicker" id="upload_date" placeholder="Uploaded Date">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <input type="text" class="form-control mr-sm-2" id="job_code" placeholder="Job Code">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <select class="form-select" id="department_id" name="Department">
+                            <option selected value="">Select Department</option>
+                            {{#each Department}}
+                            <option value="{{this.DPTID}}">{{this.Name}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                         <select class="form-select" id="status" name="Error">
+                            <option selected value="">Status</option>
+                            <option value="failed">Failed</option>
+                            <option value="success">Success</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id='close_modal' data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="search_submit" data-bs-dismiss="modal">Apply Filter</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    $(document).ready(()=>{
+        const CreatedBy = $('#employeeId').val()
+        let response_table = new Tabulator("#response_table", {
+            pagination:true,
+            paginationMode:"remote", 
+            ajaxURL:"/api/jobs/assignment/history", 
+            ajaxParams: function(){
+                let UserID = $("#emp_id").val();
+                let JobCode = $("#job_code").val();
+                let CreatedBy = $("#uploaded_by").val();
+                let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":'';
+                let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":'';
+                let CreatedAt=$("#upload_date").val()?$("#upload_date").val():''
+                let DepartmentId=$('#department_id').val();
+                let Status = $("#status").val();
+                return {UserID,CreatedBy,JobCode,FromDate,ToDate,CreatedAt,DepartmentId,Status};
+            },
+            paginationSize:31, 
+            paginationInitialPage:1,
+            paginationSizeSelector:[10, 25, 30,31, 50, 100, 500, 1000, 5000],
+            layout:"fitColumns",
+            columns:[
+                {title:"Row Num", formatter:"rownum", width:50},
+                {title:"Employee ID", field:"UserID", width:150},
+                {title:"Job Code", field:"JobCode", width:150},
+                {title:"From Date", field:"FromDate",mutatorData:function(value, data){
+                    return value.split("T")[0];
+                },},
+                {title:"To Date", field:"ToDate",mutatorData:function(value, data){
+                    return value.split("T")[0];
+                },},
+                {title:"Status", field:"Status",width:100},
+                {title:"Message", field:"Message"},
+                {title:"Uploaded By", field:"CreatedBy",width:100},
+                {title:"Department Id", field:"DepartmentName"},
+                {title:"Uploaded At", field:"CreatedAt",mutatorData:function(value, data){
+                    return value.split("T")[0];
+                },},
+            ],
+        });
+
+        let temp_response_table = new Tabulator("#temp_response_table", { 
+             columns:[
+                {title:"Row Num", formatter:"rownum"},
+                {title:"Employee ID", field:"UserID"},
+                {title:"Job Code", field:"JobCode"},
+                {title:"From Date", field:"FromDate",mutatorData:function(value, data){
+                    return value.split("T")[0];
+                },},
+                {title:"To Date", field:"ToDate",mutatorData:function(value, data){
+                    return value.split("T")[0];
+                },},
+                {title:"Status", field:"Status",width:100},
+                {title:"Message", field:"Message"},
+                {title:"Uploaded By", field:"CreatedBy"},
+                {title:"Department Id", field:"DepartmentName"},
+                {title:"Uploaded At", field:"CreatedAt",mutatorData:function(value, data){
+                    return value.split("T")[0];
+                },},
+            ],
+        });
+
+        $("#search_submit").click(function(e){
+            e.preventDefault();
+            let UserID = $("#emp_id").val();
+            let JobCode = $("#job_code").val();
+            let CreatedBy = $("#uploaded_by").val();
+            let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":'';
+            let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":'';
+            let CreatedAt=$("#upload_date").val()?$("#upload_date").val():''
+            let DepartmentId=$('#department_id').val();
+            let Status = $("#status").val();
+            response_table.setData("/api/jobs/assignment/history", 
+                {page:"1", size:"31",UserID,CreatedBy,JobCode,FromDate,ToDate,CreatedAt,DepartmentId,Status}
+            );
+        });
+
+        $("#download_table").click(function(e){
+            e.preventDefault();
+            let UserID = $("#emp_id").val();
+            let JobCode = $("#job_code").val();
+            let CreatedBy = $("#uploaded_by").val();
+            let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":'';
+            let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":'';
+            let CreatedAt=$("#upload_date").val()?$("#upload_date").val():''
+            let DepartmentId=$('#department_id').val();
+            let Status = $("#status").val();
+            $.ajax({
+                url: '/api/jobs/assignment/history/download',
+                data:{UserID,CreatedBy,JobCode,FromDate,ToDate,CreatedAt,DepartmentId,Status}
+            }).done(function (data) {
+                if(data.status =="ok"){
+                    temp_response_table.setData(data.data);
+                    temp_response_table.download("csv", "job-assignment-history.csv", {delimiter:","})
+                }else{
+                    alert("Failed to download")
+                }
+                
+            });
+        });
+
+        flatpickr("#from_date", {dateFormat: "Y-m-d"});
+        flatpickr("#to_date", {dateFormat: "Y-m-d"});
+        flatpickr("#upload_date", {dateFormat: "Y-m-d"});
+
+        $('#close_modal').click(()=>{
+            $("#emp_id").val('');
+            $("#job_code").val('');
+            $("#uploaded_by").val('');
+            $("#from_date").val('');
+            $("#to_date").val('');
+            $("#upload_date").val('')
+            $('#department_id').val('');
+            $("#status").val('');
+            $("#search_submit").click()
+        })
+
+    })
+
+</script>

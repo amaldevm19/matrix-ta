@@ -1,0 +1,94 @@
+<div class="row">
+    <div class="col-3 mt-3">
+        <div class="card" style="width: 18rem; min-height: 200px;">
+            <div class="card-body">
+                <h5 class="card-title">Jobs Assignment</h5>
+                <p class="card-text">Manually assign jobs to employees using CSV file upload.</p>
+                <a href="/jobs/assign-jobs-manually" class="card-link">Open Jobs Assignment Page</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-3 mt-3">
+        <div class="card" style="width: 18rem; min-height: 200px;">
+            <div class="card-body">
+                <h5 class="card-title">Attendance Correction</h5>
+                <p class="card-text">Make attendance correction using CSV file upload.</p>
+                <a href="/jobs/attendance-correction" class="card-link">Open Attendance Page</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-3 mt-3">
+        <div class="card" style="width: 18rem; min-height: 200px;">
+            <div class="card-body">
+                <h5 class="card-title">Attendance Correction History</h5>
+                <p class="card-text">View attendance correction History</p>
+                <a href="/jobs/attendance-correction-history" class="card-link">Open Attendance Correction History Page</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-3 mt-3">
+        <div class="card" style="width: 18rem; min-height: 200px;">
+            <div class="card-body">
+                <h5 class="card-title">Maximum Allowed Job Hours Per Day </h5>
+                <p class="card-text">Make changes to maximum allowed job hours per day.</p>
+                <a href="/jobs/jobslist" class="card-link">Open Allowed Job Hours Per Day</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-3 mt-3">
+        <div class="card" style="width: 18rem; min-height: 200px;">
+            <div class="card-body">
+                <h5 class="card-title">Search Jobs</h5>
+                <p class="card-text">Search all users assigned with a given job number.</p>
+                <a href="/jobs/search-jobs" class="card-link">Open Search Jobs Page</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-3 mt-3">
+        <div class="card" style="width: 18rem; min-height: 200px;">
+            <div class="card-body">
+                <h5 class="card-title">View Timesheet For ERP Sync</h5>
+                <p class="card-text">View Employee's attendance timesheet Pending and Completed in ERP sync format</p>
+                <a href="/erp-transactions" class="card-link">Open Timesheet For ERP Sync Page</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-3 mt-3">
+        <div class="card" style="width: 18rem; min-height: 200px;">
+            <div class="card-body">
+                <h5 class="card-title">View Biometric Timesheet</h5>
+                <p class="card-text">View Employees attendance timesheet with totalhours and jobnumber prior to ERP sync</p>
+                <a href="/bio-timesheet" class="card-link">Open Biometric Timesheet Page</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-3 mt-3">
+        <div class="card" style="width: 18rem; min-height: 200px;">
+            <div class="card-body">
+                <h5 class="card-title">View History Log</h5>
+                <p class="card-text">View Events History Logs of Biometric Middleware</p>
+                <a href="/events" class="card-link">Open History Log</a>
+            </div>
+        </div>
+    </div>
+    {{#if session.user.IsAdmin}}
+    <div class="col-3 mt-3">
+        <div class="card" style="width: 18rem; min-height: 200px;">
+            <div class="card-body">
+                <h5 class="card-title">View Admin Settings</h5>
+                <p class="card-text">View and Modify Admin settings</p>
+                <a href="/users/admin" class="card-link">Open Admin Page</a>
+            </div>
+        </div>
+    </div>
+    {{/if}}
+</div>
+<script>
+    $(document).ready(()=>{
+        //$(".card").addClass("text-white bg-success")
+        //$(".card-link").addClass("link-light fw-bold")
+    })
+</script>
+
+
+

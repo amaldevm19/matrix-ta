@@ -1,0 +1,76 @@
+<section class="vh-100 gradient-custom">
+  <div class="container py-5">
+    <div class="row d-flex justify-content-center align-items-center h-100">
+      <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+        <div class="card bg-dark text-white" style="border-radius: 1rem;">
+          <div class="card-body p-5 text-center">
+            <div class="mb-md-5 mt-md-4 pb-3">
+              <h2 class="fw-bold mb-2 text-uppercase">Login</h2>
+              <div class="form-outline form-white mb-4">
+                <input type="text" id="empId" class="form-control form-control-lg" placeholder="Employee ID"/>
+              </div>
+              <div class="form-outline form-white mb-4">
+                <input type="password" id="pass" class="form-control form-control-lg" placeholder="Password" />
+              </div>
+              <p class="small mb-3 pb-lg-2"><a class="text-white-50" href="#!">Forgot password?</a></p>
+              <button class="btn btn-outline-light btn-lg px-5" type="submit" id="loginButton">Login</button>
+            </div>
+            <div>
+              <p class="mb-0">Don't have an account? <a href="/users/signup" class="text-white-50 fw-bold">Sign Up</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<script>
+    $(document).ready(function () {
+        // This code will be executed when the DOM is fully loaded
+        $("#loginButton").click(function () {
+            let employeeID = $("#empId").val();
+            let password = $("#pass").val();
+
+            if(!employeeID || !password){
+                return alert("Please enter valid employee id and password")
+            }
+            const userdata = {
+                employeeID,
+                password
+            };
+
+            loginUser(userdata)
+        });
+    });
+
+    async function loginUser(userdata){
+        try{
+            const response = await fetch('/api/users/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userdata) // Convert the data to JSON format
+            });
+
+            if (!response.ok) {
+                return alert('Network response was not ok');
+            }
+
+            const responseData = await response.json();
+            console.log('Success:', responseData);
+            if(responseData.status == "ok" && responseData.data){
+              window.location.href = responseData.data;
+            }else if(responseData.status == "ok" && !responseData.data){
+              window.location.href = "/";
+            }
+            else{
+              alert(responseData.error)
+              window.location.href = "/users/login";
+            }
+        }catch (error) {
+            console.error('Error:', error);
+        }
+    }
+</script>

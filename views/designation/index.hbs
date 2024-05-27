@@ -1,0 +1,172 @@
+<div class="row justify-content-start">
+    <div class="col-2">
+        <button type="button" class="btn btn-primary mx-3" data-bs-toggle="modal" data-bs-target="#link_modal">Link New Position</button>
+    </div>
+    <div class="col-2">
+        <button type="button" class="btn btn-primary mx-3" data-bs-toggle="modal" data-bs-target="#filter_modal">Apply Filter</button>
+    </div>
+    <div class="col-2">
+        <button class="btn btn-outline-success " type="button" id="download_table">Download List</button>
+    </div>
+</div>
+
+<div id="loading-indicator">
+  <div class="spinner-border text-primary" role="status">
+    <span class="sr-only"></span>
+  </div>
+</div>
+
+<div class="mt-2" id="designation_table"></div>
+<div class="mt-2" id="temp_designation_table" hidden></div>
+
+<input type="text" value="{{session.user.EmployeeId}}" id="employeeId" hidden>
+<input type="text" value="{{session.user.Department}}" id="department" hidden>
+
+<!-- filter_modal -->
+<div class="modal fade " id="filter_modal" tabindex="-1" aria-labelledby="filter_modal_label" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="filter_modal_label">Filter Designation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                    <form class=" my-2 my-lg-0 ">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <input type="text" class="form-control mr-sm-2" id="Name" placeholder="Designation Name">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <input type="text" class="form-control mr-sm-2" id="Position" placeholder="Position">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <input type="text" class="form-control mr-sm-2" id="TnaDesignationId" placeholder="Designation ID">
+                            </div>
+                        </div>
+                    </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="close_modal" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="search_submit" data-bs-dismiss="modal">Apply Filter</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- position_link_modal -->
+<div class="modal fade " id="link_modal" tabindex="-1" aria-labelledby="link_modal_label" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="link_modal_label">Link New Position</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                    <form class=" my-2 my-lg-0 ">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <input type="text" class="form-control mr-sm-2" id="Position_link" placeholder="Position">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <input type="text" class="form-control mr-sm-2" id="TnaDesignationId_link" placeholder="Designation Id">
+                            </div>
+                        </div>
+                    </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="close_link_modal" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="link_submit" data-bs-dismiss="modal">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    $(document).ready(async function (){
+        let designationTable = new Tabulator("#designation_table", {
+            pagination:true, //enable pagination
+            paginationMode:"remote", //enable remote pagination
+            layout:"fitColumns",
+            ajaxURL:"/api/designations/designation-data", //ajax URL
+            ajaxParams: function(){
+                let Name=$('#Name').val();
+                let Position=$('#Position').val();
+                let TnaDesignationId=$('#TnaDesignationId').val()
+                return {Name,TnaDesignationId,Position};
+            },
+            paginationSize:31, //optional parameter to request a certain number of rows per page
+            paginationInitialPage:1,
+            paginationSizeSelector:[10, 25, 30,31, 50, 100, 500, 1000, 5000],
+            columns:[
+                {title:"Sl#", formatter:"rownum"},
+                {title:"Position", field:"Position"},
+                {title:"Designation Name", field:"Name", hozAlign:"center"},
+                {title:"Designation ID", field:"TnaDesignationId", hozAlign:"center"},
+            ],
+        });
+
+        let tempDesignationTable = new Tabulator("#temp_designation_table", {
+             columns:[
+                {title:"Position", field:"Position"},
+                {title:"Designation Name", field:"Name", hozAlign:"center"},
+                {title:"Designation ID", field:"TnaDesignationId", hozAlign:"center"},
+            ],
+        });
+        
+        $("#search_submit").click(function(e){
+            e.preventDefault();
+            let Name=$('#Name').val();
+            let Position=$('#Position').val();
+            let TnaDesignationId=$('#TnaDesignationId').val();
+            designationTable.setData("/api/designations/designation-data", 
+                {page:"1", pageSize:"31",Name,Position,TnaDesignationId}
+            );
+        });
+         $("#link_submit").click(function(e){
+            e.preventDefault();
+            
+            let Position=$('#Position_link').val();
+            let TnaDesignationId=$('#TnaDesignationId_link').val();
+            $.ajax({
+                url: '/api/designations/link-designation',
+                data:{Position,TnaDesignationId}
+            }).done(function (data) {
+                if(data.status =="ok"){
+                    alert(data.data)
+                    location.reload(true);
+                }else{
+                    alert(data.error.message)
+                }
+                
+            });
+        });
+
+        $("#download_table").click(function(e){
+            e.preventDefault();
+            let Name=$('#Name').val();
+            let Position=$('#Position').val();
+            let TnaDesignationId=$('#TnaDesignationId').val();
+            $.ajax({
+                url: '/api/designations/download-designation',
+                data:{Name,Position,TnaDesignationId}
+            }).done(function (data) {
+                if(data.status =="ok"){
+                    tempDesignationTable.setData(data.data);
+                    tempDesignationTable.download("csv", "designationList.csv", {delimiter:","})
+                }else{
+                    alert("Failed to download")
+                }
+                
+            });
+        });
+        $('#close_modal').click(()=>{
+            $('#Name').val('');
+            $('#Position').val('');
+            $('#TnaDesignationId').val('');
+            $("#search_submit").click();
+        })
+
+    })
+    
+</script>

@@ -1,0 +1,128 @@
+
+<div class="container py-4">
+    <input type="file" class="form-control" name="file" id="file" accept=".csv" />
+    <div class="row">
+        <div class="col"><button class="btn btn-primary mt-2" id="submitFile">Upload</button></div>
+        <div class="col text-left"><button type="button" class="btn btn-success mt-2" id="download" style="display: none;">Download CSV</button></div>
+    </div>
+    <div class="mt-2" id="csvTable"></div>
+    <div class="progress" id="progress" style="display: none;" >
+        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 85%" ></div>
+    </div>
+    <div class="mb-5" id="response_table"></div>
+</div>
+
+<script>
+      //$('#progress').hide()
+     const fileInput = document.getElementById('file')
+     const submitFile = document.getElementById('submitFile')
+     let file = null
+     fileInput.addEventListener('change', function(){
+        file = this.files[0]
+     })
+
+     submitFile.addEventListener('click', function(){
+        if(!file || file.type !== 'text/csv'){
+            alert('Please choose a CSV file')
+            return
+        }
+        const reader = new FileReader();
+        reader.readAsBinaryString(file)
+        reader.onload = function (e) {
+            let jsonData = [];
+            let headers = [];
+            let errors =[];
+            const requiredKeys = ['JobCode', 'ToDate'];
+            const dateRegex = /^(0[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
+            const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/
+            let rows = e.target.result.split("\r\n")
+
+            for(let i=0; i<rows.length; i++){
+                let rowData = {};
+                let cells = rows[i].split(',');
+                for(let j=0;j<cells.length;j++){
+                    if(i==0){
+                        let headerName = cells[j].trim();
+                        headers.push(headerName);
+                    }else{
+                        let key = headers[j]
+                        if(key == "attendanceDate"){
+                            if (!dateRegex.test(cells[j].trim())){
+                                continue;
+                            }
+                            let datevalue = cells[j].split("/")
+                            cells[j]=`${datevalue[0]}${datevalue[1]}${datevalue[2]}`
+                            
+                        }else if(key == "inTime" || key == "outTime"){
+                             if (!timeRegex.test(cells[j].trim())){
+                                continue;
+                            }
+                            let cellvalue = cells[j].split(":")
+                            cells[j] = `${cellvalue[0]}${cellvalue[1]}00`
+                        }
+                        if(key && cells[j]){
+                            rowData[key]=cells[j].trim()
+                        }
+                    }
+                }
+                if(i!=0 && hasAllRequiredKeys(rowData,requiredKeys)){
+                    jsonData.push(rowData);
+                }
+            }
+
+            //if the parsed data array has no elements, then alert
+            if(!jsonData.length){
+                alert('Selected file data not matching with required data')
+                return
+            }
+
+            startProgress();
+            var table = null;
+            fetch('/api/jobs/terminate-jobs', {
+                method: 'POST',
+                 headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(jsonData),
+            })
+            .then((response)=>response.json())
+            .then((data)=>{
+                $('#progress').hide()
+                $('#file').val("")
+                 if(data.data?.length){
+                    $('#download').show()
+                    table = new Tabulator("#response_table", {
+                        layout:"fitColumns",
+                        pagination:"local",
+                        paginationSize:25,
+                        paginationSizeSelector:[25, 50, 75, 100],
+                        movableColumns:true,
+                        paginationCounter:"rows",
+                        data:data.data,
+                        columns:[
+                            {title:"EmpID", field:"userID", width:100},
+                            {title:"Attendance Date", field:"attendanceDate", width:100},
+                            {title:"IN Time", field:"inTime"},
+                            {title:"OUT Time", field:"outTime"},
+                            {title:"Status", field:"status",width:100},
+                            {title:"Message", field:"message",width:500},
+                        ],
+                    });
+                    
+                 }
+            })
+            .catch(err=>{
+                console.log(err)
+            });
+            
+            $("#download").click(()=>{
+                table.download("csv", "data.csv");
+            })
+        };
+        
+     })
+
+     function startProgress(){
+        $('#progress').show()
+     }
+</script>

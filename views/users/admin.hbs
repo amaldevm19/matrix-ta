@@ -1,0 +1,84 @@
+
+
+<div class="mt-2" id="new_users_table"></div>
+
+<input type="text" value="{{session.user.EmployeeId}}" id="employeeId" hidden>
+<input type="text" value="{{session.user.Department}}" id="department" hidden>
+
+<script>
+    $(document).ready(()=>{
+        let resetButton = function(cell, formatterParams, onRendered){
+            return `<button type="button" class="btn btn-danger btn-small">Reset</button>`;
+        };
+        let newUsersTable = new Tabulator("#new_users_table", {
+            ajaxURL:"/api/users/admin/get-new-users",
+            ajaxResponse:function(url, params, response){
+                return response.data;
+            },
+           layout:"fitColumns",
+            columns:[
+                {title:"Sl#", field:"usercount", formatter:"rownum",resizable:true,width:100},
+                {title:"Id", field:"id",visible:false},
+                {title:"Employee ID", field:"EmployeeId",resizable:true},
+                {title:"Email ID", field:"Email",resizable:true,widthGrow:2},
+                {title:"Department", field:"DepartmentName",resizable:true,widthGrow:2},
+                {title:"Created On", field:"CreatedAt",resizable:true,mutator:function(value, data){
+                    return value.split("T")[0];
+                },},
+                {title:"Status", field:"IsValid",resizable:true,formatter:"tickCross", sorter:"boolean", editor:true, 
+                cellEdited:async function(cell){
+                    let data = {IsValid,id} = cell.getData();
+                    let response = await fetchHandler("/api/users/admin/change-user-status", data,"POST")
+                    if(response.status=='ok'){
+                        location.reload()
+                    }else{
+                        alert(`Error while status change : ${response.error}`)
+                    }
+                },},
+                {title:"Admin Status", field:"IsAdmin",resizable:true,formatter:"tickCross", sorter:"boolean", editor:true, 
+                cellEdited:async function(cell){
+                    let data = {IsAdmin,id} = cell.getData();
+                    let response = await fetchHandler("/api/users/admin/change-user-status", data,"POST")
+                    if(response.status=='ok'){
+                        location.reload()
+                    }else{
+                        alert(`Error while status change : ${response.error}`)
+                    }
+        
+                },},
+                {title:"Coordinator Status", field:"IsCoordinator",resizable:true,formatter:"tickCross", sorter:"boolean", editor:true, 
+                cellEdited:async function(cell){
+                    let data = {IsCoordinator,id} = cell.getData();
+                    let response = await fetchHandler("/api/users/admin/change-user-status", data,"POST")
+                    if(response.status=='ok'){
+                        location.reload()
+                    }else{
+                        alert(`Error while status change : ${response.error}`)
+                    }
+        
+                },},
+                {title:"Super Admin Status", field:"IsSuperAdmin",width:150,resizable:true,formatter:"tickCross", sorter:"boolean", editor:true, 
+                cellEdited:async function(cell){
+                    let data = {IsSuperAdmin,id} = cell.getData();
+                    let response = await fetchHandler("/api/users/admin/change-user-status", data,"POST")
+                    if(response.status=='ok'){
+                        location.reload()
+                    }else{
+                        alert(`Error while status change : ${response.error}`)
+                    }
+        
+                },},
+                {title:"Reset Password", field:"ResetPassword",width:150,resizable:true,hozAlign:"center",formatter:resetButton,cellClick:async function(e, cell){
+                    let {id,EmployeeId} = cell.getData();
+                    let response = await fetchHandler(`/api/users/admin/passwordreset`,{id,EmployeeId},"POST")
+                    if(response){
+                        if(response.status == 'ok'){
+                            alert(`Password reset successfully`)
+                        }
+                    }
+                },},
+            ],
+        });
+
+    })
+</script>

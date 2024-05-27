@@ -1,0 +1,81 @@
+
+<div class="row g-1">
+    <div class="col-2">
+    </div>
+    <div class="col-8">
+        <div class="row">
+        <div class="col-6">
+        <input type="text" class="form-control" id="jobId" placeholder="Enter Job number">
+        </div>
+        <div class="col-3">
+            <button id="search" class="btn btn-primary mb-3">Search</button>
+        </div>
+        <div class="col-3">
+            <button class="btn btn-success mb-3" id="download" style="display: none;">Download CSV</button>
+        </div>
+        </div>
+    </div>
+    <div class="col-2">
+    </div>
+    
+</div>
+<div id="loading-indicator">
+    <div class="spinner-border text-primary" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
+</div>
+<div class="mb-5" id="response_table"></div>
+
+<script>
+    $(function() {
+        let table = null;
+        $("#search").click(()=>{
+            let jobId = $("#jobId").val();
+            if(!jobId){
+                return alert("Please enter a valid job ID")
+            }
+             showLoadingIndicator();
+            fetch('/api/jobs/search-jobs', {
+                method: 'POST',
+                headers: {
+                'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({jobId}),
+                })
+            .then((response)=>response.json())
+            .then((data)=>{
+                    hideLoadingIndicator();
+                    console.log(data)
+                    if(!data.error){
+                        $('#download').show()
+                        table = new Tabulator("#response_table", {
+                            layout:"fitColumns",
+                            pagination:"local",
+                            paginationSize:25,
+                            paginationSizeSelector:[25, 50, 75, 100],
+                            movableColumns:true,
+                            paginationCounter:"rows",
+                            data:data.data,
+                            columns:[
+                                {title:"ID", field:"UserID"},
+                                {title:"Name", field:"Name"},
+                                {title:"From", field:"FromDate",mutator:function(value){let d = value.split("T")[0].split("-");return `${d[2]}-${d[1]}-${d[0]}`},},
+                                {title:"To", field:"ToDate",mutator:function(value){let d = value.split("T")[0].split("-");return `${d[2]}-${d[1]}-${d[0]}`},},
+                            ],
+                        });
+                    }else{
+                         $('#download').hide()
+                        $("#response_table").empty().removeClass().html(`<div class="alert alert-danger" role="alert">${data.error}</div>`)
+                    }
+                })
+            .catch(err=>{
+                    console.log(err)
+            });
+        })
+         $("#download").click(()=>{
+            table.download("csv", "data.csv");
+        })
+       
+    });
+    
+</script>

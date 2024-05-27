@@ -1,0 +1,280 @@
+
+  <div class="row align-items-center mt-5">
+    <div class="col">
+    <!-- Button trigger modal -->
+    <button type="button" class="btn btn-primary m-2" data-bs-toggle="modal" data-bs-target="#set_transaction_date">
+        Set Transaction Trigger Date
+    </button>
+    </div>
+    <div class="col">
+      <h3 class="text-center">Transaction Status Viewer</h3>
+    </div>
+    <div class="col">
+        <button type="button" class="btn btn-primary m-2" data-bs-toggle="modal" data-bs-target="#push_single_trans">
+            Push Single Transaction
+        </button>
+    </div>
+  </div>
+
+<div class="mb-5" id="transaction_table"></div>
+<div  id="failed_transaction_table"></div>
+
+<!-- Set Transaction Trigger Date Modal -->
+<div class="modal fade" id="set_transaction_date" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="staticBackdropLabel">Set Transaction Trigger </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+                <table class="table table-success table-striped">
+            <thead>
+                <tr>
+                <th scope="col">Category</th>
+                <th scope="col">Transaction Date</th>
+                <th scope="col">From</th>
+                <th scope="col">To</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each modifiedData}}
+                <tr>
+                    <td scope="row">{{this.EmployeeCategory}}</td>
+                    <td><input type="date" name="" id="{{this.EmployeeCategory}}_trigger" value="{{this.TransactionTrigger}}" ></td>
+                    <td><input type="date" name="" id="{{this.EmployeeCategory}}_from" value="{{this.FromDate}}"></td>
+                    <td><input type="date" name="" id="{{this.EmployeeCategory}}_to" value="{{this.ToDate}}"></td>
+                </tr>
+               {{/each}}
+            </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="trans_trigger_submit">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--  Push Single Transaction Modal -->
+<div class="modal fade" id="push_single_trans" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="staticBackdropLabel">Push Transaction for Selected Employee</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+                <table class="table table-success table-striped">
+            <thead>
+                <tr>
+                <th scope="col">Employee ID</th>
+                <th scope="col">Attendance From</th>
+                <th scope="col">Attendance To</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td scope="row"><input type="text" name="" id="employee_id"></td>
+                    <td><input type="date" name="" id="from_date" ></td>
+                    <td><input type="date" name="" id="to_date" ></td>
+                </tr>
+            </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="push_single_trans_submit">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<script type="text/javascript" src="/js/jquery.js" ></script>
+<script type="text/javascript" src="/js/bootstrap.bundle.min.js"></script>
+<script type="text/javascript" src="/js/tabulator.min.js"></script>
+<script>
+    $(document).ready(async function () {
+        let table = null;
+        let failed_table = null;
+        try{
+            table = await fetchTable('/api/trans-status')
+            if(table){
+            table.on("rowClick", async function(e, row){ 
+                
+            });
+        }
+        }catch(error){
+            alert(error.message)
+        }
+
+        $("#trans_trigger_submit").click(async ()=>{
+            let staffTrigger = $("#Staff_trigger").val();
+            let staffFrom = $("#Staff_from").val();
+            let staffTo= $("#Staff_to").val();
+            let nonstaffTrigger = $("#Non-Staff_trigger").val();
+            let nonstaffFrom = $("#Non-Staff_from").val();
+            let nonstaffTo= $("#Non-Staff_to").val();
+            let data = {staffTrigger,staffFrom,staffTo,nonstaffTrigger,nonstaffFrom,nonstaffTo}
+            const response = await fetch('/api/trans-status', 
+                                            {   method: 'POST',
+                                                body:JSON.stringify(data),
+                                                headers: {"Content-type": "application/json; charset=UTF-8"}
+                                            })
+            const {status,error} = await response.json();
+            if(status == "ok"){
+                location.reload();
+            }else{
+                alert(error);
+            }
+        })
+
+        $("#triger_last_failed").click(async()=>{
+            const response = await fetch("/api/trans-status/retriger", {method: 'GET'})
+            const json_response = await response.json();
+            if(json_response.status == "ok"){
+                alert("Successfully initiated transfer");
+            }else{
+                alert(json_response.error);
+            }
+        })
+
+        $("#push_single_trans_submit").click(async ()=>{
+            let employee_id = $("#employee_id").val();
+            let from_date = $("#from_date").val();
+            let to_date = $("#to_date").val();
+            const response = await fetch('/api/trans-status/push-single-trans', 
+                {   method: 'POST',
+                    body:JSON.stringify({employee_id,from_date,to_date}),
+                    headers: {"Content-type": "application/json; charset=UTF-8"}
+                })
+            const {status,error, data} = await response.json();
+            if(status == "ok"){
+                alert(`Successfulyy pushed transaction for ${employee_id} ` + JSON.stringify(data) );
+                console.log(data)
+            }else{
+                alert(error);
+            }
+
+        })
+
+    });
+
+    async function fetchTable(endpoint){
+        try{
+            const response = await fetch(endpoint, {method: 'GET'})
+            const {data} = await response.json();
+            let table = null;
+            let printIcon = function(cell, formatterParams){ //plain text value
+                if(cell._cell.value =="Success"){
+                    return;
+                }
+                return '<i class="bi bi-arrow-right-square-fill " style="color: red;"></i>';
+            };
+            //failed cell click - fcc
+            let fcc = async function(e, cell){
+                if(cell.getRow().getData().TransactionStatus == "Failed"){
+                    let id = cell.getRow().getData().TransactionId;
+                    const response = await fetch(`/api/trans-status/retriger/${id}`, {method: 'GET'})
+                    const json_response = await response.json();
+                    if(json_response.status == "ok"){
+                        alert("Successfully initiated transfer");
+                        location.reload();
+                    }else{
+                        alert(json_response.error);
+                    }
+                }
+            }
+
+            //status cell click - scc
+            let scc = async function(e, cell){
+                if(cell.getRow().getData().TransactionStatus == "Failed"){
+                    failed_table = await fetchFailedTable(`/api/trans-status/${cell.getRow().getData().TransactionId}/`)
+                }
+            }
+
+            if(data?.length){
+                table = new Tabulator('#transaction_table', {
+                    height:"300px",
+                    data: data,
+                    layout:"fitColumns",
+                    pagination:true, //enable.
+                    paginationSize:8, // this option can take any positive integer value
+                    columns:[ 
+                        {title:"ID", field:"TransactionId", hozAlign:"center",width:80},
+                        {title:"Date", field:"TransactionDate", hozAlign:"center"},
+                        {title:"Status", field:"TransactionStatus",width:80,hozAlign:"center",cellClick:scc,mutator:function(value, data, type, params, component){
+                            if(value==1){
+                                return value="Success"
+                            }else{
+                                return value="Failed"
+                            }
+                        },},
+                        {title:"Count", field:"TransactionCount",hozAlign:"center",width:80},
+                        {title:"Fail Count", field:"TransactionFailCount",hozAlign:"center",width:80},
+                        {title:"Status Text", field:"ErrorText",hozAlign:"center"},
+                        {title:"Employee Category",width:80, field:"EmployeeCategory",hozAlign:"center",mutator:function(value, data, type, params, component){
+                            if(value==2){
+                                return value="Staff"
+                            }else{
+                                return value="Non Staff"
+                            }
+                        },},
+                        {title:"From Date", field:"FromDate",hozAlign:"center"},
+                        {title:"To Date", field:"ToDate",  hozAlign:"center"},
+                        {title:"Retrigger",field:"TransactionStatus",formatter:printIcon, width:100, hozAlign:"center", cellClick:fcc},
+                    ],
+                });
+                if(table) return table;
+            } else{
+                throw{message:"Transaction Status Data fetch returned null data"};
+            }
+        }catch(error){
+            alert(error.message);
+        }   
+    }
+    async function fetchFailedTable(endpoint){
+        try{
+            const response = await fetch(endpoint, {method: 'GET'})
+            const {data} = await response.json();
+            if(!data){
+                return alert("This transaction has no failed report");
+            }
+            let table = null;
+            if(data?.length){
+                table = new Tabulator('#failed_transaction_table', {
+                    height:"300px",
+                    data: data,
+                    layout:"fitColumns",
+                    pagination:true, //enable.
+                    paginationSize:5, // this option can take any positive integer value
+                    columns:[ 
+                        {title:"Employee ID", field:"EmployeeId", width:150, hozAlign:"center"},
+                        {title:"Attendance Date", field:"TransDate", width:150, hozAlign:"center"},
+                        {title:"Project Id", field:"ProjId",hozAlign:"center"},
+                        {title:"Category Id", field:"CategoryId",hozAlign:"center"},
+                        {title:"Total Hours", field:"TotalHours",hozAlign:"center"},
+                        {title:"Error Status", field:"Error",hozAlign:"center",mutator:function(value, data, type, params, component){
+                            if(value==true){
+                                return value="Failed"
+                            }else{
+                                return value="Success"
+                            }
+                        },},
+                        {title:"Error Text", field:"ErrorTxt",  hozAlign:"center"},
+                        {title:"Transaction Id", field:"TransactionId",  hozAlign:"center"},
+                    ],
+                });
+                return table;
+            } else{
+                throw{message:"Failed Transaction Status Data fetch returned null data"};
+            }
+        }catch(error){
+            alert(error.message);
+        }
+
+    }
+</script>

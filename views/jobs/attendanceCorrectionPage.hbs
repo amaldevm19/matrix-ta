@@ -1,0 +1,125 @@
+
+<input type="file" class="form-control" name="file" id="attendance_file" accept=".csv" />
+<div class="row">
+    <div class="col-8"></div>
+    <div class="col-2 text-left">
+        <button type="button" class="btn btn-success mt-2 download-table" id="response_download" style="display: none;">Download CSV</button>
+        <button type="button" class="btn btn-danger mt-2 download" id="error_download" style="display: none;">Download Error CSV</button>
+    </div>
+    <div class="col-2">
+        <button class="btn btn-primary mt-2" id="upload_file">Upload</button>
+    </div>
+</div>
+<div id="loading-indicator">
+    <div class="spinner-border text-primary" role="status">
+        <span class="sr-only"></span>
+    </div>
+</div>
+<div class="mt-2" id="error_table"></div>
+<div class="mb-5" id="response_table"></div>
+
+<input type="text" value="{{session.user.EmployeeId}}" id="employeeId" hidden>
+<input type="text" value="{{session.user.Department}}" id="department" hidden>
+
+<script>
+    $(document).ready(()=>{
+        const fileInput = $('#attendance_file');
+        const uploadFile = $('#upload_file');
+        const CreatedBy = $('#employeeId').val()
+        const DepartmentId = $('#department').val()
+        let file = null;
+        let response_table = null;
+        let error_table = null;
+        fileInput.change(function(e){
+            e.preventDefault();
+            file = e.target.files[0];
+        });
+        uploadFile.click(async function(){
+            if(!file || file.type !== 'text/csv'){
+                alert('Please choose a CSV file')
+                return
+            };
+            showLoadingIndicator();
+
+            const dateRegex = /^(0[1-9]|1\d|2\d|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
+            const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
+            const userIdRegex = /^[A-Z0-9]+(?:-[A-Z0-9]+)?$/;
+            const schema = joi.object({
+                UserID: joi.string().pattern(userIdRegex),
+                AttendanceDate: joi.string().pattern(dateRegex).required(),
+                InTime: joi.string().pattern(timeRegex).required(),
+                OutTime: joi.string().pattern(timeRegex).required()
+            });
+            try{
+                const {jsonData,errorData} = await parseCSV(file,schema);
+                if(errorData.length){
+                    alert(`Validation faild for ${errorData.length} rows`)
+                    error_table = new Tabulator("#error_table", {
+                        layout:"fitColumns",
+                        pagination:"local",
+                        paginationSize:5,
+                        paginationSizeSelector:[5, 10, 50, 100],
+                        movableColumns:true,
+                        paginationCounter:"rows",
+                        data:errorData,
+                        columns:[
+                            {title:"Row Num", field:"Index", width:100},
+                            {title:"Employee ID", field:"UserID", width:100},
+                            {title:"Attendance Date", field:"AttendanceDate", width:100},
+                            {title:"IN Time", field:"InTime"},
+                            {title:"OUT Time", field:"OutTime"},
+                            {title:"Status", field:"Status",width:100},
+                            {title:"Message", field:"Message",width:500},
+                        ],
+                    });
+                    $('#attendance_file').val('');
+                    hideLoadingIndicator();
+                    $('#error_download').show();
+                    return;
+                }
+                const {data:{data,attendanceError},} = await axios.post('/api/jobs/attendance-correction', {jsonData,CreatedBy,DepartmentId}, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                if(attendanceError){
+                    alert("An error occured while attendance correction, please check csv for details")
+                }
+                if (data?.length) {
+                    $('#attendance_file').val('');
+                    hideLoadingIndicator();
+                    $('#response_download').show();
+                    response_table = new Tabulator("#response_table", {
+                        layout:"fitColumns",
+                        pagination:"local",
+                        paginationSize:25,
+                        paginationSizeSelector:[25, 50, 75, 100],
+                        movableColumns:true,
+                        paginationCounter:"rows",
+                        data:data,
+                        columns:[
+                            {title:"Row Num", field:"Index", width:100},
+                            {title:"Employee ID", field:"UserID", width:100},
+                            {title:"Attendance Date", field:"AttendanceDate", width:100},
+                            {title:"IN Time", field:"InTime"},
+                            {title:"OUT Time", field:"OutTime"},
+                            {title:"Status", field:"Status",width:100},
+                            {title:"Message", field:"Message",width:500},
+                        ],
+                    });
+                }
+
+            }catch(error){
+                console.log(error);
+                hideLoadingIndicator();
+            }
+        })
+        $("#response_download").click(()=>{
+            response_table.download("csv", `Attendance-Status-${new Date().toLocaleDateString()}.csv`);
+        })
+        $("#error_download").click(()=>{
+            error_table.download("csv", `Attendance-Error-${new Date().toLocaleDateString()}.csv`);
+        })
+    })
+
+</script>

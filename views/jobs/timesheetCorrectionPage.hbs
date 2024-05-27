@@ -1,0 +1,144 @@
+
+
+<div class="row g-3 align-items-center">
+    <div class="col-auto">
+        <label for="application_from_date" class="col-form-label">From Date:</label>
+    </div>
+    <div class="col-auto">
+        <input type="date" name="application_date" id="application_from_date" class="form-control" >
+    </div>
+    <div class="col-auto">
+        <label for="application_to_date" class="col-form-label">To Date:</label>
+    </div>
+    <div class="col-auto">
+        <input type="date" name="application_date" id="application_to_date" class="form-control">
+    </div>
+    <div class="col-auto">
+        <select class="form-control" aria-label="Default select example" id="section">
+            <option selected value="0">Select Section</option>
+            {{#each section}}
+                <option value="{{this.id}}">{{this.name}}</option>
+            {{/each}}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select class="form-control" aria-label="Default select example" id="status">
+            <option selected value="0">Select Status</option>
+            <option value="1">Pending</option>
+            <option value="2">Approved</option>
+            <option value="3">Rejected</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <div class="col"><button class="btn btn-primary" id="getAppliedCorrection">Get Applied Correction</button></div>
+    </div>
+    <div class="col-auto">
+        <button type="button" class="btn btn-success" id="approve_all" style="display: none;">Approve All</button>
+    </div>
+</div>
+<div class="progress" id="progress" style="display: none;" >
+    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 85%" ></div>
+</div>
+<div class="mt-5" id="response_table"></div>
+
+<script>
+    $(document).ready(async function () {
+        let table = null;
+        let responseData = null;
+        $("#getAppliedCorrection").click(async()=>{
+            $("#approve_all").hide();
+            let from_date = $("#application_from_date").val()
+            let to_date = $("#application_to_date").val()
+            let section = $("#section").val();
+            let status = $("#status").val();
+            if(!from_date ||!to_date || section=="0" || status == "0"){
+                return alert("Please select a valid date, section and status")
+            }
+            from_date= from_date.split("-");
+            to_date = to_date.split("-")
+            let dateRange = `${from_date[2]}${from_date[1]}${from_date[0]}-${to_date[2]}${to_date[1]}${to_date[0]}`
+            let postData = {dateRange,section,application_status:status}
+            responseData = await postJsonData("/api/jobs/timesheet-correction",postData);
+            if(responseData){
+                $('#progress').hide();
+                if(responseData.data["timesheet-correction-application"]){
+                    $("#approve_all").show();
+                }
+                table = new Tabulator("#response_table", {
+                        layout:"fitColumns",
+                        pagination:"local",
+                        paginationSize:25,
+                        paginationSizeSelector:[25, 50, 75, 100],
+                        movableColumns:true,
+                        paginationCounter:"rows",
+                        data:responseData.data["timesheet-correction-application"],
+                        columns:[
+                            {title:"Employee ID", field:"user-id",},
+                            {title:"Application ID", field:"application-id", },
+                            {title:"Attendance Date", field:"attendance-date"},
+                            {title:"Status", field:"application-status"},
+                        ],
+                    });
+            }
+           
+        })
+
+         $("#approve_all").click(async ()=>{
+            let applicationData = responseData.data["timesheet-correction-application"]
+            let filteredApplicationData=[]
+            if(applicationData){
+                for(let index=0;index<applicationData.length;index++){
+                    let element = applicationData[index];
+                    if(!filteredApplicationData.length){
+                        filteredApplicationData.push({userId:element["user-id"],applicationId:element["application-id"]})
+                    }else{
+                        let foundIndex = null;
+                        for(let i=0; i<filteredApplicationData.length;i++){
+                            let item = filteredApplicationData[i];
+                            if(item.userId == element["user-id"] && item.applicationId == element["application-id"]){
+                                foundIndex = true
+                            }
+                        }
+                        if(foundIndex){
+                            continue;
+                        }else{
+                            filteredApplicationData.push({userId:element["user-id"],applicationId:element["application-id"]})
+                        }
+                    }
+
+                }
+                let approvalResponse = await postJsonData("/api/jobs/approve-timesheet-correction",filteredApplicationData)
+                if(approvalResponse.status == "ok"){
+                    $('#progress').hide();
+                    $("#approve_all").hide();
+                    table = new Tabulator("#response_table", {
+                        layout:"fitColumns",
+                        pagination:"local",
+                        paginationSize:25,
+                        paginationSizeSelector:[25, 50, 75, 100],
+                        movableColumns:true,
+                        paginationCounter:"rows",
+                        data:approvalResponse.data,
+                        columns:[
+                            {title:"Employee ID", field:"userId",},
+                            {title:"Application ID", field:"applicationId", },
+                            {title:"Status", field:"status"},
+                        ],
+                    });
+                }else{
+                    alert("Approving timesheet corrections failed due to : ",approvalResponse.error)
+                    
+                }
+                
+            }
+           
+         })   
+    })
+
+async function postJsonData(url,postData) {
+    $('#progress').show()
+    const response = await fetch(url, {method: 'POST',headers: {'Content-Type': 'application/json'},body: JSON.stringify(postData)});
+    const jsonData = await response.json();
+    return jsonData;
+}
+</script>

@@ -1,0 +1,78 @@
+
+<div id="loading-indicator">
+  <div class="spinner-border text-primary" role="status">
+    <span class="sr-only"></span>
+  </div>
+</div>
+
+
+<div class="mt-2" id="erpSyncSettingTable"></div>
+
+
+<input type="text" value="{{session.user.EmployeeId}}" id="employee_id" hidden>
+<input type="text" value="{{session.user.Department}}" id="department" hidden>
+
+
+<script>
+    $(document).ready(async function (){
+        let UpdatedBy = $("#employee_id").val();
+        
+        let erpSyncSettingTable = new Tabulator("#erpSyncSettingTable", {
+            ajaxURL:"/api/erp-transaction/settings",
+            ajaxResponse:function(url, params, response){
+                if(response.status != "ok"){
+                    alert(response.error)
+                }
+                return response.data
+            }, 
+            ajaxLoader: true,
+            columns:[ 
+                {title:"Sl#", field:"example", formatter:"rownum",hozAlign:"center"},
+                {title:"Id", field:"Id",visible:false},
+                {title:"DepartmentId", field:"DepartmentId",visible:false},
+                {title:"Department", field:"Department",hozAlign:"center"},
+                {title:"UserCategoryId", field:"UserCategoryId",visible:false},
+                {title:"User Category", field:"UserCategory",resizable:true,hozAlign:"center"},
+                {title:"Trigger Date&Time", field:"TriggerDate",hozAlign:"center",resizable:true,mutatorData:function(value, data){
+                    return value.replace("T"," ").slice(0, -8);
+                },},
+                {title:"From Date", field:"FromDate",resizable:true,mutator:function(value, data){
+                    return value.split("T")[0];
+                },},
+                {title:"To Date", field:"ToDate",resizable:true,mutator:function(value, data){
+                    return value.split("T")[0];
+                },},
+                {title:"Status", field:"Status",resizable:true,formatter:"tickCross", sorter:"boolean",},
+                {title:"Send",formatter:sendIcon, hozAlign:"center", cellClick:async function(e, cell){
+                    let {Id, DepartmentId, UserCategoryId, FromDate, ToDate, Status} = cell.getData();
+                    if(!Status){
+                        return
+                    }
+                    showLoadingIndicator();
+                    let response = await fetchHandler(`/api/erp-transaction/post-selected`,{Id, DepartmentId, UserCategoryId, FromDate, ToDate,UpdatedBy},"POST")
+                    if(response){
+                        hideLoadingIndicator();
+                        if(response.status == 'ok'){
+                            alert(`Synchronized ${response.data.length} items with ERP`)
+                        }
+                    }
+                },},
+                {title:"Created By", field:"CreatedBy",hozAlign:"center",resizable:true},
+                {title:"Created At", field:"CreatedAt",hozAlign:"center",resizable:true,mutator:function(value, data){
+                    return value.split("T")[0];
+                },},
+                {title:"Updated At", field:"UpdatedAt",hozAlign:"center",resizable:true,mutator:function(value, data){
+                    return value.split("T")[0];
+                },},
+                {title:"Updated By", field:"UpdatedBy",hozAlign:"center",resizable:true},
+                
+            ],
+        });
+
+        flatpickr("#trigger_date", {enableTime: true, dateFormat: "Y-m-d H:i",});
+        flatpickr("#from_date", {dateFormat: "Y-m-d"});
+        flatpickr("#to_date", {dateFormat: "Y-m-d"});
+
+    })
+    
+</script>

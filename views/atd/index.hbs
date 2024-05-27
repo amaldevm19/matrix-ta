@@ -1,0 +1,105 @@
+{{!-- THIS PAGE FOR VIEW AND VERIFY EVERY DAY ATTENDANCE --}}
+<div class="row">
+    <div class="col-2">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#filter_modal">Apply Filter</button>
+    </div>
+    <div class="col-2">
+        <button class="btn btn-outline-success" type="button" id="download_table">Download Table</button>
+    </div>
+</div>
+
+<div class="mt-2" id="atdTimesheetTable"></div>
+<div class="mt-2" id="tempatdTimesheetTable" hidden></div>
+
+<input type="text" value="{{session.user.EmployeeId}}" id="employeeId" hidden>
+<input type="text" value="{{session.user.Department}}" id="department" hidden>
+
+<!-- Modal -->
+<div class="modal fade " id="filter_modal" tabindex="-1" aria-labelledby="filter_modal_label" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="filter_modal_label">Filter Timesheet Result</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        
+            <form class=" my-2 my-lg-0 ">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <input type="text" class="form-control mr-sm-2" id="emp_id" placeholder="Emp ID">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <input type="text" class="form-control datepicker" id="from_date" placeholder="From">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <input type="text" class="form-control datepicker" id="to_date" placeholder="To">
+                    </div>
+                </div>
+            </form>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="close_modal" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="search_submit" data-bs-dismiss="modal">Apply Filter</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+    $(document).ready(async function (){
+        let atdTimesheetTable = new Tabulator("#atdTimesheetTable", {
+            pagination:true,
+            layout:"fitColumns",
+            ajaxURL:"/api/atd-timesheet",
+            ajaxParams: function(){
+                let UserID = $("#emp_id").val();
+                let FromDate=$("#from_date").val();
+                let ToDate=$("#to_date").val();
+                return {UserID,FromDate,ToDate};
+            },
+            ajaxResponse:function(url, params, response){
+                 return response.data; 
+            },
+            paginationSize:31,
+            paginationInitialPage:1,
+            paginationSizeSelector:[10, 25, 30,31, 50, 100, 500, 1000, 5000],
+            columns:[
+                {title:"Date",headerHozAlign:"center", field:"AttDateTime",hozAlign:"center", width:150},
+                {title:"Department",headerHozAlign:"center", field:"DPTName"},
+                {title:"Emp ID",headerHozAlign:"center", field:"UserID", width:150},
+                {title:"Name",headerHozAlign:"center", field:"UserName"},
+                {title:"In",headerHozAlign:"center", field:"InTime",hozAlign:"center"},
+                {title:"Out",headerHozAlign:"center", field:"OutTime",hozAlign:"center"},
+                {title:"hrs(Out - In)",headerHozAlign:"center", field:"TotalWorkHours",hozAlign:"center"},
+            ],
+        });
+        
+        $("#search_submit").click(function(e){
+            e.preventDefault();
+            let UserID = $("#emp_id").val()
+            let FromDate=$("#from_date").val()
+            let ToDate=$("#to_date").val()
+            atdTimesheetTable.setData("/api/atd-timesheet", 
+                {UserID,FromDate,ToDate}
+            );
+        });
+        $("#download_table").click(function(e){
+            e.preventDefault();
+            atdTimesheetTable.download("csv", "timesheet.csv", {delimiter:","})
+        });
+        flatpickr("#from_date", {dateFormat: "Y-m-d"});
+        flatpickr("#to_date", {dateFormat: "Y-m-d"});
+
+        $('#close_modal').click(()=>{
+            $("#emp_id").val('');
+            $("#from_date").val('');
+            $("#to_date").val('');
+            $("#search_submit").click()
+        })
+  
+    })
+    
+</script>

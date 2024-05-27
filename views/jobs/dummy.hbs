@@ -1,0 +1,122 @@
+<div class="container py-4">
+    <h1>Upload Jobs CSV File</h1>
+    <input type="file" class="form-control" name="file" id="file" />
+    <button class="btn btn-primary mt-2" id="submitFile">Upload</button>
+    <button class="btn btn-success mt-2" id="importFile">ImportFile</button>
+    <button class="btn btn-success mt-2" id="get_assigned_jobs">Get Assigned Jobs</button>
+    <div class="mt-2" id="csvTable"></div>
+    <div class="col text-left"><button type="button" class="btn btn-success mt-2" id="download" >Download CSV</button></div>
+    <div class="mt-2" id="jobTable"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+<script type="text/javascript" src="https://unpkg.com/tabulator-tables/dist/js/tabulator.min.js"></script>
+
+<script>
+     const fileInput = document.getElementById('file')
+     const submitFile = document.getElementById('submitFile')
+     const importFile = document.getElementById('importFile')
+     let file = null
+
+     fileInput.addEventListener('change', function(){
+        file = this.files[0]
+     })
+
+     submitFile.addEventListener('click', function(){
+        if(!file || file.type !== 'text/csv'){
+            alert('Please choose a CSV file')
+            return
+        }
+
+        const formData = new FormData()
+        formData.append('file', file);
+
+        fetch('/api/jobs/upload', {
+            method: 'POST',
+            body: formData,
+        })
+        .then((response)=>response.json())
+        .then(({data})=>{
+            if(data.length){
+                const columns = data[0];
+                const rows = data.splice(1).map((arr)=>{
+                    const obj = {};
+                    columns.forEach((column, index)=>{
+                        obj[column] = arr[index];
+                    })
+
+                    return obj
+                })
+
+                console.log(rows, columns)
+
+                const table = new Tabulator('#csvTable', {
+                    height:"300px",
+                    data: rows,
+                    autoColumns: true
+                })
+                
+            } else{
+                alert('The CSV is Empty')
+            }
+        })
+        .catch((err)=>{
+            alert(err.message)
+        })
+     })
+
+     importFile.addEventListener('click', ()=>{
+        fetch('/api/jobs/import', {
+            method: 'GET',
+        })
+        .then((response)=>response.json())
+        .then(({data, message})=>{
+            if(data.length){
+                console.log(data)
+                const table = new Tabulator('#csvTable', {
+                    height:"300px",
+                    data: data,
+                    autoColumns: true
+                })
+                
+            } else{
+                alert("CSV File is empty")
+            }
+        })
+        .catch((err)=>{
+            alert(err.message)
+        })
+     })
+
+        
+    let jobsTable = null
+    const getAssignedJobs = document.getElementById('get_assigned_jobs')
+    const download = document.getElementById('download')
+    getAssignedJobs.addEventListener('click',()=>{
+        let ToDay = new Date().toISOString().split("T")[0]
+        console.log(ToDay)
+        fetch(`/api/jobs/get-assigned-jobs?ToDay=${ToDay}`, {
+            method: 'GET',
+        })
+        .then((response)=>response.json())
+        .then(({data, message})=>{
+            if(data.length){
+                console.log(data)
+                jobsTable = new Tabulator('#jobTable', {
+                    height:"300px",
+                    data: data,
+                    autoColumns: true
+                })
+            } else{
+                alert("CSV File is empty")
+            }
+        })
+        .catch((err)=>{
+            alert(err.message)
+        })
+    })
+    download.addEventListener('click',()=>{
+        jobsTable.download("csv", "data.csv");
+    })
+
+</script>

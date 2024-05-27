@@ -1,0 +1,125 @@
+
+<input type="file" class="form-control" name="file" id="file" accept=".csv" />
+<div class="row">
+    <div class="col-8"></div>
+    <div class="col-2 text-left">
+        <button type="button" class="btn btn-success mt-2" id="download" style="display: none;">Download CSV</button>
+    </div>
+    <div class="col-2">
+        <button class="btn btn-primary mt-2" id="submitFile">Upload</button>
+    </div>
+</div>
+<div id="loading-indicator">
+    <div class="spinner-border text-primary" role="status">
+        <span class="sr-only"></span>
+    </div>
+</div>
+<div class="mt-2" id="csvTable"></div>
+<div class="mb-5" id="response_table"></div>
+
+<input type="text" value="{{session.user.EmployeeId}}" id="employeeId" hidden>
+<input type="text" value="{{session.user.Department}}" id="department" hidden>
+
+<script>
+    $(document).ready(()=>{
+        const CreatedBy = $('#employeeId').val()
+        const DepartmentId = $('#department').val()
+        const fileInput = document.getElementById('file')
+        const submitFile = document.getElementById('submitFile')
+        const importFile = document.getElementById('importFile')
+        let file = null
+        fileInput.addEventListener('change', function(){
+            file = this.files[0]
+        })
+
+        submitFile.addEventListener('click', function(){
+            if(!file || file.type !== 'text/csv'){
+                alert('Please choose a CSV file')
+                return
+            }
+            const reader = new FileReader();
+            reader.readAsBinaryString(file)
+            reader.onload = function (e) {
+                let jsonData = [];
+                let headers = [];
+                let errors =[];
+                const requiredKeys = ['FromDate', 'ToDate', 'UserID','JobCode'];
+                const dateRegex = /^(?:19|20)\d\d-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01]) (?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\.\d{3}$/;
+                let rows = e.target.result.split("\r\n")
+
+                for(let i=0; i<rows.length; i++){
+                    let rowData = {};
+                    let cells = rows[i].split(',');
+                    for(let j=0;j<cells.length;j++){
+                        if(i==0){
+                            let headerName = cells[j].trim();
+                            headers.push(headerName);
+                        }else{
+                            let key = headers[j]
+                            if(key == "FromDate" || key == "ToDate"){
+                                if (!dateRegex.test(cells[j].trim())){
+                                    continue;
+                                }
+                            }
+                            if(key && cells[j]){
+                                rowData[key]=cells[j].trim()
+                            }
+                        }
+                    }
+                    if(i!=0 && hasAllRequiredKeys(rowData,requiredKeys)){
+                        jsonData.push(rowData);
+                    }
+                }
+
+                if(!jsonData.length){
+                    alert('Selected file data not matching with required data')
+                    return
+                }
+                showLoadingIndicator();
+                var table = null;
+                fetch('/api/jobs/register-to-user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({jsonData,DepartmentId,CreatedBy}),
+                })
+                .then((response)=>response.json())
+                .then((data)=>{
+                    hideLoadingIndicator();
+                    $('#file').val("")
+                    if(data.data?.length){
+                        $('#download').show()
+                        table = new Tabulator("#response_table", {
+                            layout:"fitColumns",
+                            pagination:"local",
+                            paginationSize:25,
+                            paginationSizeSelector:[25, 50, 75, 100],
+                            movableColumns:true,
+                            paginationCounter:"rows",
+                            data:data.data,
+                            columns:[
+                                {title:"EmpID", field:"UserID", width:100},
+                                {title:"Job Code", field:"JobCode", width:100},
+                                {title:"From Date", field:"FromDate"},
+                                {title:"To Date", field:"ToDate"},
+                                {title:"Status", field:"Status",width:100},
+                                {title:"Message", field:"Message"},
+                            ],
+                        });
+                        
+                    }
+                })
+                .catch(err=>{
+                    console.log(err)
+                });
+                
+                $("#download").click(()=>{
+                    table.download("csv", "data.csv");
+                })
+            };
+            
+        })
+
+    })
+</script>
