@@ -43,7 +43,7 @@ describe("Testing /api/jobs/assignment/history route", () => {
     it("It should respond with Jobs Assignment History JSON data", async () => {
         const agent = request.agent(app);
         await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
-        const response = await agent.get("/api/jobs/assignment/history").send({
+        const response = await agent.get("/api/jobs/assignment/history").query({
             page:1,
             size:100,
             UserID:"",
