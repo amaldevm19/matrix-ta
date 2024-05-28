@@ -43,12 +43,24 @@ describe("Testing /api/jobs/assignment/history route", () => {
     it("It should respond with Jobs Assignment History JSON data", async () => {
         const agent = request.agent(app);
         await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
-        const response = await agent.get("/api/jobs/assignment/history");
+        const response = await agent.get("/api/jobs/assignment/history").send({
+            page:1,
+            size:100,
+            UserID:"",
+            CreatedBy:"",
+            JobCode:"",
+            FromDate:"",
+            ToDate:"",
+            CreatedAt:"",
+            DepartmentId:"",
+            Status :""
+        });
 
         expect(response.statusCode).toBe(200);
+        expect(response.body.status).toBe("ok");
         expect(response.headers['Content-Type']).toMatch(/json/);
-        expect(Array.isArray(response.body)).toBe(true);
-        expect(response.body.length).toBeGreaterThan(0);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        expect(response.body.data.length).toBeGreaterThan(0);
         
     });
 });
