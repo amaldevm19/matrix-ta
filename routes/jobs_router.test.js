@@ -1,6 +1,21 @@
 const request = require("supertest");
 const app = require("../app");
 
+let cookie;
+
+beforeAll(async () => {
+    const response = await request(app)
+        .post("/api/users/login")
+        .send({
+            employeeID: "25002",
+            password: "123456"
+        }).set('Accept', 'application/json');
+
+    expect(response.statusCode).toBe(200);
+    console.log(response.headers['set-cookie'])
+    cookie = response.headers['set-cookie']; // Capture the session cookie
+});
+
 describe("Testing /jobs/ route", () => {
     it("It should respond with Assign Jobs To Employees Using CSV file", async () => {
         const agent = request.agent(app);
