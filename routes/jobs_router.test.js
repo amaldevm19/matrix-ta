@@ -76,11 +76,11 @@ describe("Testing /jobs/jobslist route", () => {
     });
 });
 
-describe("Testing /api/job/jobslist route", () => {
+describe("Testing /api/jobs/joblist route", () => {
     it("It should respond with Jobs Assignment History JSON data", async () => {
         const agent = request.agent(app);
         await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
-        const response = await agent.get("/api/job/jobslist").query({
+        const response = await agent.get("/api/jobs/joblist").query({
             page:1,
             size:10,
             searchField:""
