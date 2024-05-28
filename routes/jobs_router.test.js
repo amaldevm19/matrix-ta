@@ -72,6 +72,6 @@ describe("Testing /jobs/jobslist route", () => {
 
         expect(response.statusCode).toBe(200);
         expect(response.text).toContain('<title>TNA PROXY SERVER | Edit Maximum Allowed Job Hours Per Day</title>');
-        expect(response.text).toContain('<h4 class="mx-auto">Edit Maximum Allowed Job Hours Per Day</h4>');
+        expect(response.text).toContain('<h4 class="mx-auto">Edit Maximum Allowed Job Hours Per Day </h4>');
     });
 });
