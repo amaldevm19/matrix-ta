@@ -45,7 +45,7 @@ describe("Testing /api/jobs/assignment/history route", () => {
         await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
         const response = await agent.get("/api/jobs/assignment/history").query({
             page:1,
-            size:100,
+            size:10,
             UserID:"",
             CreatedBy:"",
             JobCode:"",
@@ -72,6 +72,24 @@ describe("Testing /jobs/jobslist route", () => {
 
         expect(response.statusCode).toBe(200);
         expect(response.text).toContain('<title>TNA PROXY SERVER | Edit Maximum Allowed Job Hours Per Day</title>');
-        expect(response.text).toContain('<h4 class="mx-auto">Edit Maximum Allowed Job Hours Per Day </h4>');
+        expect(response.text).toContain('<h4 class="mx-auto">Edit Maximum Allowed Job Hours Per Day</h4>');
+    });
+});
+
+describe("Testing /api/jobs/jobslist route", () => {
+    it("It should respond with Jobs Assignment History JSON data", async () => {
+        const agent = request.agent(app);
+        await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
+        const response = await agent.get("/api/jobs/jobslist").query({
+            page:1,
+            size:10,
+            searchField:""
+        });
+        expect(response.statusCode).toBe(200);
+        expect(response.body.status).toBe("OK");
+        expect(response.headers['content-type']).toMatch(/json/);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        expect(response.body.data.length).toBeGreaterThan(0);
+        
     });
 });
