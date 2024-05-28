@@ -23,6 +23,6 @@ describe("Testing /jobs/ route", () => {
 
         expect(response.statusCode).toBe(200);
         expect(response.text).toContain('<title>TNA PROXY SERVER | Assign Jobs To Employees Using CSV file</title>');
-        expect(response.text).toContain('<h4 class="mx-auto">Assign Jobs To Employees Using CSV file</h4>');
+        expect(response.text).toContain('<h4 class="mx-auto">Assign Jobs To Employees Using CSV</h4>');
     });
 });
