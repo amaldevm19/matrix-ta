@@ -18,7 +18,7 @@ beforeAll(async () => {
 
 describe("Testing /jobs/ route", () => {
     test("It should respond with Assign Jobs To Employees Using CSV file", async () => {
-        const response = await request(app).get("/jobs/assign-jobs-manually");
+        const response = await request(app).get("/jobs/assign-jobs-manually").set("Cookie", cookie);;
 
         expect(response.statusCode).toBe(200);
         expect(response.text).toContain('<title>TNA PROXY SERVER | Assign Jobs To Employees Using CSV file</title>');
