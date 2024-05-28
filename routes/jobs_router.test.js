@@ -93,3 +93,15 @@ describe("Testing /api/jobs/joblist route", () => {
         
     });
 });
+
+describe("Testing /jobs/search-jobs route", () => {
+    it("It should respond with Search all users assigned with a given job number Page", async () => {
+        const agent = request.agent(app);
+        await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
+        const response = await agent.get("/jobs/search-jobs");
+
+        expect(response.statusCode).toBe(200);
+        expect(response.text).toContain('<title>TNA PROXY SERVER | Search all users assigned with a given job number</title>');
+        expect(response.text).toContain('<h4 class="mx-auto">Search all users assigned with a given job number</h4>');
+    });
+});
