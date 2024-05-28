@@ -5,7 +5,7 @@ let cookie;
 
 beforeAll(async () => {
     const response = await request(app)
-        .post("/users/login")
+        .post("/api/users/login")
         .send({
             username: "25002",
             password: "123456"
