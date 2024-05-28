@@ -69,6 +69,7 @@ app.use(
     secret: 'your-secret-key',
     resave: false,
     saveUninitialized: false,
+    cookie: { secure: false } 
   })
 );
 app.use(express.static(path.join(__dirname, 'views'))) 
