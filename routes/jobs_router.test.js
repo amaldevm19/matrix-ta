@@ -63,3 +63,15 @@ describe("Testing /api/jobs/assignment/history route", () => {
         
     });
 });
+
+describe("Testing /jobs/jobslist route", () => {
+    it("It should respond with Edit Maximum Allowed Job Hours Per Day Page", async () => {
+        const agent = request.agent(app);
+        await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
+        const response = await agent.get("/jobs/jobslist");
+
+        expect(response.statusCode).toBe(200);
+        expect(response.text).toContain('<title>TNA PROXY SERVER | Edit Maximum Allowed Job Hours Per Day</title>');
+        expect(response.text).toContain('<h4 class="mx-auto">Edit Maximum Allowed Job Hours Per Day</h4>');
+    });
+});
