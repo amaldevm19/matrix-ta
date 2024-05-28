@@ -12,7 +12,7 @@ beforeAll(async () => {
         });
 
     expect(response.statusCode).toBe(200);
-    console.log(response.headers)
+    console.log(response)
     cookie = response.headers['set-cookie']; // Capture the session cookie
 });
 
