@@ -55,7 +55,6 @@ describe("Testing /api/jobs/assignment/history route", () => {
             DepartmentId:"",
             Status :""
         });
-        console.log(response.headers)
         expect(response.statusCode).toBe(200);
         expect(response.body.status).toBe("ok");
         expect(response.headers['content-type']).toMatch(/json/);
