@@ -7,7 +7,7 @@ beforeAll(async () => {
     const response = await request(app)
         .post("/api/users/login")
         .send({
-            username: "25002",
+            employeeID: "25002",
             password: "123456"
         });
 
