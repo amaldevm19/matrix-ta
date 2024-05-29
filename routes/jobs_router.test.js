@@ -105,3 +105,34 @@ describe("Testing /jobs/search-jobs route", () => {
         expect(response.text).toContain('<h4 class="mx-auto">Search all users assigned with a given job number</h4>');
     });
 });
+
+
+describe("Testing /jobs/attendance-correction route", () => {
+    it("It should respond with Edit Attendance Correction Using CSV file Page", async () => {
+        const agent = request.agent(app);
+        await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
+        const response = await agent.get("/jobs/attendance-correction");
+
+        expect(response.statusCode).toBe(200);
+        expect(response.text).toContain('<title>TNA PROXY SERVER | Attendance Correction Using CSV file</title>');
+        expect(response.text).toContain('<h4 class="mx-auto">Attendance Correction Using CSV file</h4>');
+    });
+});
+
+describe("Testing /api/jobs/attendance-correction route", () => {
+    it("It should respond with Successfully uploaded JSON data", async () => {
+        const agent = request.agent(app);
+        await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
+        const response = await agent.get("/api/jobs/attendance-correction").send({
+            jsonData : {UserID:"25002", AttendanceDate:"10/04/2024",InTime:"08:00",OutTime:"16:00"},
+            CreatedBy:"25002",
+            DepartmentId:"17"
+        });
+        expect(response.statusCode).toBe(200);
+        expect(response.body.status).toBe("ok");
+        expect(response.headers['content-type']).toMatch(/json/);
+        expect(Array.isArray(response.body.data.data)).toBe(true);
+        expect(response.body.data.data.length).toBeGreaterThan(0);
+        
+    });
+});
