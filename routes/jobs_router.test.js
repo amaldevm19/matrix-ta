@@ -123,7 +123,7 @@ describe("Testing /api/jobs/attendance-correction route", () => {
     it("It should respond with Successfully uploaded JSON data", async () => {
         const agent = request.agent(app);
         await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
-        const response = await agent.get("/api/jobs/attendance-correction").send({
+        const response = await agent.post("/api/jobs/attendance-correction").send({
             jsonData : {UserID:"25002", AttendanceDate:"10/04/2024",InTime:"08:00",OutTime:"16:00"},
             CreatedBy:"25002",
             DepartmentId:"17"
