@@ -140,3 +140,38 @@ describe("Testing /api/jobs/attendance-correction route", () => {
         
     });
 });
+
+
+describe("Testing /jobs/attendance-correction-history route", () => {
+    it("It should respond with View Attendance Correction History Page", async () => {
+        const agent = request.agent(app);
+        await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
+        const response = await agent.get("/jobs/attendance-correction-history");
+
+        expect(response.statusCode).toBe(200);
+        expect(response.text).toContain('<title>TNA PROXY SERVER | View Attendance Correction History</title>');
+        expect(response.text).toContain('<h4 class="mx-auto">View Attendance Correction History</h4>');
+    });
+});
+
+describe("Testing /api/jobs/attendance-correction-history-data route", () => {
+    it("It should respond with Jobs Assignment History JSON data", async () => {
+        const agent = request.agent(app);
+        await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
+        const response = await agent.get("/api/jobs/attendance-correction-history-data").query({
+            UserID:"",
+            CreatedBy:"",
+            FromDate:"",
+            ToDate:"",
+            CreatedAt:"",
+            DepartmentId:"",
+            Status:""
+        });
+        expect(response.statusCode).toBe(200);
+        expect(response.body.status).toBe("ok");
+        expect(response.headers['content-type']).toMatch(/json/);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        expect(response.body.data.length).toBeGreaterThan(0);
+        
+    });
+});
