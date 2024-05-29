@@ -3,6 +3,7 @@ const app = require("../app");
 
 let cookie;
 
+
 beforeAll(async () => {
     const response = await request(app)
         .post("/api/users/login")
@@ -121,18 +122,19 @@ describe("Testing /jobs/attendance-correction route", () => {
 
 describe("Testing /api/jobs/attendance-correction route", () => {
     it("It should respond with Successfully uploaded JSON data", async () => {
+        const d = new Date();
+        let secondsString = `${d.getSeconds()}`.padStart(2,0);
         const agent = request.agent(app);
         await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
         const response = await agent.post("/api/jobs/attendance-correction").send({
-            jsonData : [{UserID:"25002", AttendanceDate:"10/04/2024",InTime:"08:00",OutTime:"16:00"}],
+            jsonData : [{UserID:"25002", AttendanceDate:"10/04/2024",InTime:`08:${secondsString}`,OutTime:`16:${secondsString}`}],
             CreatedBy:"25002",
             DepartmentId:"17"
         });
         expect(response.statusCode).toBe(200);
         expect(response.body.status).toBe("ok");
-        console.log(response.body.data)
         expect(response.headers['content-type']).toMatch(/json/);
-        expect(Array.isArray(response.body.data.data)).toBe(true);
+        expect(Array.isArray(response.body.data)).toBe(true);
         expect(response.body.data.data.length).toBeGreaterThan(0);
         
     });
