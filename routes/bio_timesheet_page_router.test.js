@@ -19,7 +19,7 @@ describe("Testing /bio-timesheet route", () => {
     it("It should respond with Timesheet for last 34 days Page", async () => {
         const agent = request.agent(app);
         await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
-        const response = await agent.get("/designation/");
+        const response = await agent.get("/bio-timesheet");
 
         expect(response.statusCode).toBe(200);
         expect(response.text).toContain('<title>TNA PROXY SERVER | Timesheet for last 34 days</title>');
@@ -46,7 +46,7 @@ describe("Testing /api/bio-timesheet route", () => {
         });
 
         expect(response.statusCode).toBe(200);
-        expect(response.body.status).toBe("ok");
+        expect(response.body.status).toBe("OK");
         expect(response.headers['content-type']).toMatch(/json/);
         expect(Array.isArray(response.body.data)).toBe(true);
         expect(response.body.data.length).toBeGreaterThan(0);
