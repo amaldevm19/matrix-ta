@@ -15,28 +15,34 @@ beforeAll(async () => {
     cookie = response.headers['set-cookie']; // Capture the session cookie
 });
 
-describe("Testing /designation/ route", () => {
-    it("It should respond with Position to Designation Mapping List Page", async () => {
+describe("Testing /bio-timesheet route", () => {
+    it("It should respond with Timesheet for last 34 days Page", async () => {
         const agent = request.agent(app);
         await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
         const response = await agent.get("/designation/");
 
         expect(response.statusCode).toBe(200);
-        expect(response.text).toContain('<title>TNA PROXY SERVER | Position to Designation Mapping List</title>');
-        expect(response.text).toContain('<h4 class="mx-auto">Position to Designation Mapping List</h4>');
+        expect(response.text).toContain('<title>TNA PROXY SERVER | Timesheet for last 34 days</title>');
+        expect(response.text).toContain('<h4 class="mx-auto">Timesheet for last 34 days</h4>');
     });
 });
 
-describe("Testing /api/designations/designation-data route", () => {
-    it("It should respond with Position to Designation Mapping JSON data", async () => {
+describe("Testing /api/bio-timesheet route", () => {
+    it("It should respond with Timesheet for last 34 days JSON data", async () => {
         const agent = request.agent(app);
         await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
-        const response = await agent.get("/api/designations/designation-data").query({
+        const response = await agent.get("/api/bio-timesheet").query({
             page:1,
             size:10,
-            Name:"",
-            TnaDesignationId:"",
-            Position:""
+            EmployeeId :"",
+            FromDate :"",
+            ToDate :"",
+            JobCode :"",
+            DepartmentId :"",
+            UserCategoryId :"",
+            EmployeeCategoryId :"",
+            DesignationId :"",
+            SectionId :"",
         });
 
         expect(response.statusCode).toBe(200);
