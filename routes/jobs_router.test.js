@@ -135,7 +135,7 @@ describe("Testing /api/jobs/attendance-correction route", () => {
         expect(response.body.status).toBe("ok");
         expect(response.headers['content-type']).toMatch(/json/);
         expect(Array.isArray(response.body.data)).toBe(true);
-        expect(response.body.data.data.length).toBeGreaterThan(0);
+        expect(response.body.data.length).toBeGreaterThan(0);
         
     });
 });
