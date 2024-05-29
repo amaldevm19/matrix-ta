@@ -159,6 +159,8 @@ describe("Testing /api/jobs/attendance-correction-history-data route", () => {
         const agent = request.agent(app);
         await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
         const response = await agent.get("/api/jobs/attendance-correction-history-data").query({
+            page:1,
+            size:10,
             UserID:"",
             CreatedBy:"",
             FromDate:"",
