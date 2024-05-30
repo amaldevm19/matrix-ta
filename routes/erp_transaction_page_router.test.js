@@ -154,7 +154,7 @@ describe("Testing /api/erp-transaction/post-selected route", () => {
         expect(response.body.status).toBe("not ok");
         expect(response.headers['content-type']).toMatch(/json/);
         expect(response.body.data).toBe("");
-        
+        expect(response.body.error).toBe("Required data missing");
         
     });
 });

@@ -525,6 +525,9 @@ const transactionController = {
     postSelectedErpTimesheet:async(req,res)=>{
         try {
             let {Id,DepartmentId, UserCategoryId, FromDate, ToDate,UpdatedBy} = req.body;
+            if(!DepartmentId || !UserCategoryId || !FromDate || !ToDate){
+                return res.status(200).json({status:"not ok",error:"Required data missing", data:""});
+            }
             // console.log(Id, DepartmentId, UserCategoryId, FromDate, ToDate,UpdatedBy);
             let {status,error,data} = await startERPTransaction({FromDate,ToDate,DepartmentId,UserCategoryId})
             if(status == "ok"){
