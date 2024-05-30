@@ -177,3 +177,36 @@ describe("Testing /api/jobs/attendance-correction-history-data route", () => {
         
     });
 });
+
+
+
+
+describe("Testing /jobs/timesheet-correction route", () => {
+    it("It should respond with Exisiting Timesheet Correction Application Page", async () => {
+        const agent = request.agent(app);
+        await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
+        const response = await agent.get("/jobs/timesheet-correction");
+
+        expect(response.statusCode).toBe(200);
+        expect(response.text).toContain('<title>TNA PROXY SERVER | Exisiting Timesheet Correction Application</title>');
+        expect(response.text).toContain('<h4 class="mx-auto">Exisiting Timesheet Correction Application</h4>');
+    });
+});
+
+describe("Testing /api/jobs/timesheet-correction route", () => {
+    it("It should respond with Exisiting Timesheet Correction Application JSON data", async () => {
+        const agent = request.agent(app);
+        await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
+        const response = await agent.post("/api/jobs/timesheet-correction").send({
+            dateRange:"20240411-20240412",
+            section:"2",
+            application_status:"1"
+        });
+        expect(response.statusCode).toBe(200);
+        expect(response.body.status).toBe("ok");
+        expect(response.headers['content-type']).toMatch(/json/);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        expect(response.body.data.length).toBeGreaterThan(0);
+        
+    });
+});
