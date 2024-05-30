@@ -138,16 +138,23 @@ describe("Testing /erp-transactions/push-selected route", () => {
     });
 });
 
-describe("Testing /api/erp-transaction/settings route", () => {
-    it("It should respond with Push Selected Timesheet to ERP JSON data", async () => {
+describe("Testing /api/erp-transaction/post-selected route", () => {
+    it("It should respond with Pushing Selected Timesheet to ERP response JSON data", async () => {
         const agent = request.agent(app);
         await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
-        const response = await agent.get("/api/erp-transaction/settings");
+        const response = await agent.post("/api/erp-transaction/post-selected").send({
+            Id:"", 
+            DepartmentId:"", 
+            UserCategoryId:"", 
+            FromDate:"", 
+            ToDate:"",
+            UpdatedBy:""
+        });
         expect(response.statusCode).toBe(200);
-        expect(response.body.status).toBe("ok");
+        expect(response.body.status).toBe("not ok");
         expect(response.headers['content-type']).toMatch(/json/);
-        expect(Array.isArray(response.body.data)).toBe(true);
-        expect(response.body.data.length).toBeGreaterThan(0);
+        expect(response.body.data).toBe("");
+        
         
     });
 });

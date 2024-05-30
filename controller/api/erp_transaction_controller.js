@@ -525,13 +525,13 @@ const transactionController = {
     postSelectedErpTimesheet:async(req,res)=>{
         try {
             let {Id,DepartmentId, UserCategoryId, FromDate, ToDate,UpdatedBy} = req.body;
-            console.log(Id, DepartmentId, UserCategoryId, FromDate, ToDate,UpdatedBy);
+            // console.log(Id, DepartmentId, UserCategoryId, FromDate, ToDate,UpdatedBy);
             let {status,error,data} = await startERPTransaction({FromDate,ToDate,DepartmentId,UserCategoryId})
             if(status == "ok"){
                 await controllerLogger(req)
                 return res.status(200).json({status,error, data})
             }
-            throw error;
+            return res.status(200).json({status:"not ok",error, data:""});
         } catch (error) {
             console.log("Error in postSelectedErpTimesheet function : ", error.message)
             await controllerLogger(req, error)
