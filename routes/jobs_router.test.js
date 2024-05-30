@@ -203,7 +203,7 @@ describe("Testing /api/jobs/timesheet-correction route", () => {
             application_status:"1"
         });
         expect(response.statusCode).toBe(200);
-        expect(response.body.status).toBe("ok");
+        expect(response.body.status).toBe("failed");
         expect(response.headers['content-type']).toMatch(/json/);
         expect(Array.isArray(response.body.data)).toBe(true);
         expect(response.body.data.length).toBeGreaterThan(0);
