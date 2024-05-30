@@ -99,7 +99,6 @@ describe("Testing /api/erp-transaction/status route", () => {
 });
 
 
-
 describe("Testing /erp-transactions/settings route", () => {
     it("It should respond with ERP Sync Setting Page", async () => {
         const agent = request.agent(app);
@@ -114,6 +113,33 @@ describe("Testing /erp-transactions/settings route", () => {
 
 describe("Testing /api/erp-transaction/settings route", () => {
     it("It should respond with ERP Sync Setting JSON data", async () => {
+        const agent = request.agent(app);
+        await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
+        const response = await agent.get("/api/erp-transaction/settings");
+        expect(response.statusCode).toBe(200);
+        expect(response.body.status).toBe("ok");
+        expect(response.headers['content-type']).toMatch(/json/);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        expect(response.body.data.length).toBeGreaterThan(0);
+        
+    });
+});
+
+
+describe("Testing /erp-transactions/push-selected route", () => {
+    it("It should respond with Push Selected Timesheet to ERP Page", async () => {
+        const agent = request.agent(app);
+        await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
+        const response = await agent.get("/erp-transactions/push-selected");
+
+        expect(response.statusCode).toBe(200);
+        expect(response.text).toContain('<title>TNA PROXY SERVER | Push Selected Timesheet to ERP</title>');
+        expect(response.text).toContain('<h4 class="mx-auto">Push Selected Timesheet to ERP</h4>');
+    });
+});
+
+describe("Testing /api/erp-transaction/settings route", () => {
+    it("It should respond with Push Selected Timesheet to ERP JSON data", async () => {
         const agent = request.agent(app);
         await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
         const response = await agent.get("/api/erp-transaction/settings");
