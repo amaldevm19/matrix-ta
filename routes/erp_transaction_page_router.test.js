@@ -97,3 +97,31 @@ describe("Testing /api/erp-transaction/status route", () => {
         
     });
 });
+
+
+
+describe("Testing /erp-transactions/settings route", () => {
+    it("It should respond with ERP Sync Setting Page", async () => {
+        const agent = request.agent(app);
+        await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
+        const response = await agent.get("/erp-transactions/settings");
+
+        expect(response.statusCode).toBe(200);
+        expect(response.text).toContain('<title>TNA PROXY SERVER | ERP Sync Setting</title>');
+        expect(response.text).toContain('<h4 class="mx-auto">ERP Sync Setting</h4>');
+    });
+});
+
+describe("Testing /api/erp-transaction/settings route", () => {
+    it("It should respond with ERP Sync Setting JSON data", async () => {
+        const agent = request.agent(app);
+        await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
+        const response = await agent.get("/api/erp-transaction/settings");
+        expect(response.statusCode).toBe(200);
+        expect(response.body.status).toBe("ok");
+        expect(response.headers['content-type']).toMatch(/json/);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        expect(response.body.data.length).toBeGreaterThan(0);
+        
+    });
+});
