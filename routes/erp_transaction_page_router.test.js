@@ -39,7 +39,7 @@ describe("Testing /api/erp-transactions/pending-data route", () => {
             page:1,
             size:10,
             EmployeeId:"",
-            FromDate,
+            FromDate:"",
             ToDate:"",
             JobCode:"",
             DepartmentId:"",
