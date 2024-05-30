@@ -31,11 +31,11 @@ describe("Testing /erp-transactions/pending-data route", () => {
     });
 });
 
-describe("Testing /api/erp-transactions/pending-data route", () => {
+describe("Testing /api/erp-transaction/pending-data route", () => {
     it("It should respond with ERP Timesheet Data Pending JSON data", async () => {
         const agent = request.agent(app);
         await agent.post('/api/users/login').send({ employeeID: '25002', password: '123456' });
-        const response = await agent.get("/api/erp-transactions/pending-data").query({
+        const response = await agent.get("/api/erp-transaction/pending-data").query({
             page:1,
             size:10,
             EmployeeId:"",
