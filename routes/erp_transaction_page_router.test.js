@@ -17,8 +17,6 @@ beforeAll(async () => {
     cookie = response.headers['set-cookie']; // Capture the session cookie
 });
 
-
-
 describe("Testing /erp-transactions/pending-data route", () => {
     it("It should respond with ERP Timesheet Data Pending Page", async () => {
         const agent = request.agent(app);
@@ -58,8 +56,6 @@ describe("Testing /api/erp-transaction/pending-data route", () => {
     });
 });
 
-
-
 describe("Testing /erp-transactions/status route", () => {
     it("It should respond with ERP Timesheet Sync Completed Page", async () => {
         const agent = request.agent(app);
@@ -98,7 +94,6 @@ describe("Testing /api/erp-transaction/status route", () => {
     });
 });
 
-
 describe("Testing /erp-transactions/settings route", () => {
     it("It should respond with ERP Sync Setting Page", async () => {
         const agent = request.agent(app);
@@ -124,7 +119,6 @@ describe("Testing /api/erp-transaction/settings route", () => {
         
     });
 });
-
 
 describe("Testing /erp-transactions/push-selected route", () => {
     it("It should respond with Push Selected Timesheet to ERP Page", async () => {
