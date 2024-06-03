@@ -136,6 +136,13 @@
                         return Math.floor(roundedValue).toFixed(1);
                     }
                 },},
+                {title:"Leave Status", field:"LeaveID", hozAlign:"left",mutatorData:function(value,data){
+                    if (value == "NULL") {
+                        return "P";
+                    } else {
+                        return value;
+                    }
+                },},
                 {title:"Branch", field:"BranchName"},
                 {title:"Department", field:"DepartmentName"},
                 {title:"Staff Type", field:"UserCategoryName"},

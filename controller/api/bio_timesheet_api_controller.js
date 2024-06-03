@@ -105,7 +105,7 @@ const bioTimesheetController ={
                         BranchMst.Name AS BranchName
                     FROM (
                         SELECT
-                            Id, UserID, PDate, JobCode, TotalJobTime, BranchId, DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,CreatedAt,
+                            Id, UserID, PDate, JobCode, TotalJobTime, BranchId, DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,CreatedAt,LeaveID,
                             ROW_NUMBER() OVER (ORDER BY Id) AS RowNum
                         FROM [TNA_PROXY].[dbo].[Px_TimesheetMst]
                         WHERE 
