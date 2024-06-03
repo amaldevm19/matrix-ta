@@ -128,11 +128,9 @@
                 },},
                 {title:"Job Code", field:"JobCode", hozAlign:"left"},
                 {title:"Total Hours", field:"TotalJobTime",mutatorData:function(value,data){
-                     if (!data.LeaveID) {
-                        return value;
-                    } else {
+                     if (data.LeaveID) {
                         return "L";
-                    }
+                    } 
                     const roundedValue = parseFloat((value / 60.0).toFixed(2));
                     if (roundedValue % 1 >= 0.25) {
                         const floorValue = Math.floor(roundedValue);
