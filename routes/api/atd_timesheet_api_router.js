@@ -4,7 +4,7 @@ const {atdTimesheetController} = require("../../controller/api/atd_timesheet_api
 
 router.get("/", atdTimesheetController.getAtdTimesheetHomePageData)
 // router.get("/update-timesheet", bioTimesheetController.updateTimesheetData)
-router.get("/download-timesheet", atdTimesheetController.downloadTimesheetData)
+// router.get("/download-timesheet", atdTimesheetController.downloadTimesheetData)
 
 
 

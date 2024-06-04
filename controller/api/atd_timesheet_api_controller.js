@@ -133,14 +133,6 @@ const atdTimesheetController ={
             console.log("Error in getAtdTimesheetHomePageData function : ", error)
             return res.status(400).json({status:"not ok",error:error, data:""})
         }
-    },
-    downloadTimesheetData: async (req, res)=>{
-        try {
-           
-               
-        } catch (error) {
-           
-        }
     }
 }
 module.exports = {atdTimesheetController}
