@@ -131,7 +131,7 @@
                     if (data.LeaveID) {
                         return data.LeaveID;
                     } 
-                    let hour = value / 60;
+                    let hour = Math.floor(value / 60);
                     let minutes = value % 60;
                     if ( minutes >= 15 && minutes < 45 ) {
                         return (hour + 0.5).toFixed(1);
@@ -171,7 +171,7 @@
                     if (data.LeaveID) {
                         return data.LeaveID;
                     } 
-                    let hour = value / 60;
+                    let hour = Math.floor(value / 60);
                     let minutes = value % 60;
                     if ( minutes >= 15 && minutes < 45 ) {
                         return (hour + 0.5).toFixed(1);
