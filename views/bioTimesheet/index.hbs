@@ -128,14 +128,28 @@
                 },},
                 {title:"Job Code", field:"JobCode", hozAlign:"left"},
                 {title:"Total Hours", field:"TotalJobTime",mutatorData:function(value,data){
-                     if (data.LeaveID) {
-                        return "L";
+                    if (data.LeaveID) {
+                        return data.LeaveID;
                     } 
+                     console.log(`Value is ${value}`)
                     const roundedValue = parseFloat((value / 60.0).toFixed(2));
-                    if (roundedValue % 1 >= 0.25) {
+                    console.log(`roundedValue is ${roundedValue}`)
+                    let numberStr = roundedValue.toString();
+                    let parts = numberStr.split('.');
+                    console.log(`parts is ${parts}`)
+                    let workHourMinutes = parseInt(parts[1], 10)
+                    console.log(`workHourMinutes is ${workHourMinutes}`)
+
+                    if ( workHourMinutes >= 25 && workHourMinutes < 75 ) {
                         const floorValue = Math.floor(roundedValue);
+                        console.log(`Return Value is ${(floorValue + 0.5).toFixed(1)}`)
                         return (floorValue + 0.5).toFixed(1);
-                    } else {
+                    } else if (workHourMinutes >= 75) {
+                        const floorValue = Math.floor(roundedValue);
+                        console.log(`Return Value is ${(floorValue + 1).toFixed(1)}`)
+                        return (floorValue + 1).toFixed(1);
+                    }else{
+                        console.log(`Return Value is ${Math.floor(roundedValue).toFixed(1)}`)
                         return Math.floor(roundedValue).toFixed(1);
                     }
                 },},
@@ -166,18 +180,28 @@
                 },},
                 {title:"Job Code", field:"JobCode", hozAlign:"left"},
                 {title:"Total Hours", field:"TotalJobTime",mutatorData:function(value,data){
+                    if (data.LeaveID) {
+                        return data.LeaveID;
+                    } 
+                    console.log(`Value is ${value}`)
                     const roundedValue = parseFloat((value / 60.0).toFixed(2));
+                    console.log(`roundedValue is ${roundedValue}`)
                     let numberStr = roundedValue.toString();
                     let parts = numberStr.split('.');
+                    console.log(`parts is ${parts}`)
                     let workHourMinutes = parseInt(parts[1], 10)
+                    console.log(`workHourMinutes is ${workHourMinutes}`)
 
                     if ( workHourMinutes >= 25 && workHourMinutes < 75 ) {
                         const floorValue = Math.floor(roundedValue);
+                        console.log(`Return Value is ${(floorValue + 0.5).toFixed(1)}`)
                         return (floorValue + 0.5).toFixed(1);
                     } else if (workHourMinutes >= 75) {
                         const floorValue = Math.floor(roundedValue);
+                        console.log(`Return Value is ${(floorValue + 1).toFixed(1)}`)
                         return (floorValue + 1).toFixed(1);
                     }else{
+                        console.log(`Return Value is ${Math.floor(roundedValue).toFixed(1)}`)
                         return Math.floor(roundedValue).toFixed(1);
                     }
                 },},
