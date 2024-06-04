@@ -29,10 +29,9 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
                 PDate AS TransDate,
                 TSM.JobCode AS projId,
                 CASE 
-                    WHEN CAST(TotalJobTime/60.0 AS decimal(4, 2)) % 1 >= 0.25 THEN 
-                        CAST(FLOOR(CAST(TotalJobTime/60.0 AS decimal(4, 2))) + 0.5 AS decimal(4, 1))
-                    ELSE 
-                        CAST(FLOOR(CAST(TotalJobTime/60.0 AS decimal(4, 2))) AS decimal(4, 1))
+                    WHEN TotalJobTime % 60 >= 15 AND TotalJobTime % 60 < 45 THEN CAST(FLOOR(TotalJobTime / 60) + 0.5 AS DECIMAL(4,1))
+                    WHEN TotalJobTime % 60 >= 45 THEN CAST(FLOOR(TotalJobTime / 60) + 1 AS DECIMAL(4,1))
+                    ELSE CAST(FLOOR(TotalJobTime / 60) AS DECIMAL(4,1))
                 END AS TotalHours,
                 BranchId,
                 TSM.DepartmentId AS DepartmentId,
