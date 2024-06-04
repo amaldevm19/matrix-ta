@@ -167,10 +167,17 @@
                 {title:"Job Code", field:"JobCode", hozAlign:"left"},
                 {title:"Total Hours", field:"TotalJobTime",mutatorData:function(value,data){
                     const roundedValue = parseFloat((value / 60.0).toFixed(2));
-                    if (roundedValue % 1 >= 0.25) {
+                    let numberStr = roundedValue.toString();
+                    let parts = numberStr.split('.');
+                    let workHourMinutes = parseInt(parts[1], 10)
+
+                    if ( workHourMinutes >= 25 && workHourMinutes < 75 ) {
                         const floorValue = Math.floor(roundedValue);
                         return (floorValue + 0.5).toFixed(1);
-                    } else {
+                    } else if (workHourMinutes >= 75) {
+                        const floorValue = Math.floor(roundedValue);
+                        return (floorValue + 1).toFixed(1);
+                    }else{
                         return Math.floor(roundedValue).toFixed(1);
                     }
                 },},
