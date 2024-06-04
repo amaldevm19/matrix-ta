@@ -131,10 +131,10 @@
                     if (data.LeaveID) {
                         return data.LeaveID;
                     } 
-                    const hourMinutes = parseFloat((value / 60.0).toFixed(2));
+                    let hourMinutes = parseFloat((value / 60.0).toFixed(2));
                     let hourMinutesStr = hourMinutes.toString();
-                    let hourMinutes = hourMinutesStr.split('.');
-                    let hour = parseInt(hourMinutes[0])
+                    let hourMinutesArray = hourMinutesStr.split('.');
+                    let hour = parseInt(hourMinutesArray[0])
                     let minutes = value-(hour*60);
                     if ( minutes >= 15 && minutes < 45 ) {
                         return (hour + 0.5).toFixed(1);
@@ -174,10 +174,10 @@
                     if (data.LeaveID) {
                         return data.LeaveID;
                     } 
-                    const hourMinutes = parseFloat((value / 60.0).toFixed(2));
+                    let hourMinutes = parseFloat((value / 60.0).toFixed(2));
                     let hourMinutesStr = hourMinutes.toString();
-                    let hourMinutes = hourMinutesStr.split('.');
-                    let hour = parseInt(hourMinutes[0])
+                    let hourMinutesArray = hourMinutesStr.split('.');
+                    let hour = parseInt(hourMinutesArray[0])
                     let minutes = value-(hour*60);
                     if ( minutes >= 15 && minutes < 45 ) {
                         return (hour + 0.5).toFixed(1);
