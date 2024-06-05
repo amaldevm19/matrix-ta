@@ -44,7 +44,7 @@ END;
 UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] SET SyncCompleted=1 WHERE [HcmWorker_PersonnelNumber]='SRU016316'
 
 
--- INSERT DATA TO [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
+-- INSERT DATA TO [TNA_PROXY].[dbo].[Px_ERPTransactionMst] -- OLD
 MERGE INTO [TNA_PROXY].[dbo].[Px_ERPTransactionMst] AS Target
 USING (
 SELECT
@@ -142,6 +142,106 @@ INSERT (
 );
 
 
+
+-- INSERT DATA TO [TNA_PROXY].[dbo].[Px_ERPTransactionMst] -- 05/06/2024
+
+MERGE INTO [TNA_PROXY].[dbo].[Px_ERPTransactionMst] AS Target
+            USING (
+            SELECT
+                UserID AS HcmWorker_PersonnelNumber,
+                PDate AS TransDate,
+                TSM.JobCode AS projId,
+                CASE 
+                    WHEN TotalJobTime % 60 >= 15 AND TotalJobTime % 60 < 45 THEN CAST(FLOOR(TotalJobTime / 60) + 0.5 AS DECIMAL(4,1))
+                    WHEN TotalJobTime % 60 >= 45 THEN CAST(FLOOR(TotalJobTime / 60) + 1 AS DECIMAL(4,1))
+                    ELSE CAST(FLOOR(TotalJobTime / 60) AS DECIMAL(4,1))
+                END AS TotalHours,
+                BranchId,
+                TSM.DepartmentId AS DepartmentId,
+                UserCategoryId,
+                EmployeeCategoryId,
+                DesignationId,
+                CustomGroup3Id,
+                SectionId,
+                'Timesheet' AS CategoryId,
+                JPC.MaxJobHourPerDay AS MaxJobHourPerDay,
+                JPC.BreakHour AS BreakHour,
+                JPC.TravelHour AS TravelHour
+                                
+            FROM [TNA_PROXY].[dbo].[Px_TimesheetMst] AS TSM
+            LEFT JOIN [TNA_PROXY].[dbo].[Px_JPCJobMst] AS JPC ON TSM.JobCode = JPC.JobCode
+            WHERE
+                PDate BETWEEN '${FromDate}' AND '${ToDate}'
+                AND UserID IS NOT NULL 
+                AND PDate IS NOT NULL
+                AND TSM.JobCode IS NOT NULL
+                AND TotalJobTime IS NOT NULL
+                AND UserID <> ''
+                AND TSM.JobCode <> ''
+                AND BranchId = 1
+                AND TotalJobTime > (COALESCE(JPC.BreakHour, 1)*60 + COALESCE(JPC.TravelHour, 0)*60) + 15
+                --AND TSM.DepartmentId = 2
+                --AND UserCategoryId = 2
+                                
+            ) AS Source ON
+            Target.HcmWorker_PersonnelNumber = CONCAT(
+                LEFT(Source.HcmWorker_PersonnelNumber, PATINDEX('%[0-9]%', Source.HcmWorker_PersonnelNumber) - 1),
+                '-',
+                SUBSTRING(Source.HcmWorker_PersonnelNumber, PATINDEX('%[0-9]%', Source.HcmWorker_PersonnelNumber), LEN(Source.HcmWorker_PersonnelNumber))
+            )
+            AND Target.TransDate = Source.TransDate
+            AND Target.projId = Source.projId
+
+            WHEN MATCHED AND (
+                (CAST(Target.TotalHours AS decimal(4, 1)) <> 
+                    CAST( 
+                        CASE    WHEN Target.TotalHours > MaxJobHourPerDay OR Source.TotalHours-COALESCE(BreakHour, 1)-COALESCE(TravelHour, 0) > MaxJobHourPerDay THEN MaxJobHourPerDay
+                                ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0)
+                    END AS decimal(4, 1))
+            OR Target.projId <> Source.projId) AND Target.SyncCompleted = 0
+        ) THEN
+        UPDATE SET
+            TotalHours = CAST(CASE 
+                            WHEN Target.TotalHours > COALESCE(Source.MaxJobHourPerDay, Target.TotalHours) OR Source.TotalHours-COALESCE(BreakHour, 1)-COALESCE(TravelHour, 0) > COALESCE(Source.MaxJobHourPerDay, Source.TotalHours)  THEN MaxJobHourPerDay
+                            ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0)
+                        END AS decimal(4, 1)),
+            projId = Source.projId
+        WHEN NOT MATCHED THEN
+            INSERT (
+                HcmWorker_PersonnelNumber,
+                TransDate,
+                projId,
+                TotalHours,
+                BranchId,
+                DepartmentId,
+                UserCategoryId,
+                EmployeeCategoryId,
+                DesignationId,
+                SectionId,
+                CustomGroup3Id,
+                CategoryId
+            ) VALUES (
+                CONCAT(
+                    LEFT(Source.HcmWorker_PersonnelNumber, PATINDEX('%[0-9]%', Source.HcmWorker_PersonnelNumber) - 1),
+                    '-',
+                    SUBSTRING(Source.HcmWorker_PersonnelNumber, PATINDEX('%[0-9]%', Source.HcmWorker_PersonnelNumber), LEN(Source.HcmWorker_PersonnelNumber))
+                ),
+                Source.TransDate,
+                Source.projId,
+                CASE
+                    WHEN Source.TotalHours-COALESCE(BreakHour, 1)-COALESCE(TravelHour, 0) > COALESCE(Source.MaxJobHourPerDay, Source.TotalHours) THEN COALESCE(Source.MaxJobHourPerDay, Source.TotalHours)
+                    ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0)
+                END,
+                Source.BranchId,
+                Source.DepartmentId,
+                Source.UserCategoryId,
+                Source.EmployeeCategoryId,
+                Source.DesignationId,
+                Source.SectionId,
+                Source.CustomGroup3Id,
+                Source.CategoryId
+            );
+
 --GET TOTAL COUNT AND START AND END ID
 SELECT 
     COUNT(*) AS TotalCount,
@@ -204,3 +304,9 @@ JOIN (
     ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
     ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
     (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}')
+
+
+
+
+DELETE FROM [TNA_PROXY].[dbo].[Px_ERPTransactionMst] WHERE SyncCompleted=0 AND TotalHours<1
+SELECT * FROM [TNA_PROXY].[dbo].[Px_ERPTransactionMst] WHERE SyncCompleted=0 AND TotalHours<1
