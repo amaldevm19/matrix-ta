@@ -56,7 +56,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
                 AND UserID <> ''
                 AND TSM.JobCode <> ''
                 AND BranchId = 1
-                AND TotalJobTime > (COALESCE(JPC.BreakHour, 1)*60 + COALESCE(JPC.TravelHour, 0)*60)
+                AND TotalJobTime > (COALESCE(JPC.BreakHour, 1)*60 + COALESCE(JPC.TravelHour, 0)*60) + 15
                 --AND TSM.DepartmentId = 2
                 --AND UserCategoryId = 2
                                 
