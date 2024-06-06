@@ -59,7 +59,7 @@
             <li><a class="dropdown-item" href="/designation">Designation</a></li>
           </ul>
         </li>
-         <li class="nav-item dropdown">
+          <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Biometric Jobs </a>
           <ul class="dropdown-menu">
             <li><a class="dropdown-item" href="/jobs/assign-jobs-manually">Jobs Assign Page</a></li>
@@ -67,7 +67,13 @@
             <li><a class="dropdown-item" href="/jobs/jobslist">Job Hours Setting</a></li>
             <li><a class="dropdown-item" href="/jobs/search-jobs">Search Jobs</a></li>
           </ul>
-        </li>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Employees</a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="/employees/hour-deduction">Employee Work Hour Deduction Page</a></li>
+            </ul>
+          </li>
         <li class="nav-item">
           <a class="nav-link {{#unless session.user.IsAdmin}}disabled{{/unless}}" href="/events">Event Log</a>
         </li>

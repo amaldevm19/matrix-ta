@@ -24,3 +24,6 @@ BEGIN
     WHERE [TNA_PROXY].[dbo].[Px_UserHourDeduTrn].Id = inserted.Id;
 END;
 GO
+
+ALTER TABLE [TNA_PROXY].[dbo].[Px_UserHourDeduTrn]
+ADD UserName NVARCHAR(50);

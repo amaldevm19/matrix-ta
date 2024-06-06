@@ -1,0 +1,232 @@
+
+<div class="row justify-content-end">
+    <div class="col-md-3">
+        <button class="btn btn-outline-success" type="button" data-bs-toggle="modal" data-bs-target="#upload_modal">Upload CSV</button>
+    </div>
+    <div class="col-md-3"></div>
+    <div class="col-md-3">
+        <form class="d-flex flex-row my-2 my-lg-0">
+            <input class="form-control mr-sm-2" type="search" placeholder="Search by Employee Id" aria-label="Search" id="searchElement">
+            <button class="btn btn-outline-success" type="submit" id="searchSubmit">Search</button>
+        </form>
+    </div>
+</div>
+<div id="loading-indicator">
+    <div class="spinner-border text-primary" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
+</div>
+
+<div class="mt-2" id="csvTable"></div>
+<div class="mt-2" id="tempCsvTable" hidden></div>
+
+<input type="text" value="{{session.user.EmployeeId}}" id="employeeId" hidden>
+<input type="text" value="{{session.user.Department}}" id="department" hidden>
+
+<div class="modal fade " id="upload_modal" tabindex="-1" aria-labelledby="upload_modal_label" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="upload_modal_label">Upload Employee Work Hour Deduction CSV file</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body d-flex align-items-center">
+            <div class="d-inline-block mx-4">
+                <input type="file" class="form-control" name="JobFile" id="employee_workHour_deduction_csv" accept=".csv" />
+            </div>
+            <div class="d-inline-block">
+                <button class="btn btn-primary " data-bs-dismiss="modal" id="submitFile">Upload</button>
+            </div>
+      </div>
+      <div class="modal-footer">
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  
+</script>
+
+<script>
+    $(document).ready(()=>{
+        let table = new Tabulator("#csvTable", {
+            pagination:true, //enable pagination
+            paginationMode:"remote", //enable remote pagination
+            ajaxURL:"/api/employees/hour-deduction", //ajax URL
+            ajaxParams: function(){
+                let searchElement = document.querySelector('#searchElement')
+                let searchField = searchElement.value;
+                return {searchField};
+            },
+            paginationSize:15, //optional parameter to request a certain number of rows per page
+            paginationInitialPage:1, //optional parameter to set the initial page to load
+            layout:"fitColumns", //fit columns to width of table (optional)
+            paginationSizeSelector:[10, 25, 30,31, 50, 100, 500, 1000, 5000],
+            columns:[ //Define Table Columns
+                {title:"Row Num", field:"Id", width:150},
+                {title:"Employee ID", field:"UserID", hozAlign:"left"},
+                {title:"Employee Name", field:"UserName"},
+                {title:"Hour Deduction / Day", field:"HoursPerDay",editor:"input", editorParams:{search:true,selectContents:true,elementAttributes:{maxlength:"4"},},},
+                {title:"From Date", field:"FromDate",resizable:true,editor:"date",mutator:function(value, data){ return value.split("T")[0];},},
+                {title:"To Date", field:"ToDate",resizable:true,editor:"date",mutator:function(value, data){return value.split("T")[0];},},
+                {title:"Remarks", field:"Remarks",editor:"input", editorParams:{search:true,selectContents:true,},},
+                {title:"Department", field:"DepartmentId"},
+                {title:"Updated By", field:"UpdatedBy"},
+                {title:"Updated At", field:"UpdatedAt",hozAlign:"center"},
+            ],
+        });
+
+        function checkHour({cell,oldValue,newValue}){
+            if (newValue < 0 || newValue > 24.0 ){
+                alert("Please enter Hour between 0 and 23.9")
+                cell.setValue(oldValue)
+                return true;
+            }
+        }
+        function checkValueChange ({cell,oldValue,newValue}){
+            if(oldValue == newValue){
+                return true;
+            }
+        }
+        function checkDatesValidity ({cell,FromDate,ToDate}){
+            let DateTime = luxon.DateTime;
+            let luxonNow = luxon.DateTime.now();
+            let luxonfromDate = DateTime.fromISO(FromDate.split(" ")[0]);
+            let luxonToDate = DateTime.fromISO(ToDate.split(" ")[0]);
+            if(!luxonfromDate < luxonToDate){
+                alert("To Date must be later than From Date");
+                cell.restoreOldValue();
+                return true;
+            }
+        }
+        async function updateDataInBackend (data){
+        const response = await fetch("/api/employees/hour-deduction", {
+            method: "POST",
+            mode: "cors", 
+            cache: "no-cache",
+            credentials: "same-origin",
+            headers: {"Content-Type": "application/json",},
+            redirect: "follow",
+            referrerPolicy: "no-referrer",
+            body: JSON.stringify(data),
+         });
+        return response.json();
+    }
+
+        table.on("cellEdited", async function(cell){
+            let row = cell.getRow();
+            let newValue = cell.getValue();
+            let oldValue = cell.getOldValue();
+            let Id = row.getData("Id").Id;
+            let UserID = row.getData("UserID").UserID;
+            let HoursPerDay = row.getData("HoursPerDay").HoursPerDay;
+            HoursPerDay = HoursPerDay.toFixed(1)
+            let FromDate = row.getData("FromDate").FromDate;
+            let ToDate = row.getData("ToDate").ToDate;
+            let EmployeeId = document.querySelector('#employeeId').value;
+            let Department = document.querySelector('#department').value;
+            //console.log(`Id=${Id} UserID=${UserID} HoursPerDay=${HoursPerDay} FromDate=${FromDate} ToDate=${ToDate} EmployeeId=${EmployeeId} Department=${Department}`)
+            
+            let column = cell.getColumn();
+            let field = column.getField();
+            //console.log(`Field = ${field}`);
+            switch (field){
+                case 'HoursPerDay':
+                    if(checkHour({cell,oldValue,newValue}) || checkValueChange({cell,oldValue,newValue})) return;
+                    break;
+                case 'FromDate':
+                case 'ToDate':
+                    if(checkDatesValidity ({cell,FromDate,ToDate}) || checkValueChange({cell,oldValue,newValue})) return;
+                    break;
+            }
+            let data = {Id,HoursPerDay,UserID,FromDate,ToDate,UpdatedBy:EmployeeId,Department }
+            let response = await updateDataInBackend(data)
+            if(response.status == "ok"){
+                row.update(response.data);
+            }else{
+                alert(response.error);
+                location.reload();
+            } 
+        });
+
+        let searchSubmit = document.querySelector('#searchSubmit');
+        let searchElement = document.querySelector('#searchElement')
+        searchSubmit.addEventListener("click",(e)=>{
+            e.preventDefault();
+            table.setData("/api/employees/hour-deduction", {page:"1", pageSize:"15",searchField:searchElement.value});
+        })
+        const fileInput = $('#employee_workHour_deduction_csv')
+        const submitFile = $('#submitFile')
+        const UpdatedBy = $('#employeeId').val()
+        let file = null
+        fileInput.change((e)=>{
+            e.preventDefault();
+            file = e.target.files[0];
+        })
+        submitFile.click(async(e)=>{
+            showLoadingIndicator();
+            // Define the regex pattern for the date format YYYY-MM-DD HH:mm:ss.SSS
+            const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+            const schema = joi.object({
+                RowNum: joi.number(),
+                HoursPerDay: joi.number().min(0).max(24).precision(2).required(),
+                FromDate: joi.string().pattern(datePattern).messages({"FromDate must be in the format YYYY-MM-DD"}).required(),
+                ToDate: joi.string().pattern(datePattern).messages({"FromDate must be in the format YYYY-MM-DD"}).required(),
+                Remarks: joi.string(),
+                DepartmentId: joi.number()
+            });
+            if (!file || file.type !== 'text/csv') {
+                alert('Please choose a CSV file');
+                return;
+            }
+            try{
+                const {jsonData,errorData} = await parseCSV(file,schema);
+                if (!jsonData.length) {
+                    alert('Selected file data not matching with required data');
+                    return;
+                }
+                const response = await axios.post('/api/employees/upload/hour-deduction-csv', {jsonData,UpdatedBy}, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                if (response.data) {
+                    //console.log(response.data)
+                    let fail = false;
+                    response.data.data.forEach((e)=>{
+                        if(e.Status == "Fail"){
+                            fail= true
+                        }
+                    })
+                    $('#file').val('');
+                    hideLoadingIndicator();
+                    if(fail){
+                        alert("Some row failed to update, please see response CSV")
+                    }
+                    tempCsvTable.setData(response.data.data);
+                    tempCsvTable.download("csv", "EmployeeHourDeductionCSVUploadStatus.csv", {delimiter:","})
+                    location.reload()
+                }
+            }catch(error){
+                console.error(error);
+            }
+        })
+
+        let tempCsvTable = new Tabulator("#tempCsvTable", {
+                columns:[ //Define Table Columns
+                    {title:"Row Num", field:"RowNum"},
+                    {title:"Employee ID", field:"UserID", hozAlign:"left"},
+                    {title:"Employee Name", field:"UserName"},
+                    {title:"Hour Deduction /Day", field:"HoursPerDay",},
+                    {title:"From Date", field:"FromDate",mutator:function(value, data){ return value.split("T")[0];},},
+                    {title:"To Date", field:"ToDate",mutator:function(value, data){return value.split("T")[0];},},
+                    {title:"Remarks", field:"Remarks",},
+                    {title:"Department", field:"DepartmentId"},
+                    {title:"Status", field:"Status"},
+                    {title:"Message", field:"Message"},
+                ],
+            });   
+        })
+</script>

@@ -47,6 +47,7 @@ const leaveApiRouter = require('./routes/api/leave_router');
 const userApiRouter = require('./routes/api/user_router')
 const bioTimesheetApiRouter = require("./routes/api/bio_timesheet_api_router")
 const eventsApiRouter = require('./routes/api/events_api_router');
+const employeesApiRouter = require('./routes/api/employees_router');
 
 //Page routes
 const designationPageRouter = require('./routes/designation_page_router');
@@ -57,6 +58,8 @@ const jobsRouter = require('./routes/jobs_router');
 const erpTransactionPageRouter = require("./routes/erp_transaction_page_router");
 const bioTimesheetRouter = require("./routes/bio_timesheet_page_router")
 const userRouter = require('./routes/user_router');
+const employeesRouter = require('./routes/employees_router');
+
 const {historyLogger} = require("./middlewares/historyLoggerMiddleware")
 
 
@@ -116,7 +119,8 @@ app.use('/api/events',historyLogger,isAuthenticated,eventsApiRouter);
 app.use('/api/bio-timesheet',historyLogger,isAuthenticated, bioTimesheetApiRouter);
 app.use('/api/erp-transaction',historyLogger,isAuthenticated, erpTransactionApiRouter);
 app.use('/api/jobs',historyLogger,isAuthenticated,jobsApiRouter);
-app.use('/api/users',historyLogger,userApiRouter)
+app.use('/api/users',historyLogger,userApiRouter);
+app.use('/api/employees',historyLogger,employeesApiRouter)
 
 //Pages Routes
 app.use('/designation',historyLogger,isAuthenticated,designationPageRouter)
@@ -126,6 +130,7 @@ app.use('/bio-timesheet',historyLogger,isAuthenticated, bioTimesheetRouter);
 app.use('/erp-transactions',historyLogger,isAuthenticated,erpTransactionPageRouter);
 app.use('/users',historyLogger,userRouter);
 app.use('/jobs',historyLogger,isAuthenticated, jobsRouter);
+app.use('/employees',historyLogger,isAuthenticated, employeesRouter);
 app.use('/', homeRouter);
 
 
