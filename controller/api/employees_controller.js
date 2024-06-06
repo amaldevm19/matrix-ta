@@ -44,13 +44,18 @@ const employeesApiController = {
     updateHourDeductionData:async(req,res)=>{
         try {
             let db = req.app.locals.db;
-            let {HoursPerDay,UserID,FromDate,ToDate,UpdatedBy,Department } = req.body
+            let {HoursPerDay,UserID,FromDate,ToDate,Remarks,UpdatedBy,Department } = req.body
+            const remarksRegex = /^[a-zA-Z0-9\s.,!?'-]*$/;
+            if (!remarksRegex.test(Remarks)) {
+                return res.status(400).json({status:"not ok",error:"Invalid input in Remarks.",data:{HoursPerDay,UserID,FromDate,ToDate,UpdatedBy,Department }})
+            } 
             let response = await db.query(`
                 UPDATE [TNA_PROXY].[dbo].[Px_UserHourDeduTrn] 
                 SET 
                     HoursPerDay=ROUND(${HoursPerDay}, 1),
                     FromDate='${FromDate}', 
                     ToDate='${ToDate}', 
+                    Remarks='${Remarks}', 
                     UpdatedBy='${UpdatedBy}', 
                     DepartmentId='${Department}' 
                 WHERE UserID='${UserID}'`)

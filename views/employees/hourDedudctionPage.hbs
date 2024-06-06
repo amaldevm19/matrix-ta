@@ -126,6 +126,7 @@
             HoursPerDay = parseFloat(HoursPerDay).toFixed(1)
             let FromDate = row.getData("FromDate").FromDate;
             let ToDate = row.getData("ToDate").ToDate;
+            let Remarks = row.getData("Remarks").Remarks;
             let EmployeeId = document.querySelector('#employeeId').value;
             let Department = document.querySelector('#department').value;
             //console.log(`Id=${Id} UserID=${UserID} HoursPerDay=${HoursPerDay} FromDate=${FromDate} ToDate=${ToDate} EmployeeId=${EmployeeId} Department=${Department}`)
@@ -142,7 +143,7 @@
                     if(checkDatesValidity ({cell,FromDate,ToDate}) || checkValueChange({cell,oldValue,newValue})) return;
                     break;
             }
-            let data = {Id,HoursPerDay,UserID,FromDate,ToDate,UpdatedBy:EmployeeId,Department }
+            let data = {Id,HoursPerDay,UserID,FromDate,ToDate,Remarks,UpdatedBy:EmployeeId,Department }
             let response = await updateDataInBackend(data)
             if(response.status == "ok"){
                 row.update(response.data);
