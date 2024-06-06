@@ -71,6 +71,92 @@ const employeesApiController = {
             await controllerLogger(req,error)
             return res.status(200).json({status:"not ok",error:error.message,data:""})
         }
+    },
+    updateHourDeductionViaCSVUpload:async(req, res)=>{
+        try {
+            let {jsonData,UpdatedBy} = req.body;
+            let db = req.app.locals.db;
+            let responseStatus = [];
+            const remarksRegex = /^[a-zA-Z0-9\s.,!?'-]*$/;
+            for (let index = 0; index < jsonData.length; index++) {
+                const element = jsonData[index];
+                if (!remarksRegex.test(element.Remarks)) {
+                    responseStatus.push({
+                        RowNum:element.RowNum,
+                        HoursPerDay:element.HoursPerDay,
+                        UserID:element.UserID,
+                        UserName:element.UserName,
+                        FromDate:element.FromDate,
+                        ToDate: element.ToDate,
+                        Remarks:element.Remarks,
+                        DepartmentId: element.DepartmentId,
+                        Status:`Fail`,
+                        Message:'Invalid input in Remarks.'
+                    })
+                    continue;
+                } 
+                let response = await db.query(`
+                    MERGE [TNA_PROXY].[dbo].[Px_UserHourDeduTrn] AS target
+                    USING (SELECT 
+                                '${element.UserID}' AS UserID, 
+                                '${element.UserName}' AS UserName, 
+                                ROUND(${element.HoursPerDay}, 1) AS HoursPerDay, 
+                                '${element.FromDate}' AS FromDate, 
+                                '${element.ToDate}' AS ToDate, 
+                                '${element.Remarks}' AS Remarks, 
+                                '${UpdatedBy}' AS UpdatedBy, 
+                                '${element.Department}' AS DepartmentId
+                            ) AS source
+                    ON (target.UserID = source.UserID)
+                    WHEN MATCHED THEN
+                        UPDATE SET 
+                            target.HoursPerDay = source.HoursPerDay,
+                            target.FromDate = source.FromDate, 
+                            target.ToDate = source.ToDate, 
+                            target.Remarks = source.Remarks, 
+                            target.UpdatedBy = source.UpdatedBy, 
+                            target.DepartmentId = source.DepartmentId
+                    WHEN NOT MATCHED THEN
+                        INSERT (UserID, UserName, HoursPerDay, FromDate, ToDate, Remarks, UpdatedBy, DepartmentId)
+                        VALUES (source.UserID, source.UserName, source.HoursPerDay, source.FromDate, source.ToDate, source.Remarks, source.UpdatedBy, source.DepartmentId);
+                `)
+                if(response.rowsAffected[0] > 0){
+                    responseStatus.push({
+                        RowNum:element.RowNum,
+                        HoursPerDay:element.HoursPerDay,
+                        UserID:element.UserID,
+                        UserName:element.UserName,
+                        FromDate:element.FromDate,
+                        ToDate: element.ToDate,
+                        Remarks:element.Remarks,
+                        DepartmentId: element.DepartmentId,
+                        Status:`Success`,
+                        Message:'Successfully updated UserId'
+                    })
+                }else{
+                    responseStatus.push({
+                        RowNum:element.RowNum,
+                        HoursPerDay:element.HoursPerDay,
+                        UserID:element.UserID,
+                        UserName:element.UserName,
+                        FromDate:element.FromDate,
+                        ToDate: element.ToDate,
+                        Remarks:element.Remarks,
+                        DepartmentId: element.DepartmentId,
+                        Status:`Fail`,
+                        Message:'Failed to update UserId, Either UserId not found or DB Error'
+                    })
+                }
+            }
+            if(responseStatus.length>0){
+                await controllerLogger(req)
+                return res.status(200).json({status:"ok",error:"",data:responseStatus})
+            }
+        } catch (error) {
+            console.log("Error in maxJobHrCSV function : ",error)
+            await controllerLogger(req,error)
+            return res.status(200).json({status:"not ok",error:error.message,data:""})
+        }
     }
 }
 

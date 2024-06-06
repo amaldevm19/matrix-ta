@@ -5,5 +5,6 @@ const employeesApiController = require("../../controller/api/employees_controlle
 
 router.get('/hour-deduction',employeesApiController.hourDeductionPageData )
 router.post('/hour-deduction',employeesApiController.updateHourDeductionData )
+router.post('/upload/hour-deduction-csv',employeesApiController.updateHourDeductionViaCSVUpload )
 
 module.exports = router;
