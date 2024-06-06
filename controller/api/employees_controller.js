@@ -51,7 +51,6 @@ const employeesApiController = {
                     HoursPerDay=ROUND(${HoursPerDay}, 1),
                     FromDate='${FromDate}', 
                     ToDate='${ToDate}', 
-                    ProjectType='${ProjectType}',
                     UpdatedBy='${UpdatedBy}', 
                     DepartmentId='${Department}' 
                 WHERE UserID='${UserID}'`)
