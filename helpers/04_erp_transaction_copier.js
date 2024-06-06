@@ -72,13 +72,17 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
             WHEN MATCHED AND (
                 (CAST(Target.TotalHours AS decimal(4, 1)) <> 
                     CAST( 
-                        CASE    WHEN Target.TotalHours > MaxJobHourPerDay OR Source.TotalHours-COALESCE(BreakHour, 1)-COALESCE(TravelHour, 0) > MaxJobHourPerDay THEN MaxJobHourPerDay
-                                ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0)
+                        CASE  
+                            WHEN Source.TotalHours < 8.0 THEN Source.TotalHours  
+                            WHEN Target.TotalHours > MaxJobHourPerDay OR Source.TotalHours-COALESCE(BreakHour, 1)-COALESCE(TravelHour, 0) > MaxJobHourPerDay THEN MaxJobHourPerDay
+                            ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0)
                     END AS decimal(4, 1))
             OR Target.projId <> Source.projId) AND Target.SyncCompleted = 0
         ) THEN
         UPDATE SET
-            TotalHours = CAST(CASE 
+            TotalHours = CAST(
+                        CASE 
+                            WHEN Source.TotalHours < 8.0 THEN Source.TotalHours 
                             WHEN Target.TotalHours > COALESCE(Source.MaxJobHourPerDay, Target.TotalHours) OR Source.TotalHours-COALESCE(BreakHour, 1)-COALESCE(TravelHour, 0) > COALESCE(Source.MaxJobHourPerDay, Source.TotalHours)  THEN MaxJobHourPerDay
                             ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0)
                         END AS decimal(4, 1)),
@@ -106,6 +110,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
                 Source.TransDate,
                 Source.projId,
                 CASE
+                    WHEN Source.TotalHours < 8.0 THEN Source.TotalHours
                     WHEN Source.TotalHours-COALESCE(BreakHour, 1)-COALESCE(TravelHour, 0) > COALESCE(Source.MaxJobHourPerDay, Source.TotalHours) THEN COALESCE(Source.MaxJobHourPerDay, Source.TotalHours)
                     ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0)
                 END,
