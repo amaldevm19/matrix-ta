@@ -95,7 +95,7 @@
             let luxonNow = luxon.DateTime.now();
             let luxonfromDate = DateTime.fromISO(FromDate.split(" ")[0]);
             let luxonToDate = DateTime.fromISO(ToDate.split(" ")[0]);
-            if(!luxonfromDate < luxonToDate){
+            if(luxonfromDate > luxonToDate){
                 alert("To Date must be later than From Date");
                 cell.restoreOldValue();
                 return true;
@@ -119,6 +119,7 @@
             let row = cell.getRow();
             let newValue = cell.getValue();
             let oldValue = cell.getOldValue();
+            let RowNum = row.getData("RowNum").RowNum;
             let Id = row.getData("Id").Id;
             let UserID = row.getData("UserID").UserID;
             let HoursPerDay = row.getData("HoursPerDay").HoursPerDay;

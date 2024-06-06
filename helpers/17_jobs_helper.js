@@ -40,12 +40,12 @@ const jobsHelper = {
             let updateMaxJobHourPerDayResponse = await db.query(`
             UPDATE Px_JPCJobMst 
             SET 
-            MaxJobHourPerDay=ROUND(${MaxJobHourPerDay}, 1),
-            BreakHour=ROUND(${BreakHour}, 1), 
-            TravelHour=ROUND(${TravelHour}, 1),
-            ProjectType='${ProjectType}',
-            UpdatedBy='${UpdatedBy}', 
-            DepartmentId='${Department}' 
+                MaxJobHourPerDay=ROUND(${MaxJobHourPerDay}, 1),
+                BreakHour=ROUND(${BreakHour}, 1), 
+                TravelHour=ROUND(${TravelHour}, 1),
+                ProjectType='${ProjectType}',
+                UpdatedBy='${UpdatedBy}', 
+                DepartmentId='${Department}' 
             WHERE JobCode='${JobCode}'`)
             if(updateMaxJobHourPerDayResponse.rowsAffected[0] > 0){
                 return {status:true,message:`Successfully updated project`}

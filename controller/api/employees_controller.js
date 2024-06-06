@@ -40,6 +40,33 @@ const employeesApiController = {
             await controllerLogger(req, error)
             return res.status(200).json({status:"failed",last_page:"", data:"",error:error})
         }
+    },
+    updateHourDeductionData:async(req,res)=>{
+        try {
+            let db = req.app.locals.db;
+            let {HoursPerDay,UserID,FromDate,ToDate,UpdatedBy,Department } = req.body
+            let response = await db.query(`
+                UPDATE [TNA_PROXY].[dbo].[Px_UserHourDeduTrn] 
+                SET 
+                    HoursPerDay=ROUND(${HoursPerDay}, 1),
+                    FromDate='${FromDate}', 
+                    ToDate='${ToDate}', 
+                    ProjectType='${ProjectType}',
+                    UpdatedBy='${UpdatedBy}', 
+                    DepartmentId='${Department}' 
+                WHERE UserID='${UserID}'`)
+            if(response.rowsAffected[0] > 0){
+                await controllerLogger(req)
+                return res.status(200).json({status:"ok",error:"",data:{HoursPerDay,UserID,FromDate,ToDate,UpdatedBy,Department }})
+            }else{
+                await controllerLogger(req)
+                return res.status(200).json({status:"not ok",error:"Failed to update updateHourDeductionData",data:{HoursPerDay,UserID,FromDate,ToDate,UpdatedBy,Department }})
+            }
+        } catch (error) {
+            console.log("Error in updateHourDeductionData function : ",error)
+            await controllerLogger(req,error)
+            return res.status(200).json({status:"not ok",error:error.message,data:""})
+        }
     }
 }
 
