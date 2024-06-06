@@ -18,7 +18,7 @@ const employeesApiController = {
                 SELECT *
                 FROM (
                     SELECT
-                        UserID, UserName, HoursPerDay,FromDate,ToDate, DepartmentId, UpdatedBy, UpdatedAt,
+                        UserID, UserName, HoursPerDay,FromDate,ToDate,Remarks, DepartmentId, UpdatedBy, UpdatedAt,
                         ROW_NUMBER() OVER (ORDER BY UserID) AS RowNum
                     FROM [TNA_PROXY].[dbo].[Px_UserHourDeduTrn]
                     ${whereClause}
