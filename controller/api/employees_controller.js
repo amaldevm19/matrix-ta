@@ -2,13 +2,14 @@
 const employeesApiController = {
     hourDeductionPageData:async(req,res)=>{
         try {
-
+            
             let db = req.app.locals.db;
             let page = req.query.page;
             let pageSize = req.query.size;
             let searchField = req.query.searchField;
             let firstRow = ((page-1) * pageSize)+1
             let lastRow = page * pageSize;
+            console.log(`page : ${page}, pageSize : ${pageSize}, searchField : ${searchField} `)
             let whereClause = ''
             if(searchField){
                 whereClause = `WHERE UserID LIKE '%${searchField}%' OR UserName LIKE '%${searchField}%' OR UpdatedBy LIKE '%${searchField}%'`
