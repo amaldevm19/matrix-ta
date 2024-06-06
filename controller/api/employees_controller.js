@@ -2,7 +2,6 @@
 const employeesApiController = {
     hourDeductionPageData:async(req,res)=>{
         try {
-            
             let db = req.app.locals.db;
             let page = req.query.page;
             let pageSize = req.query.size;

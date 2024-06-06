@@ -172,8 +172,8 @@
             const schema = joi.object({
                 RowNum: joi.number(),
                 HoursPerDay: joi.number().min(0).max(24).precision(2).required(),
-                FromDate: joi.string().pattern(datePattern).messages({"FromDate must be in the format YYYY-MM-DD"}).required(),
-                ToDate: joi.string().pattern(datePattern).messages({"FromDate must be in the format YYYY-MM-DD"}).required(),
+                FromDate: joi.string().pattern(datePattern).required(),
+                ToDate: joi.string().pattern(datePattern).required(),
                 Remarks: joi.string(),
                 DepartmentId: joi.number()
             });
