@@ -708,30 +708,31 @@ const transactionController = {
                         }
                     }
                 }
-                console.log(JSON.parse(finalData))
+                //console.log(JSON.parse(finalData))
                 
-                return res.status(200).json({status:"ok", last_page, data: [
-                    {
-                        "HcmWorker_PersonnelNumber":"SRU00111",
-                        "projId":"SRU-00229",
-                        "01":8.5,
-                        "02":9.5,
-                        "03":8.5,
-                        "04":9.5
-                    },
-                    {
-                        "HcmWorker_PersonnelNumber":"SRU00112",
-                        "projId":"SRU-00229",
-                        "01":8.5,
-                        "02":9.5
-                    },
-                    {
-                        "HcmWorker_PersonnelNumber":"SRU00112",
-                        "projId":"SRU-00228",
-                        "03":8.5,
-                        "04":9.5
-                    }
-                ]});
+                // return res.status(200).json({status:"ok", last_page, data: [
+                //     {
+                //         "HcmWorker_PersonnelNumber":"SRU00111",
+                //         "projId":"SRU-00229",
+                //         "01":8.5,
+                //         "02":9.5,
+                //         "03":8.5,
+                //         "04":9.5
+                //     },
+                //     {
+                //         "HcmWorker_PersonnelNumber":"SRU00112",
+                //         "projId":"SRU-00229",
+                //         "01":8.5,
+                //         "02":9.5
+                //     },
+                //     {
+                //         "HcmWorker_PersonnelNumber":"SRU00112",
+                //         "projId":"SRU-00228",
+                //         "03":8.5,
+                //         "04":9.5
+                //     }
+                // ]});
+                return res.status(200).json({status:"ok", last_page, data:finalData });
 
             } catch (error) {
                 throw error;
