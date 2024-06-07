@@ -724,11 +724,10 @@ const transactionController = {
                 ]});
 
             } catch (error) {
-                await transaction.rollback();
                 throw error;
             }
         } catch (error) {
-            console.log("Error in getErpPendingData function : ", error.message)
+            console.log("Error in getErpTransactionPendingHorizontalData function : ", error.message)
             await controllerLogger(req, error)
             return res.status(400).json({status:"not ok",error:error, data:""})
         }
