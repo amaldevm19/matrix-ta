@@ -43,10 +43,12 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
                 'Timesheet' AS CategoryId,
                 JPC.MaxJobHourPerDay AS MaxJobHourPerDay,
                 JPC.BreakHour AS BreakHour,
-                JPC.TravelHour AS TravelHour
+                JPC.TravelHour AS TravelHour,
+                UHD.HoursPerDay AS DeductionHours
                                 
             FROM [TNA_PROXY].[dbo].[Px_TimesheetMst] AS TSM
             LEFT JOIN [TNA_PROXY].[dbo].[Px_JPCJobMst] AS JPC ON TSM.JobCode = JPC.JobCode
+            LEFT JOIN [TNA_PROXY].[dbo].[Px_UserHourDeduTrn] AS UHD ON TSM.UserID = UHD.UserID
             WHERE
                 PDate BETWEEN '${FromDate}' AND '${ToDate}'
                 AND UserID IS NOT NULL 
@@ -74,8 +76,9 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
                     CAST( 
                         CASE  
                             WHEN Source.TotalHours < 8.0 THEN Source.TotalHours  
-                            WHEN Target.TotalHours > MaxJobHourPerDay OR Source.TotalHours-COALESCE(BreakHour, 1)-COALESCE(TravelHour, 0) > MaxJobHourPerDay THEN MaxJobHourPerDay
-                            ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0)
+                            WHEN Target.TotalHours > MaxJobHourPerDay 
+                                OR Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0)-COALESCE(DeductionHours, 0) > MaxJobHourPerDay THEN MaxJobHourPerDay
+                            ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0) - COALESCE(DeductionHours, 0)
                     END AS decimal(4, 1))
             OR Target.projId <> Source.projId) AND Target.SyncCompleted = 0
         ) THEN
@@ -83,8 +86,9 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
             TotalHours = CAST(
                         CASE 
                             WHEN Source.TotalHours < 8.0 THEN Source.TotalHours 
-                            WHEN Target.TotalHours > COALESCE(Source.MaxJobHourPerDay, Target.TotalHours) OR Source.TotalHours-COALESCE(BreakHour, 1)-COALESCE(TravelHour, 0) > COALESCE(Source.MaxJobHourPerDay, Source.TotalHours)  THEN MaxJobHourPerDay
-                            ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0)
+                            WHEN Target.TotalHours > COALESCE(Source.MaxJobHourPerDay, Target.TotalHours) 
+                                OR Source.TotalHours-COALESCE(BreakHour, 1)-COALESCE(TravelHour, 0) - COALESCE(DeductionHours, 0) > COALESCE(Source.MaxJobHourPerDay, Source.TotalHours)  THEN MaxJobHourPerDay
+                            ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0) - COALESCE(DeductionHours, 0)
                         END AS decimal(4, 1)),
             projId = Source.projId
         WHEN NOT MATCHED THEN
@@ -111,8 +115,8 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
                 Source.projId,
                 CASE
                     WHEN Source.TotalHours < 8.0 THEN Source.TotalHours
-                    WHEN Source.TotalHours-COALESCE(BreakHour, 1)-COALESCE(TravelHour, 0) > COALESCE(Source.MaxJobHourPerDay, Source.TotalHours) THEN COALESCE(Source.MaxJobHourPerDay, Source.TotalHours)
-                    ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0)
+                    WHEN Source.TotalHours-COALESCE(BreakHour, 1)-COALESCE(TravelHour, 0) - COALESCE(DeductionHours, 0) > COALESCE(Source.MaxJobHourPerDay, Source.TotalHours) THEN COALESCE(Source.MaxJobHourPerDay, Source.TotalHours)
+                    ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0)-COALESCE(DeductionHours, 0)
                 END,
                 Source.BranchId,
                 Source.DepartmentId,
