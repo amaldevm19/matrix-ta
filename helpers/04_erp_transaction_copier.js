@@ -25,7 +25,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
             MERGE INTO [TNA_PROXY].[dbo].[Px_ERPTransactionMst] AS Target
             USING (
             SELECT
-                UserID AS HcmWorker_PersonnelNumber,
+                TSM.UserID AS HcmWorker_PersonnelNumber,
                 PDate AS TransDate,
                 TSM.JobCode AS projId,
                 CASE 
