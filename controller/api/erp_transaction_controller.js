@@ -708,7 +708,7 @@ const transactionController = {
                         }
                     }
                 }
-                console.log(finalData)
+                console.log(JSON.parse(JSON.stringify(finalData)))
                 
                 return res.status(200).json({status:"ok", last_page, data: [
                     {
