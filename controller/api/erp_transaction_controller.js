@@ -677,8 +677,8 @@ const transactionController = {
                         if(horizontalData.has(element.HcmWorker_PersonnelNumber)){
                             let employee = horizontalData.get(element.HcmWorker_PersonnelNumber)
                             let found = false
-                            for (let index = 0; index < employee.projIds.length; index++) {
-                                const projectIds = employee.projIds[index];
+                            for (let index = 0; index < employee.projIds?.length; index++) {
+                                const projectIds = employee.projectIds[index];
                                 if(projectIds.projId == element.projId){
                                     projectIds.days.push({[day]:element.TotalHours})
                                     found = true;
@@ -687,7 +687,7 @@ const transactionController = {
                                 
                             }
                             if(!found){
-                                employee.projIds.push({projId:element.projId,days:[{[day]:element.TotalHours}]})
+                                employee.projectIds.push({projId:element.projId,days:[{[day]:element.TotalHours}]})
                             }
                         }else{
                             horizontalData.set(element.HcmWorker_PersonnelNumber,
