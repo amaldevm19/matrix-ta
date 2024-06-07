@@ -700,7 +700,10 @@ const transactionController = {
                         }
                     }
                 }
-                console.log(horizontalData);
+                for (let [key, value] of horizontalData) {
+                    console.log(`${key}: ${value}`);
+                }
+                
                 return res.status(200).json({status:"ok", last_page, data: [
                     {
                         "HcmWorker_PersonnelNumber":"SRU00111",
