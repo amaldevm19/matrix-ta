@@ -701,7 +701,7 @@ const transactionController = {
                     }
                 }
                 for (let [key, value] of horizontalData) {
-                    console.log(`${key}: ${value}`);
+                    console.log(`${key}: ${JSON.stringify(value)}`);
                 }
                 
                 return res.status(200).json({status:"ok", last_page, data: [
