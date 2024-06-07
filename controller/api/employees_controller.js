@@ -105,7 +105,7 @@ const employeesApiController = {
                                 '${element.ToDate}' AS ToDate, 
                                 '${element.Remarks}' AS Remarks, 
                                 '${UpdatedBy}' AS UpdatedBy, 
-                                '${element.Department}' AS DepartmentId
+                                '${element.DepartmentId}' AS DepartmentId
                             ) AS source
                     ON (target.UserID = source.UserID)
                     WHEN MATCHED THEN
