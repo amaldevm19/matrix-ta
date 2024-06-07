@@ -17,5 +17,6 @@ router.post("/settings", transactionController.postErpSettings)
 router.put("/settings/:Id", transactionController.updateErpSettings)
 router.delete("/settings/:Id", transactionController.deleteErpSettings)
 
+router.get("/horizontal-report/pending-data", transactionController.getErpTransactionPendingHorizontalData)
 
 module.exports = router;
