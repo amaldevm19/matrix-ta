@@ -258,6 +258,7 @@
             let DesignationId=$('#designation_id').val()
             let SectionId=$('#section_id').val()
             let Error = $("#error").val()
+            console.log(EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId, Error)
             pendingErpTable.setData("/api/erp-transaction/horizontal-report/pending-data", 
                 {page:"1", pageSize:"31",EmployeeId:EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId, Error}
             );
