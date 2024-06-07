@@ -51,14 +51,12 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
             LEFT JOIN [TNA_PROXY].[dbo].[Px_UserHourDeduTrn] AS UHD ON TSM.UserID = UHD.UserID
             WHERE
                 PDate BETWEEN '${FromDate}' AND '${ToDate}'
-                AND TSM.UserID IS NOT NULL 
+                AND TSM.UserID IS NOT NULL AND TSM.UserID <> ''
                 AND PDate IS NOT NULL
-                AND TSM.JobCode IS NOT NULL
+                AND TSM.JobCode IS NOT NULL AND TSM.JobCode <> ''
                 AND TotalJobTime IS NOT NULL
-                AND UserID <> ''
-                AND TSM.JobCode <> ''
                 AND BranchId = 1
-                AND TotalJobTime > (COALESCE(JPC.BreakHour, 1)*60 + COALESCE(JPC.TravelHour, 0)*60) + 15
+                AND TotalJobTime > (COALESCE(JPC.BreakHour, 1)*60 + COALESCE(JPC.TravelHour, 0)*60) + COALESCE(DeductionHours, 0) + 15
                 --AND TSM.DepartmentId = 2
                 --AND UserCategoryId = 2
                                 
