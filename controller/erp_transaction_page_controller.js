@@ -142,6 +142,63 @@ const erpTransactionPageController = {
             await controllerLogger(req,error);
             return res.redirect("/")
         }
+    },
+    erpTransactionPendingHorizontalPage:async(req, res)=>{
+        try {
+            await ProxyDbPool.connect();
+            const transaction = new sql.Transaction(ProxyDbPool);
+            try {
+                await transaction.begin();
+                let Department = await ProxyDbPool.request().query(`
+                SELECT DPTID, Name
+                FROM [COSEC].[dbo].[Mx_DepartmentMst]
+                `);
+                await transaction.commit();
+                await transaction.begin();
+                let UserCategory = await ProxyDbPool.request().query(`
+                SELECT CG1ID, Name
+                FROM [COSEC].[dbo].[Mx_CustomGroup1Mst]
+                `);
+                await transaction.commit();
+                await transaction.begin();
+                let Designation = await ProxyDbPool.request().query(`
+                SELECT DSGID, Name
+                FROM [COSEC].[dbo].[Mx_DesignationMst]
+                `);
+                await transaction.commit();
+                await transaction.begin();
+                let Section = await ProxyDbPool.request().query(`
+                SELECT SECID, Name
+                FROM [COSEC].[dbo].[Mx_SectionMst]
+                `);
+                await transaction.commit();
+                await transaction.begin();
+                let Category = await ProxyDbPool.request().query(`
+                SELECT CTGID, Name
+                FROM [COSEC].[dbo].[Mx_CategoryMst]
+                `);
+                await transaction.commit();
+                await transaction.begin();
+                await controllerLogger(req);
+                return res.render("erpTransaction/horizontal_report", {page_header:"ERP Timesheet Data for Sync",
+                    Department:Department.recordset,
+                    UserCategory:UserCategory.recordset,
+                    Designation:Designation.recordset,
+                    Section:Section.recordset,
+                    Category:Category.recordset
+                });
+            } catch (error) {
+                await transaction.rollback()
+                throw error
+            }
+            
+        } catch (error) {
+            console.log("Error in erpTransactionPendingDataPage function : ",error)
+            await controllerLogger(req,error);
+            return res.render("erpTransaction/pending_page", {page_header:"ERP Timesheet Data Pending"});
+        }finally{
+            ProxyDbPool.close();
+        }
     }
 
 }

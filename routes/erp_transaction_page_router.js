@@ -9,5 +9,6 @@ router.get("/pending-data",erpTransactionPageController.erpTransactionPendingDat
 router.get("/status",erpTransactionPageController.erpTransactionStatusPage)
 router.get("/settings",isAdmin,erpTransactionPageController.erpTransactionSettingsPage)
 router.get("/push-selected",isAdmin,erpTransactionPageController.pushSelectedTimesheetPage)
+router.get("/horizontal-report/pending-data",erpTransactionPageController.erpTransactionPendingHorizontalPage)
 
 module.exports = router;
