@@ -145,40 +145,41 @@ const erpTransactionPageController = {
     },
     erpTransactionPendingHorizontalPage:async(req, res)=>{
         try {
-            await ProxyDbPool.connect();
-            const transaction = new sql.Transaction(ProxyDbPool);
+            let db = req.app.locals.db;
+            // await ProxyDbPool.connect();
+            // const transaction = new sql.Transaction(ProxyDbPool);
             try {
-                await transaction.begin();
-                let Department = await ProxyDbPool.request().query(`
+                // await transaction.begin();
+                let Department = await db.query(`
                 SELECT DPTID, Name
                 FROM [COSEC].[dbo].[Mx_DepartmentMst]
                 `);
-                await transaction.commit();
-                await transaction.begin();
-                let UserCategory = await ProxyDbPool.request().query(`
+                // await transaction.commit();
+                // await transaction.begin();
+                let UserCategory = await db.query(`
                 SELECT CG1ID, Name
                 FROM [COSEC].[dbo].[Mx_CustomGroup1Mst]
                 `);
-                await transaction.commit();
-                await transaction.begin();
-                let Designation = await ProxyDbPool.request().query(`
+                // await transaction.commit();
+                // await transaction.begin();
+                let Designation = await db.query(`
                 SELECT DSGID, Name
                 FROM [COSEC].[dbo].[Mx_DesignationMst]
                 `);
-                await transaction.commit();
-                await transaction.begin();
-                let Section = await ProxyDbPool.request().query(`
+                // await transaction.commit();
+                // await transaction.begin();
+                let Section = await db.query(`
                 SELECT SECID, Name
                 FROM [COSEC].[dbo].[Mx_SectionMst]
                 `);
-                await transaction.commit();
-                await transaction.begin();
-                let Category = await ProxyDbPool.request().query(`
+                // await transaction.commit();
+                // await transaction.begin();
+                let Category = await db.query(`
                 SELECT CTGID, Name
                 FROM [COSEC].[dbo].[Mx_CategoryMst]
                 `);
-                await transaction.commit();
-                await transaction.begin();
+                // await transaction.commit();
+                // await transaction.begin();
                 await controllerLogger(req);
                 return res.render("erpTransaction/horizontal_report", {page_header:"ERP Timesheet Data for Sync",
                     Department:Department.recordset,
@@ -196,8 +197,6 @@ const erpTransactionPageController = {
             console.log("Error in erpTransactionPendingDataPage function : ",error)
             await controllerLogger(req,error);
             return res.render("erpTransaction/pending_page", {page_header:"ERP Timesheet Data Pending"});
-        }finally{
-            ProxyDbPool.close();
         }
     }
 
