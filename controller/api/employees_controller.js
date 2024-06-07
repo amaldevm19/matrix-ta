@@ -120,6 +120,7 @@ const employeesApiController = {
                         INSERT (UserID, UserName, HoursPerDay, FromDate, ToDate, Remarks, UpdatedBy, DepartmentId)
                         VALUES (source.UserID, source.UserName, source.HoursPerDay, source.FromDate, source.ToDate, source.Remarks, source.UpdatedBy, source.DepartmentId);
                 `)
+                console.log(response);
                 if(response.rowsAffected[0] > 0){
                     responseStatus.push({
                         RowNum:element.RowNum,
