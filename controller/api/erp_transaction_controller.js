@@ -696,9 +696,19 @@ const transactionController = {
                         }
                     }
                 }
+                let finalData =[]
                 for (let [key, value] of horizontalData) {
-                    console.log(`${key}: ${JSON.stringify(value)}`);
+                    //console.log(`${key}: ${JSON.stringify(value)}`);
+                    for (let index = 0; index < value.projectIds.length; index++) {
+                        const element = value.projectIds[index];
+                        finalData.push({HcmWorker_PersonnelNumber:key,projId:element.projId})
+                        for (let index = 0; index < element.days.length; index++) {
+                            const day = element.days[index];
+                            finalData[finalData.length-1]={...finalData[finalData.length-1],...day}
+                        }
+                    }
                 }
+                console.log(finalData)
                 
                 return res.status(200).json({status:"ok", last_page, data: [
                     {
