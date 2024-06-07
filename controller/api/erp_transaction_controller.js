@@ -672,21 +672,22 @@ const transactionController = {
                 let last_page = Math.ceil(totalCount.recordset[0].TotalRowCount / size);
                 await controllerLogger(req);
                 let horizontalData = new Map();
-                console.log(result.recordset)
-                // if(result.recordset.length > 0){
-                //     for (let index = 0; index < result.recordset.length; index++) {
-                //         const element = result.recordset[index];
-                //         let day = element.TransDate.split("")
-                //         if(horizontalData.has(element.HcmWorker_PersonnelNumber)){
-                //             if(horizontalData.get(element.HcmWorker_PersonnelNumber).projId == element.projId){
+                // console.log(result.recordset)
+                if(result.recordset.length > 0){
+                    for (let index = 0; index < result.recordset.length; index++) {
+                        const element = result.recordset[index];
+                        let day = element.TransDate.toISOString().split("T")[0].split("-")[2]
+                        console.log(day)
+                        // if(horizontalData.has(element.HcmWorker_PersonnelNumber)){
+                        //     if(horizontalData.get(element.HcmWorker_PersonnelNumber).projId == element.projId){
 
-                //             }
-                //         }
-                //         horizontalData.set(element.HcmWorker_PersonnelNumber,[])
+                        //     }
+                        // }
+                        // horizontalData.set(element.HcmWorker_PersonnelNumber,[])
                         
-                //     }
+                    }
 
-                // }
+                }
                 return res.status(200).json({status:"ok", last_page, data: [
                     {
                         "HcmWorker_PersonnelNumber":"SRU00111",
