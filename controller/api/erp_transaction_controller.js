@@ -668,7 +668,7 @@ const transactionController = {
                 let last_page = Math.ceil(totalCount.recordset[0].TotalRowCount / size);
                 await controllerLogger(req);
                 let horizontalData = new Map();
-                console.log(result.recordset)
+                //console.log(result.recordset)
                 if(result.recordset?.length > 0){
                     for (let index = 0; index < result.recordset.length; index++) {
                         const element = result.recordset[index];
@@ -696,9 +696,9 @@ const transactionController = {
                         }
                     }
                 }
-                // for (let [key, value] of horizontalData) {
-                //     console.log(`${key}: ${JSON.stringify(value)}`);
-                // }
+                for (let [key, value] of horizontalData) {
+                    console.log(`${key}: ${JSON.stringify(value)}`);
+                }
                 
                 return res.status(200).json({status:"ok", last_page, data: [
                     {
