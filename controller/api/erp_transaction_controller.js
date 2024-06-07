@@ -720,7 +720,7 @@ const transactionController = {
                         }
                     }
                 }
-                console.log(finalData)
+               // console.log(finalData)
                 return res.status(200).json({status:"ok", last_page, data:finalData });
 
             } catch (error) {
