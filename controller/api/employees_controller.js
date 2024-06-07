@@ -9,7 +9,7 @@ const employeesApiController = {
             let searchField = req.query.searchField;
             let firstRow = ((page-1) * pageSize)+1
             let lastRow = page * pageSize;
-            console.log(`page : ${page}, pageSize : ${pageSize}, searchField : ${searchField} `)
+            // console.log(`page : ${page}, pageSize : ${pageSize}, searchField : ${searchField} `)
             let whereClause = ''
             if(searchField){
                 whereClause = `WHERE UserID LIKE '%${searchField}%' OR UserName LIKE '%${searchField}%' OR UpdatedBy LIKE '%${searchField}%'`
