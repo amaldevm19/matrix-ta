@@ -178,6 +178,28 @@
             ],
         });
 
+        function daysInCurrentMonth() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1; // getMonth() returns 0-based month index, so add 1
+
+            return new Date(year, month, 0).getDate();
+        }
+        switch (daysInCurrentMonth()){
+            case 30:
+                pendingErpTable.hideColumn(31)
+                break;
+            case 29:
+                pendingErpTable.hideColumn(31)
+                pendingErpTable.hideColumn(30)
+                break;
+            case 28:
+                pendingErpTable.hideColumn(31)
+                pendingErpTable.hideColumn(30)
+                pendingErpTable.hideColumn(29)
+                break;
+        }
+
         let temppendingErpTable = new Tabulator("#temppendingErpTable", {
             columns:[
                 {title:"Sl#", field:"example", formatter:"rownum"},
