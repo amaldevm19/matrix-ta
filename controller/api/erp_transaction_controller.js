@@ -609,14 +609,12 @@ const transactionController = {
     },
     getErpTransactionPendingHorizontalData:async(req,res)=>{
         try {
-            await ProxyDbPool.connect();
-            const transaction = new sql.Transaction(ProxyDbPool);
+            let db = req.app.locals.db;
             try {
                 let {page,size, EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,Error} = req.query;
                 let firstRow = ((page-1) * size)+1
                 let lastRow = page * size;
-                await transaction.begin();
-                let result = await ProxyDbPool.request().query(`
+                let result = await db.query(`
                 SELECT 
                     Subquery.*,
                     DepartmentMst.Name AS DepartmentName,
@@ -651,9 +649,8 @@ const transactionController = {
                 JOIN [COSEC].[dbo].[Mx_BranchMst] AS BranchMst ON Subquery.BranchId = BranchMst.BRCID
                 WHERE RowNum BETWEEN ${firstRow} AND ${lastRow}
                 `);
-                await transaction.commit();
-                await transaction.begin();
-                let totalCount = await ProxyDbPool.request().query( `
+               
+                let totalCount = await db.query( `
                 SELECT COUNT(*) AS TotalRowCount 
                 FROM [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
                 WHERE 
@@ -668,7 +665,6 @@ const transactionController = {
                     (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
                     SyncCompleted=0
                 `)
-                await transaction.commit();
                 let last_page = Math.ceil(totalCount.recordset[0].TotalRowCount / size);
                 await controllerLogger(req);
                 let horizontalData = new Map();
@@ -735,8 +731,6 @@ const transactionController = {
             console.log("Error in getErpPendingData function : ", error.message)
             await controllerLogger(req, error)
             return res.status(400).json({status:"not ok",error:error, data:""})
-        }finally{
-            ProxyDbPool.close();
         }
     },
 }
