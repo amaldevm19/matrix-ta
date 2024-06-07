@@ -677,17 +677,30 @@ const transactionController = {
                     for (let index = 0; index < result.recordset.length; index++) {
                         const element = result.recordset[index];
                         let day = element.TransDate.toISOString().split("T")[0].split("-")[2]
-                        console.log(day)
-                        // if(horizontalData.has(element.HcmWorker_PersonnelNumber)){
-                        //     if(horizontalData.get(element.HcmWorker_PersonnelNumber).projId == element.projId){
-
-                        //     }
-                        // }
-                        // horizontalData.set(element.HcmWorker_PersonnelNumber,[])
-                        
+                        //console.log(day)
+                        if(horizontalData.has(element.HcmWorker_PersonnelNumber)){
+                            let employee = horizontalData.get(element.HcmWorker_PersonnelNumber)
+                            let found = false
+                            for (let index = 0; index < employee.projIds.length; index++) {
+                                const projectIds = employee.projIds[index];
+                                if(projectIds.projId == element.projId){
+                                    projectIds.days.push({[day]:element.TotalHours})
+                                    found = true;
+                                    break;
+                                }
+                                
+                            }
+                            if(!found){
+                                employee.projIds.push({projId:element.projId,days:[{[day]:element.TotalHours}]})
+                            }
+                        }else{
+                            horizontalData.set(element.HcmWorker_PersonnelNumber,
+                                {projectIds:[{projId:element.projId,days:[{[day]:element.TotalHours}]}]}
+                            )
+                        }
                     }
-
                 }
+                console.log(horizontalData);
                 return res.status(200).json({status:"ok", last_page, data: [
                     {
                         "HcmWorker_PersonnelNumber":"SRU00111",
