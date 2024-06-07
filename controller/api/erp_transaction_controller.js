@@ -709,10 +709,10 @@ const transactionController = {
                         finalData.push({
                             HcmWorker_PersonnelNumber:key,
                             projId:element.projId,
-                            DepartmentName:element.DepartmentName,
-                            UserCategoryName:element.UserCategoryName,
-                            DesignationName:element.DesignationName,
-                            SectionName:element.SectionName,
+                            DepartmentName:value.DepartmentName,
+                            UserCategoryName:value.UserCategoryName,
+                            DesignationName:value.DesignationName,
+                            SectionName:value.SectionName,
                         })
                         for (let index = 0; index < element.days.length; index++) {
                             const day = element.days[index];
