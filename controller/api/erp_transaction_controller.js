@@ -701,10 +701,10 @@ const transactionController = {
                     //console.log(`${key}: ${JSON.stringify(value)}`);
                     for (let index = 0; index < value.projectIds.length; index++) {
                         const element = value.projectIds[index];
-                        finalData.push({HcmWorker_PersonnelNumber:key,projId:element.projId})
+                        let baseData =  {HcmWorker_PersonnelNumber:key,projId:element.projId}
                         for (let index = 0; index < element.days.length; index++) {
                             const day = element.days[index];
-                            finalData[finalData.length-1]={...finalData[finalData.length-1],...day}
+                            finalData.push({ ...baseData, ...day });
                         }
                     }
                 }
