@@ -684,14 +684,19 @@ const transactionController = {
                                     found = true;
                                     break;
                                 }
-                                
                             }
                             if(!found){
                                 employee.projectIds.push({projId:element.projId,days:[{[day]:element.TotalHours}]})
                             }
                         }else{
                             horizontalData.set(element.HcmWorker_PersonnelNumber,
-                                {projectIds:[{projId:element.projId,days:[{[day]:element.TotalHours}]}]}
+                                {
+                                    projectIds:[{projId:element.projId,days:[{[day]:element.TotalHours}]}],
+                                    DepartmentName:element.DepartmentName,
+                                    UserCategoryName:element.UserCategoryName,
+                                    DesignationName:element.DesignationName,
+                                    SectionName:element.SectionName,
+                                }
                             )
                         }
                     }
@@ -701,37 +706,20 @@ const transactionController = {
                     //console.log(`${key}: ${JSON.stringify(value)}`);
                     for (let index = 0; index < value.projectIds.length; index++) {
                         const element = value.projectIds[index];
-                        finalData.push({HcmWorker_PersonnelNumber:key,projId:element.projId})
+                        finalData.push({
+                            HcmWorker_PersonnelNumber:key,
+                            projId:element.projId,
+                            DepartmentName:element.DepartmentName,
+                            UserCategoryName:element.UserCategoryName,
+                            DesignationName:element.DesignationName,
+                            SectionName:element.SectionName,
+                        })
                         for (let index = 0; index < element.days.length; index++) {
                             const day = element.days[index];
                             finalData[finalData.length-1]={...finalData[finalData.length-1],...day}
                         }
                     }
                 }
-                //console.log(JSON.parse(finalData))
-                
-                // return res.status(200).json({status:"ok", last_page, data: [
-                //     {
-                //         "HcmWorker_PersonnelNumber":"SRU00111",
-                //         "projId":"SRU-00229",
-                //         "01":8.5,
-                //         "02":9.5,
-                //         "03":8.5,
-                //         "04":9.5
-                //     },
-                //     {
-                //         "HcmWorker_PersonnelNumber":"SRU00112",
-                //         "projId":"SRU-00229",
-                //         "01":8.5,
-                //         "02":9.5
-                //     },
-                //     {
-                //         "HcmWorker_PersonnelNumber":"SRU00112",
-                //         "projId":"SRU-00228",
-                //         "03":8.5,
-                //         "04":9.5
-                //     }
-                // ]});
                 return res.status(200).json({status:"ok", last_page, data:finalData });
 
             } catch (error) {
