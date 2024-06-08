@@ -8,7 +8,8 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
       try {
             if(!FromDate){
                 FromDate = new Date();
-                FromDate.setDate(FromDate.getDate() - 32);
+                FromDate.setDate(26);
+                //FromDate.setDate(FromDate.getDate() - 32);
                 FromDate.setUTCHours(0, 0, 0, 0);
                 FromDate = FromDate.toISOString().replace("T"," ").replace("Z","")
             }
