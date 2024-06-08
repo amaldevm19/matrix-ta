@@ -7,11 +7,22 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
     try {
       try {
             if(!FromDate){
-                FromDate = new Date();
+                let FromDate = new Date();
+                // Set to the 26th of the current month
                 FromDate.setDate(26);
-                //FromDate.setDate(FromDate.getDate() - 32);
+                // Check if the month is January
+                if (FromDate.getMonth() === 0) {
+                    // If it's January, set to December of the previous year
+                    FromDate.setFullYear(FromDate.getFullYear() - 1);
+                    FromDate.setMonth(11); // December is month 11 (0-based index)
+                } else {
+                    // Otherwise, set to the previous month
+                    FromDate.setMonth(FromDate.getMonth() - 1);
+                }
+                // Set the time to UTC 00:00:00
                 FromDate.setUTCHours(0, 0, 0, 0);
-                FromDate = FromDate.toISOString().replace("T"," ").replace("Z","")
+                // Format the date as required
+                FromDate = FromDate.toISOString().replace("T", " ").replace("Z", "");
             }
             if(!ToDate){
                 ToDate = new Date();
