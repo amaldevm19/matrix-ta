@@ -7,7 +7,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
     try {
       try {
             if(!FromDate){
-                let FromDate = new Date();
+                FromDate = new Date();
                 // Set to the 26th of the current month
                 FromDate.setDate(26);
                 // Check if the month is January
