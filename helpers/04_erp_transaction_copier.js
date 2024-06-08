@@ -67,8 +67,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
                 SUBSTRING(Source.HcmWorker_PersonnelNumber, PATINDEX('%[0-9]%', Source.HcmWorker_PersonnelNumber), LEN(Source.HcmWorker_PersonnelNumber))
             )
             AND Target.TransDate = Source.TransDate
-            AND Target.projId = Source.projId
-
+            AND Target.SyncCompleted = 0
             WHEN MATCHED AND (
                 (CAST(Target.TotalHours AS decimal(4, 1)) <> 
                     CAST( 
@@ -78,7 +77,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
                                 OR Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0)-COALESCE(DeductionHours, 0) > MaxJobHourPerDay THEN MaxJobHourPerDay
                             ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0) - COALESCE(DeductionHours, 0)
                     END AS decimal(4, 1))
-            OR Target.projId <> Source.projId) AND Target.SyncCompleted = 0
+            OR Target.projId <> Source.projId) 
         ) THEN
         UPDATE SET
             TotalHours = CAST(
