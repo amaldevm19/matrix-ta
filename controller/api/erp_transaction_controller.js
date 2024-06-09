@@ -770,7 +770,6 @@ const transactionController = {
             JOIN [COSEC].[dbo].[Mx_DesignationMst] AS DesignationMst ON Subquery.DesignationId = DesignationMst.DSGID
             JOIN [COSEC].[dbo].[Mx_SectionMst] AS SectionMst ON Subquery.SectionId = SectionMst.SECID
             JOIN [COSEC].[dbo].[Mx_BranchMst] AS BranchMst ON Subquery.BranchId = BranchMst.BRCID
-            WHERE RowNum BETWEEN ${firstRow} AND ${lastRow}
             `);
             
             await controllerLogger(req);
