@@ -6,5 +6,6 @@ const {bioTimesheetPageController} = require("../controller/bio_timesheet_page_c
 
 
 router.get("/",bioTimesheetPageController.bioTimesheetHomePage)
+router.get("/horizontal-report/pending-data",bioTimesheetPageController.bioTimesheetReportHorizontalPage)
 
 module.exports = router;
