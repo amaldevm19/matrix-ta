@@ -8,7 +8,7 @@
     <div class="col-2">
         <button class="btn btn-outline-success" type="button" id="download_table">Download Table</button>
     </div>
-    <div class="col-2" id="timeDateDisplay"><h6>From: 26-05-2024 To: 18-06-2024</h6></div>
+    <div class="col-4" id="timeDateDisplay"><h6><span id="timeDateDisplaySpan"></span></h6></div>
 </div>
 
 <div id="loading-indicator">
@@ -217,7 +217,9 @@
             let SectionId=$('#section_id').val()
             bioTimesheetTable.setData("/api/bio-timesheet/horizontal-report/pending-data", 
                 {page:"1", pageSize:"500",EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId}
-            );
+            ).then(()=>{
+                let timeDateDisplaySpan = $("#timeDateDisplaySpan").val(`From: ${FromDate} To: ${ToDate}`)
+            });
         });
 
         $("#update_table").click(function(e){
