@@ -162,7 +162,7 @@
                 {title:"25", field:"25"},
                 {title:"Total", field:"total",mutatorData:function(value, data){
                     for (const property in data) {
-                    console.log(`${property}: ${object[property]}`);
+                    console.log(`${property}: ${data[property]}`);
                     }
 
                     return 100;
@@ -177,7 +177,7 @@
         function daysInCurrentMonth() {
             const now = new Date();
             const year = now.getFullYear();
-            const month = now.getMonth(); // getMonth() returns 0-based month index, so add 1
+            let month = now.getMonth(); // getMonth() returns 0-based month index, so add 1
             month = month==0?12:month;
             return new Date(year, month, 0).getDate();
         }
