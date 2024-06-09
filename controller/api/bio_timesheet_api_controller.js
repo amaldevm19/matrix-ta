@@ -305,6 +305,7 @@ const bioTimesheetController ={
                             horizontalData.set(element.UserID,
                                 {
                                     JobCodes:[{JobCode:element.JobCode,days:[{[day]:hour}]}],
+                                    Name:element.Name,
                                     DepartmentName:element.DepartmentName,
                                     UserCategoryName:element.UserCategoryName,
                                     DesignationName:element.DesignationName,
@@ -322,6 +323,7 @@ const bioTimesheetController ={
                         finalData.push({
                             UserID:key,
                             JobCode:element.JobCode,
+                            Name:value.Name,
                             DepartmentName:value.DepartmentName,
                             UserCategoryName:value.UserCategoryName,
                             DesignationName:value.DesignationName,
@@ -422,6 +424,7 @@ const bioTimesheetController ={
                         horizontalData.set(element.UserID,
                             {
                                 JobCodes:[{JobCode:element.JobCode,days:[{[day]:hour}]}],
+                                Name:element.Name,
                                 DepartmentName:element.DepartmentName,
                                 UserCategoryName:element.UserCategoryName,
                                 DesignationName:element.DesignationName,
@@ -438,6 +441,7 @@ const bioTimesheetController ={
                     const element = value.JobCodes[index];
                     finalData.push({
                         UserID:key,
+                        Name:value.Name,
                         JobCode:element.JobCode,
                         DepartmentName:value.DepartmentName,
                         UserCategoryName:value.UserCategoryName,
