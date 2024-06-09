@@ -808,12 +808,14 @@ const transactionController = {
                 }
             }
             let finalData =[]
+            let rownum = 0
             for (let [key, value] of horizontalData) {
                 //console.log(`${key}: ${JSON.stringify(value)}`);
                 for (let index = 0; index < value.projectIds.length; index++) {
                     const element = value.projectIds[index];
                     finalData.push({
                         HcmWorker_PersonnelNumber:key,
+                        rownum:rownum+1,
                         projId:element.projId,
                         DepartmentName:value.DepartmentName,
                         UserCategoryName:value.UserCategoryName,
@@ -921,12 +923,14 @@ const transactionController = {
                 }
             }
             let finalData =[]
+            let rownum = 0
             for (let [key, value] of horizontalData) {
                 //console.log(`${key}: ${JSON.stringify(value)}`);
                 for (let index = 0; index < value.projectIds.length; index++) {
                     const element = value.projectIds[index];
                     finalData.push({
                         HcmWorker_PersonnelNumber:key,
+                        rownum:rownum+1,
                         projId:element.projId,
                         DepartmentName:value.DepartmentName,
                         UserCategoryName:value.UserCategoryName,
