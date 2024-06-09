@@ -451,7 +451,7 @@ const bioTimesheetController ={
                 }
             }
            // console.log(finalData)
-            return res.status(200).json({status:"ok", last_page, data:finalData });
+            return res.status(200).json({status:"ok", data:finalData ,error:''});
         } catch (error) {
             console.log("Error in downloadHorizontalTimesheetData function : ", error);
             await controllerLogger(req, error)
