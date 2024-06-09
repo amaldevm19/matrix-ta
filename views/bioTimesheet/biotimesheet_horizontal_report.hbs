@@ -217,8 +217,8 @@
             let SectionId=$('#section_id').val()
             bioTimesheetTable.setData("/api/bio-timesheet/horizontal-report/pending-data", 
                 {page:"1", pageSize:"500",EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId}
-            ).then(()=>{
-                let timeDateDisplaySpan = $("#timeDateDisplaySpan").val(`From: ${FromDate} To: ${ToDate}`)
+            ).then(function() {
+                $("#timeDateDisplaySpan").val(`From: ${FromDate} To: ${ToDate}`)
             });
         });
 
