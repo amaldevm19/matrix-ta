@@ -218,6 +218,7 @@
             bioTimesheetTable.setData("/api/bio-timesheet/horizontal-report/pending-data", 
                 {page:"1", pageSize:"500",EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId}
             ).then(function() {
+                console.log(`From: ${FromDate} To: ${ToDate}`)
                 $("#timeDateDisplaySpan").val(`From: ${FromDate} To: ${ToDate}`)
             });
         });
