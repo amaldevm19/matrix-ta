@@ -161,7 +161,10 @@
                 {title:"24", field:"21"},
                 {title:"25", field:"25"},
                 {title:"Total", field:"total",mutatorData:function(value, data){
-                    console.log(data)
+                    for (const property in data) {
+                    console.log(`${property}: ${object[property]}`);
+                    }
+
                     return 100;
                 },},
                 {title:"Department", field:"DepartmentName"},
