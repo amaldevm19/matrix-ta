@@ -170,7 +170,8 @@
         function daysInCurrentMonth() {
             const now = new Date();
             const year = now.getFullYear();
-            const month = now.getMonth() + 1; // getMonth() returns 0-based month index, so add 1
+            const month = now.getMonth(); // getMonth() returns 0-based month index, so add 1
+            month = month==0?12:month;
             return new Date(year, month, 0).getDate();
         }
         bioTimesheetTable.on("tableBuilt", function(){
