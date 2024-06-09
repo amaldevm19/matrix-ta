@@ -122,7 +122,7 @@
                 let SectionId=$('#section_id').val()
                 return {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId};
             },
-            paginationSize:31,
+            paginationSize:500,
             paginationInitialPage:1,
             paginationSizeSelector:[10, 25, 30,31, 50, 100, 500, 1000, 5000],
             columns:[
@@ -215,7 +215,7 @@
             let DesignationId=$('#designation_id').val()
             let SectionId=$('#section_id').val()
             bioTimesheetTable.setData("/api/bio-timesheet/horizontal-report/pending-data", 
-                {page:"1", pageSize:"31",EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId}
+                {page:"1", pageSize:"500",EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId}
             );
         });
 

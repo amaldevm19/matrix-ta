@@ -406,7 +406,10 @@ const bioTimesheetController ={
                         let found = false
                         for (let index = 0; index < employee.JobCodes?.length; index++) {
                             const JobCodes = employee.JobCodes[index];
-                            if(JobCodes.JobCode == element.JobCode){
+                            if(!JobCodes.JobCode && element.JobCode){
+                                JobCodes.JobCode = element.JobCode
+                            }
+                            if( JobCodes.JobCode == element.JobCode || (!element.JobCode && !element.TotalJobTime)){
                                 JobCodes.days.push({[day]:hour})
                                 found = true;
                                 break;
