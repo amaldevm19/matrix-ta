@@ -23,6 +23,7 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
             SELECT
                 DateRangeCTE.PDate,
                 MxUser.UserID,
+                MxUser.Name,
                 MxUser.BRCID,
                 MxUser.DPTID,
                 MxUser.CG1ID,
@@ -36,7 +37,7 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
             FROM
                 DateRangeCTE
             CROSS JOIN (
-                SELECT UserID, BRCID, DPTID, CG1ID, CTGID,DSGID,SECID,CG3ID
+                SELECT UserID, Name, BRCID, DPTID, CG1ID, CTGID,DSGID,SECID,CG3ID
                 FROM [COSEC].[dbo].[Mx_UserMst]
                 WHERE BRCID = '1' AND UserIDEnbl = '1' 
             ) AS MxUser
@@ -48,6 +49,7 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
             GROUP BY
                 DateRangeCTE.PDate,
                 MxUser.UserID,
+                MxUser.Name,
                 MxUser.BRCID,
                 MxUser.DPTID,
                 MxUser.CG1ID,
@@ -61,13 +63,14 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
         WHEN MATCHED AND Target.TotalJobTime <> Source.TotalJobTime THEN
             UPDATE SET TotalJobTime = Source.TotalJobTime, JobCode = Source.JobCode
         WHEN NOT MATCHED THEN
-            INSERT (PDate, UserID, BranchId, DepartmentId, UserCategoryId, EmployeeCategoryId, DesignationId, SectionId,CustomGroup3Id, JobCode, TotalJobTime,LeaveID)
-            VALUES (Source.PDate, Source.UserID, Source.BRCID, Source.DPTID, Source.CG1ID, Source.CTGID, Source.DSGID, Source.SECID,Source.CG3ID, Source.JobCode, Source.TotalJobTime,Source.LeaveID);
+            INSERT (PDate, UserID,Name, BranchId, DepartmentId, UserCategoryId, EmployeeCategoryId, DesignationId, SectionId,CustomGroup3Id, JobCode, TotalJobTime,LeaveID)
+            VALUES (Source.PDate, Source.UserID, Source.Name, Source.BRCID, Source.DPTID, Source.CG1ID, Source.CTGID, Source.DSGID, Source.SECID,Source.CG3ID, Source.JobCode, Source.TotalJobTime,Source.LeaveID);
         IF OBJECT_ID('tempdb..#TempTimesheetTable', 'U') IS NOT NULL DROP TABLE #TempTimesheetTable;
         IF OBJECT_ID('tempdb..#TempTimesheetWithoutDuplicates', 'U') IS NOT NULL DROP TABLE #TempTimesheetWithoutDuplicates;
         SELECT DISTINCT
             a.PDate,
             a.UserID,
+            a.Name,
             a.BranchId,
             a.DepartmentId,
             a.UserCategoryId,
@@ -91,6 +94,7 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
             SELECT
                 PDate,
                 UserID,
+                Name,
                 BranchId,
                 DepartmentId,
                 UserCategoryId,
@@ -119,6 +123,7 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
         INSERT INTO [TNA_PROXY].[dbo].[Px_TimesheetMst] 
         (PDate, 
         UserID,
+        Name,
         BranchId,
         DepartmentId,
         UserCategoryId,
@@ -132,6 +137,7 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
         )
         SELECT  PDate, 
                 UserID,
+                Name,
                 BranchId,
                 DepartmentId,
                 UserCategoryId,
