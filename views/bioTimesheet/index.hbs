@@ -122,6 +122,7 @@
             columns:[
                 {title:"Sl#", field:"example", formatter:"rownum"},
                 {title:"Employee Id", field:"UserID", width:150},
+                {title:"Name", field:"Name"},
                 {title:"Attendance Date", field:"PDate",hozAlign:"center",mutatorData:function(value, data){
                     return value.split("T")[0];
                 },},
@@ -162,6 +163,7 @@
         let TempbioTimesheetTable = new Tabulator("#tempbioTimesheetTable", {
             columns:[
                 {title:"Employee Id", field:"UserID", width:150},
+                {title:"Name", field:"Name"},
                 {title:"Attendance Date", field:"PDate",hozAlign:"center",mutatorData:function(value, data){
                     return value.split("T")[0];
                 },},

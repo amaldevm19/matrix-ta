@@ -23,7 +23,7 @@ const bioTimesheetController ={
                     BranchMst.Name AS BranchName
                 FROM (
                     SELECT
-                        Id, UserID, PDate, JobCode, TotalJobTime, BranchId, DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,CreatedAt,LeaveID,
+                        Id, UserID, Name, PDate, JobCode, TotalJobTime, BranchId, DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,CreatedAt,LeaveID,
                         ROW_NUMBER() OVER (ORDER BY Id) AS RowNum
                     FROM [TNA_PROXY].[dbo].[Px_TimesheetMst]
                     WHERE 
@@ -172,7 +172,7 @@ const bioTimesheetController ={
                     BranchMst.Name AS BranchName
                 FROM (
                     SELECT
-                        Id, UserID, PDate, JobCode, TotalJobTime, BranchId, DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,CreatedAt
+                        Id, UserID,  Name, PDate, JobCode, TotalJobTime, BranchId, DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,CreatedAt
                     FROM [TNA_PROXY].[dbo].[Px_TimesheetMst]
                     WHERE 
                         ('${EmployeeId}' IS NULL OR '${EmployeeId}'='' OR UserID = '${EmployeeId}') AND
@@ -214,7 +214,7 @@ const bioTimesheetController ={
                 let result = await db.query(`
                     WITH OrderedSubquery AS (
                         SELECT
-                            Id, UserID, PDate, JobCode, TotalJobTime, BranchId, DepartmentId, UserCategoryId, EmployeeCategoryId, DesignationId, SectionId, CreatedAt, LeaveID,
+                            Id, UserID, Name, PDate, JobCode, TotalJobTime, BranchId, DepartmentId, UserCategoryId, EmployeeCategoryId, DesignationId, SectionId, CreatedAt, LeaveID,
                             ROW_NUMBER() OVER (ORDER BY UserID ASC) AS RowNum
                         FROM [TNA_PROXY].[dbo].[Px_TimesheetMst]
                         WHERE 
@@ -358,7 +358,7 @@ const bioTimesheetController ={
                     BranchMst.Name AS BranchName
                 FROM (
                     SELECT
-                        Id, UserID, PDate, JobCode, TotalJobTime, BranchId, DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,CreatedAt
+                        Id, UserID, Name, PDate, JobCode, TotalJobTime, BranchId, DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,CreatedAt
                     FROM [TNA_PROXY].[dbo].[Px_TimesheetMst]
                     WHERE 
                         ('${EmployeeId}' IS NULL OR '${EmployeeId}'='' OR UserID = '${EmployeeId}') AND
