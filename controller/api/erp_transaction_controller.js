@@ -815,7 +815,7 @@ const transactionController = {
                     const element = value.projectIds[index];
                     finalData.push({
                         HcmWorker_PersonnelNumber:key,
-                        rownum:rownum+1,
+                        rownum:++rownum,
                         projId:element.projId,
                         DepartmentName:value.DepartmentName,
                         UserCategoryName:value.UserCategoryName,
@@ -930,7 +930,7 @@ const transactionController = {
                     const element = value.projectIds[index];
                     finalData.push({
                         HcmWorker_PersonnelNumber:key,
-                        rownum:rownum+1,
+                        rownum:++rownum,
                         projId:element.projId,
                         DepartmentName:value.DepartmentName,
                         UserCategoryName:value.UserCategoryName,

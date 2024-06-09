@@ -443,7 +443,7 @@ const bioTimesheetController ={
                     finalData.push({
                         UserID:key,
                         Name:value.Name,
-                        rownum:rownum+1,
+                        rownum:++rownum,
                         JobCode:element.JobCode,
                         DepartmentName:value.DepartmentName,
                         UserCategoryName:value.UserCategoryName,
