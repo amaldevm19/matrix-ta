@@ -105,7 +105,7 @@ const bioTimesheetController ={
                         BranchMst.Name AS BranchName
                     FROM (
                         SELECT
-                            Id, UserID, PDate, JobCode, TotalJobTime, BranchId, DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,CreatedAt,
+                            Id, UserID, Name, PDate, JobCode, TotalJobTime, BranchId, DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,CreatedAt,
                             ROW_NUMBER() OVER (ORDER BY Id) AS RowNum
                         FROM [TNA_PROXY].[dbo].[Px_TimesheetMst]
                         WHERE 
@@ -141,6 +141,7 @@ const bioTimesheetController ={
                 `)
                 let last_page = Math.ceil(totalCount.recordset[0].TotalRowCount / size);
                 await controllerLogger(req)
+                //return res.redirect("/bio-timesheet/horizontal-report/pending-data")
                 return res.status(200).json({status:"OK", last_page, data:response.recordset});
                 }
 

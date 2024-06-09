@@ -221,7 +221,7 @@
         });
 
         $("#update_table").click(function(e){
-            bioTimesheetTable.setData("/api/bio-timesheet/update-timesheet", {page:"1", pageSize:"31"});
+            bioTimesheetTable.setData("/api/bio-timesheet/update-timesheet", {page:"1", pageSize:"31"}).then(function(){ location.reload()});
         });
 
         let TempbioTimesheetTable = new Tabulator("#tempbioTimesheetTable", {
