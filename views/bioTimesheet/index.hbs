@@ -214,6 +214,7 @@
         });
         $("#download_table").click(function(e){
             e.preventDefault();
+            showLoadingIndicator();
             let EmployeeId = $("#emp_id").val()
             let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":''
             let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":''
@@ -227,6 +228,7 @@
                 url: '/api/bio-timesheet/download-timesheet',
                 data:{EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId}
             }).done(function (data) {
+                 hideLoadingIndicator();
                 if(data.status =="ok"){
                     TempbioTimesheetTable.setData(data.data);
                     TempbioTimesheetTable.download("csv", "timesheet.csv", {delimiter:","})

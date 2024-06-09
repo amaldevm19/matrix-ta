@@ -323,6 +323,7 @@
 
         $("#download_table").click(function(e){
             e.preventDefault();
+            showLoadingIndicator();
             let EmployeeId = $("#emp_id").val()
             let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":''
             let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":''
@@ -337,6 +338,7 @@
                 url: '/api/erp-transaction/horizontal-report/download-erptimesheet',
                 data:{EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,Error}
             }).done(function (data) {
+                 hideLoadingIndicator();
                 if(data.status =="ok"){
                     temppendingErpTable.setData(data.data);
                     temppendingErpTable.download("csv", "erptimesheet.csv", {delimiter:","})
@@ -426,6 +428,7 @@
 
          $("#download_exception").click(function(e){
             e.preventDefault();
+            showLoadingIndicator();
             let EmployeeId = $("#emp_id").val()
             let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":''
             let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":''
@@ -439,6 +442,7 @@
                 url: '/api/erp-transaction/horizontal-report/download-exception',
                 data:{EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId}
             }).done(function (data) {
+                 hideLoadingIndicator();
                 if(data.status =="ok"){
                     tempExceptionTable.setData(data.data);
                     tempExceptionTable.download("csv", "ExceptionDetails.csv", {delimiter:","})

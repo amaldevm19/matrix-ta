@@ -280,6 +280,7 @@
         });
 
         $("#download_table").click(function(e){
+            showLoadingIndicator();
             e.preventDefault();
             let EmployeeId = $("#emp_id").val()
             let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":''
@@ -294,6 +295,7 @@
                 url: '/api/bio-timesheet/horizontal-report/pending-data/download-timesheet',
                 data:{EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId}
             }).done(function (data) {
+                hideLoadingIndicator();
                 if(data.status =="ok"){
                     TempbioTimesheetTable.setData(data.data);
                     TempbioTimesheetTable.download("csv", "horizontal_timesheet.csv", {delimiter:","})
