@@ -212,38 +212,39 @@ const bioTimesheetController ={
                 let firstRow = ((page-1) * size)+1
                 let lastRow = page * size;
                 let result = await db.query(`
-                SELECT 
-                    Subquery.*,
-                    DepartmentMst.Name AS DepartmentName,
-                    CustomGroup1Mst.Name AS UserCategoryName,
-                    CategoryMst.Name AS EmployeeCategoryName,
-                    DesignationMst.Name AS DesignationName,
-                    SectionMst.Name AS SectionName,
-                    BranchMst.Name AS BranchName
-                FROM (
-                    SELECT
-                        Id, UserID, PDate, JobCode, TotalJobTime, BranchId, DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,CreatedAt,LeaveID,
-                        ROW_NUMBER() OVER (ORDER BY UserID ASC) AS RowNum
-                    FROM [TNA_PROXY].[dbo].[Px_TimesheetMst]
-                    WHERE 
-                        ('${EmployeeId}' IS NULL OR '${EmployeeId}'='' OR UserID = '${EmployeeId}') AND
-                        ('${JobCode}' IS NULL OR '${JobCode}'='' OR JobCode ='${JobCode}') AND
-                        ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR DepartmentId = ${DepartmentId?DepartmentId:0}) AND
-                        ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR UserCategoryId = ${UserCategoryId?UserCategoryId:0}) AND
-                        ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId?EmployeeCategoryId:0}) AND
-                        ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
-                        ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
-                        (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}')
-                    ORDER BY UserID ASC
-                ) AS Subquery
-                JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
-                JOIN [COSEC].[dbo].[Mx_CustomGroup1Mst] AS CustomGroup1Mst ON Subquery.UserCategoryId = CustomGroup1Mst.CG1ID
-                JOIN [COSEC].[dbo].[Mx_CategoryMst] AS CategoryMst ON Subquery.EmployeeCategoryId = CategoryMst.CTGID
-                JOIN [COSEC].[dbo].[Mx_DesignationMst] AS DesignationMst ON Subquery.DesignationId = DesignationMst.DSGID
-                JOIN [COSEC].[dbo].[Mx_SectionMst] AS SectionMst ON Subquery.SectionId = SectionMst.SECID
-                JOIN [COSEC].[dbo].[Mx_BranchMst] AS BranchMst ON Subquery.BranchId = BranchMst.BRCID
-                WHERE RowNum BETWEEN ${firstRow} AND ${lastRow}
-                `);
+                    WITH OrderedSubquery AS (
+                        SELECT
+                            Id, UserID, PDate, JobCode, TotalJobTime, BranchId, DepartmentId, UserCategoryId, EmployeeCategoryId, DesignationId, SectionId, CreatedAt, LeaveID,
+                            ROW_NUMBER() OVER (ORDER BY UserID ASC) AS RowNum
+                        FROM [TNA_PROXY].[dbo].[Px_TimesheetMst]
+                        WHERE 
+                            ('${EmployeeId}' IS NULL OR '${EmployeeId}'='' OR UserID = '${EmployeeId}') AND
+                            ('${JobCode}' IS NULL OR '${JobCode}'='' OR JobCode ='${JobCode}') AND
+                            ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR DepartmentId = ${DepartmentId ? DepartmentId : 0}) AND
+                            ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR UserCategoryId = ${UserCategoryId ? UserCategoryId : 0}) AND
+                            ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId ? EmployeeCategoryId : 0}) AND
+                            ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId ? DesignationId : 0}) AND
+                            ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId ? SectionId : 0}) AND
+                            (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}')
+                    )
+                    SELECT 
+                        OrderedSubquery.*,
+                        DepartmentMst.Name AS DepartmentName,
+                        CustomGroup1Mst.Name AS UserCategoryName,
+                        CategoryMst.Name AS EmployeeCategoryName,
+                        DesignationMst.Name AS DesignationName,
+                        SectionMst.Name AS SectionName,
+                        BranchMst.Name AS BranchName
+                    FROM OrderedSubquery
+                    JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON OrderedSubquery.DepartmentId = DepartmentMst.DPTID
+                    JOIN [COSEC].[dbo].[Mx_CustomGroup1Mst] AS CustomGroup1Mst ON OrderedSubquery.UserCategoryId = CustomGroup1Mst.CG1ID
+                    JOIN [COSEC].[dbo].[Mx_CategoryMst] AS CategoryMst ON OrderedSubquery.EmployeeCategoryId = CategoryMst.CTGID
+                    JOIN [COSEC].[dbo].[Mx_DesignationMst] AS DesignationMst ON OrderedSubquery.DesignationId = DesignationMst.DSGID
+                    JOIN [COSEC].[dbo].[Mx_SectionMst] AS SectionMst ON OrderedSubquery.SectionId = SectionMst.SECID
+                    JOIN [COSEC].[dbo].[Mx_BranchMst] AS BranchMst ON OrderedSubquery.BranchId = BranchMst.BRCID
+                    WHERE RowNum BETWEEN ${firstRow} AND ${lastRow}
+                    ORDER BY OrderedSubquery.UserID ASC
+                `);                
                
                 let totalCount = await db.query( `
                 SELECT COUNT(*) AS TotalRowCount 
