@@ -223,7 +223,7 @@ const bioTimesheetController ={
                 FROM (
                     SELECT
                         Id, UserID, PDate, JobCode, TotalJobTime, BranchId, DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,CreatedAt,LeaveID,
-                        ROW_NUMBER() OVER (ORDER BY Id) AS RowNum
+                        ROW_NUMBER() OVER (ORDER BY UserID ASC) AS RowNum
                     FROM [TNA_PROXY].[dbo].[Px_TimesheetMst]
                     WHERE 
                         ('${EmployeeId}' IS NULL OR '${EmployeeId}'='' OR UserID = '${EmployeeId}') AND
@@ -257,7 +257,6 @@ const bioTimesheetController ={
                     ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
                     ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                     (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}')
-                ORDER BY UserID ASC
                 `)
                 let last_page = Math.ceil(totalCount.recordset[0].TotalRowCount / size);
                 await controllerLogger(req);
