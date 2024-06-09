@@ -170,6 +170,17 @@
                 {title:"23", field:"23"},
                 {title:"24", field:"21"},
                 {title:"25", field:"25"},
+                {title:"Total", field:"total",mutatorData:function(value, data){
+                    let totalWorkHours = 0.0;
+                    for (const property in data) {
+                        let workHours = parseFloat(data[property])
+                        if(parseInt(property) && workHours ){
+                            totalWorkHours = totalWorkHours + workHours;
+                        }
+                    }
+
+                    return totalWorkHours;
+                },},
                 {title:"Department", field:"DepartmentName"},
                 {title:"User Category", field:"UserCategoryName"},
                 {title:"Designation", field:"DesignationName"},
