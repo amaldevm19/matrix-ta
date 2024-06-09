@@ -435,6 +435,7 @@ const bioTimesheetController ={
                 }
             }
             let finalData =[]
+            let rownum=0;
             for (let [key, value] of horizontalData) {
                 //console.log(`${key}: ${JSON.stringify(value)}`);
                 for (let index = 0; index < value.JobCodes.length; index++) {
@@ -442,6 +443,7 @@ const bioTimesheetController ={
                     finalData.push({
                         UserID:key,
                         Name:value.Name,
+                        rownum:rownum+1,
                         JobCode:element.JobCode,
                         DepartmentName:value.DepartmentName,
                         UserCategoryName:value.UserCategoryName,
