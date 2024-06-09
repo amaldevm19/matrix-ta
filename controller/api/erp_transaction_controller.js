@@ -585,6 +585,7 @@ const transactionController = {
                         ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
                         ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                         (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}')
+                        SyncCompleted=0
                 ) AS Subquery
                 JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
                 JOIN [COSEC].[dbo].[Mx_CustomGroup1Mst] AS CustomGroup1Mst ON Subquery.UserCategoryId = CustomGroup1Mst.CG1ID
@@ -732,6 +733,221 @@ const transactionController = {
             return res.status(400).json({status:"not ok",error:error, data:""})
         }
     },
+    downloadErpTransactionPendingHorizontalData:async(req,res)=>{
+        try {
+            let db = req.app.locals.db;    
+            let {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,Error} = req.query;
+            let result = await db.query(`
+            SELECT 
+                Subquery.*,
+                DepartmentMst.Name AS DepartmentName,
+                CustomGroup1Mst.Name AS UserCategoryName,
+                CategoryMst.Name AS EmployeeCategoryName,
+                DesignationMst.Name AS DesignationName,
+                SectionMst.Name AS SectionName,
+                BranchMst.Name AS BranchName
+            FROM (
+                SELECT
+                    Id, HcmWorker_PersonnelNumber, TransDate, projId,Error,ErrorText, TotalHours, BranchId, DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,SyncCompleted,CreatedAt,UpdatedAt,
+                    ROW_NUMBER() OVER (ORDER BY Id) AS RowNum
+                FROM [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
+                WHERE 
+                    ('${EmployeeId}' IS NULL OR '${EmployeeId}'='' OR HcmWorker_PersonnelNumber = '${EmployeeId}') AND
+                    ('${JobCode}' IS NULL OR '${JobCode}'='' OR projId ='${JobCode}') AND
+                    ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR DepartmentId = ${DepartmentId?DepartmentId:0}) AND
+                    ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR UserCategoryId = ${UserCategoryId?UserCategoryId:0}) AND
+                    ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId?EmployeeCategoryId:0}) AND
+                    ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
+                    ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
+                    ('${Error}' IS NULL OR '${Error}'='' OR Error = ${Error?Error:0}) AND
+                    (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
+                    SyncCompleted=0
+
+            ) AS Subquery
+            JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
+            JOIN [COSEC].[dbo].[Mx_CustomGroup1Mst] AS CustomGroup1Mst ON Subquery.UserCategoryId = CustomGroup1Mst.CG1ID
+            JOIN [COSEC].[dbo].[Mx_CategoryMst] AS CategoryMst ON Subquery.EmployeeCategoryId = CategoryMst.CTGID
+            JOIN [COSEC].[dbo].[Mx_DesignationMst] AS DesignationMst ON Subquery.DesignationId = DesignationMst.DSGID
+            JOIN [COSEC].[dbo].[Mx_SectionMst] AS SectionMst ON Subquery.SectionId = SectionMst.SECID
+            JOIN [COSEC].[dbo].[Mx_BranchMst] AS BranchMst ON Subquery.BranchId = BranchMst.BRCID
+            WHERE RowNum BETWEEN ${firstRow} AND ${lastRow}
+            `);
+            
+            await controllerLogger(req);
+            let horizontalData = new Map();
+            //console.log(result.recordset)
+            if(result.recordset?.length > 0){
+                for (let index = 0; index < result.recordset.length; index++) {
+                    const element = result.recordset[index];
+                    let day = element.TransDate.toISOString().split("T")[0].split("-")[2]
+                    //console.log(day)
+                    if(horizontalData.has(element.HcmWorker_PersonnelNumber)){
+                        let employee = horizontalData.get(element.HcmWorker_PersonnelNumber)
+                        let found = false
+                        for (let index = 0; index < employee.projectIds?.length; index++) {
+                            const projectIds = employee.projectIds[index];
+                            if(projectIds.projId == element.projId){
+                                projectIds.days.push({[day]:element.TotalHours})
+                                found = true;
+                                break;
+                            }
+                        }
+                        if(!found){
+                            employee.projectIds.push({projId:element.projId,days:[{[day]:element.TotalHours}]})
+                        }
+                    }else{
+                        horizontalData.set(element.HcmWorker_PersonnelNumber,
+                            {
+                                projectIds:[{projId:element.projId,days:[{[day]:element.TotalHours}]}],
+                                DepartmentName:element.DepartmentName,
+                                UserCategoryName:element.UserCategoryName,
+                                DesignationName:element.DesignationName,
+                                SectionName:element.SectionName,
+                            }
+                        )
+                    }
+                }
+            }
+            let finalData =[]
+            for (let [key, value] of horizontalData) {
+                //console.log(`${key}: ${JSON.stringify(value)}`);
+                for (let index = 0; index < value.projectIds.length; index++) {
+                    const element = value.projectIds[index];
+                    finalData.push({
+                        HcmWorker_PersonnelNumber:key,
+                        projId:element.projId,
+                        DepartmentName:value.DepartmentName,
+                        UserCategoryName:value.UserCategoryName,
+                        DesignationName:value.DesignationName,
+                        SectionName:value.SectionName,
+                    })
+                    for (let index = 0; index < element.days.length; index++) {
+                        const day = element.days[index];
+                        finalData[finalData.length-1]={...finalData[finalData.length-1],...day}
+                    }
+                }
+            }
+            // console.log(finalData)
+            return res.status(200).json({status:"ok", data:finalData, error:"" });
+        } catch (error) {
+            console.log("Error in downloadErpTransactionPendingHorizontalData function : ", error.message)
+            await controllerLogger(req, error)
+            return res.status(400).json({status:"not ok",error:error, data:""})
+        }
+    },
+    downloadExceptionHorizontal:async(req,res)=>{
+        try {
+            let db = req.app.locals.db;    
+            let {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId} = req.query;
+            let result = await db.query(`
+            SELECT 
+                    Subquery.HcmWorker_PersonnelNumber,
+                    Subquery.TransDate,
+                    Subquery.projId,
+                    Subquery.TotalHours,
+                    DepartmentMst.Name AS DepartmentName,
+                    CustomGroup1Mst.Name AS UserCategoryName,
+                    CategoryMst.Name AS EmployeeCategoryName,
+                    DesignationMst.Name AS DesignationName,
+                    SectionMst.Name AS SectionName,
+                    BranchMst.Name AS BranchName
+                FROM (
+                    SELECT
+                        HcmWorker_PersonnelNumber,
+                        TransDate,
+                        projId,
+                        TotalHours,
+                        BranchId,
+                        t.DepartmentId ,
+                        UserCategoryId ,
+                        EmployeeCategoryId,
+                        DesignationId,
+                        SectionId
+                    FROM [TNA_PROXY].[dbo].[Px_ERPTransactionMst] t
+                    JOIN [TNA_PROXY].[dbo].[Px_JPCJobMst] j
+                    ON t.projId = j.JobCode 
+                    WHERE 
+                        t.TotalHours < j.MaxJobHourPerDay  AND
+                        ('${EmployeeId}' IS NULL OR '${EmployeeId}'='' OR HcmWorker_PersonnelNumber = '${EmployeeId}') AND
+                        ('${JobCode}' IS NULL OR '${JobCode}'='' OR projId ='${JobCode}') AND
+                        ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR t.DepartmentId = ${DepartmentId?DepartmentId:0}) AND
+                        ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR UserCategoryId = ${UserCategoryId?UserCategoryId:0}) AND
+                        ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId?EmployeeCategoryId:0}) AND
+                        ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
+                        ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
+                        (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}')
+                        SyncCompleted=0
+                ) AS Subquery
+                JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
+                JOIN [COSEC].[dbo].[Mx_CustomGroup1Mst] AS CustomGroup1Mst ON Subquery.UserCategoryId = CustomGroup1Mst.CG1ID
+                JOIN [COSEC].[dbo].[Mx_CategoryMst] AS CategoryMst ON Subquery.EmployeeCategoryId = CategoryMst.CTGID
+                JOIN [COSEC].[dbo].[Mx_DesignationMst] AS DesignationMst ON Subquery.DesignationId = DesignationMst.DSGID
+                JOIN [COSEC].[dbo].[Mx_SectionMst] AS SectionMst ON Subquery.SectionId = SectionMst.SECID
+                JOIN [COSEC].[dbo].[Mx_BranchMst] AS BranchMst ON Subquery.BranchId = BranchMst.BRCID
+            `);
+            
+            await controllerLogger(req);
+            let horizontalData = new Map();
+            //console.log(result.recordset)
+            if(result.recordset?.length > 0){
+                for (let index = 0; index < result.recordset.length; index++) {
+                    const element = result.recordset[index];
+                    let day = element.TransDate.toISOString().split("T")[0].split("-")[2]
+                    //console.log(day)
+                    if(horizontalData.has(element.HcmWorker_PersonnelNumber)){
+                        let employee = horizontalData.get(element.HcmWorker_PersonnelNumber)
+                        let found = false
+                        for (let index = 0; index < employee.projectIds?.length; index++) {
+                            const projectIds = employee.projectIds[index];
+                            if(projectIds.projId == element.projId){
+                                projectIds.days.push({[day]:element.TotalHours})
+                                found = true;
+                                break;
+                            }
+                        }
+                        if(!found){
+                            employee.projectIds.push({projId:element.projId,days:[{[day]:element.TotalHours}]})
+                        }
+                    }else{
+                        horizontalData.set(element.HcmWorker_PersonnelNumber,
+                            {
+                                projectIds:[{projId:element.projId,days:[{[day]:element.TotalHours}]}],
+                                DepartmentName:element.DepartmentName,
+                                UserCategoryName:element.UserCategoryName,
+                                DesignationName:element.DesignationName,
+                                SectionName:element.SectionName,
+                            }
+                        )
+                    }
+                }
+            }
+            let finalData =[]
+            for (let [key, value] of horizontalData) {
+                //console.log(`${key}: ${JSON.stringify(value)}`);
+                for (let index = 0; index < value.projectIds.length; index++) {
+                    const element = value.projectIds[index];
+                    finalData.push({
+                        HcmWorker_PersonnelNumber:key,
+                        projId:element.projId,
+                        DepartmentName:value.DepartmentName,
+                        UserCategoryName:value.UserCategoryName,
+                        DesignationName:value.DesignationName,
+                        SectionName:value.SectionName,
+                    })
+                    for (let index = 0; index < element.days.length; index++) {
+                        const day = element.days[index];
+                        finalData[finalData.length-1]={...finalData[finalData.length-1],...day}
+                    }
+                }
+            }
+            // console.log(finalData)
+            return res.status(200).json({status:"ok", data:finalData, error:"" });
+        } catch (error) {
+            console.log("Error in downloadExceptionHorizontal function : ", error.message)
+            await controllerLogger(req, error)
+            return res.status(400).json({status:"not ok",error:error, data:""})
+        }
+    }
 }
 
 module.exports=transactionController;

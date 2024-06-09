@@ -18,5 +18,7 @@ router.put("/settings/:Id", transactionController.updateErpSettings)
 router.delete("/settings/:Id", transactionController.deleteErpSettings)
 
 router.get("/horizontal-report/pending-data", transactionController.getErpTransactionPendingHorizontalData)
+router.get("/horizontal-report/download-erptimesheet", transactionController.downloadErpTransactionPendingHorizontalData)
+router.get("/horizontal-report/download-exception", transactionController.downloadExceptionHorizontal)
 
 module.exports = router;

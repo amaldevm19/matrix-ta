@@ -213,6 +213,42 @@
             }
 
         });
+
+        
+        $("#search_submit").click(function(e){
+            e.preventDefault();
+            let EmployeeId = $("#emp_id").val();
+            let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":''
+            let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":''
+            let JobCode=$('#job_code').val()
+            let DepartmentId=$('#department_id').val()
+            let UserCategoryId=$('#user_category').val()
+            let EmployeeCategoryId=$('#employee_category').val()
+            let DesignationId=$('#designation_id').val()
+            let SectionId=$('#section_id').val()
+            let Error = $("#error").val()
+            console.log(EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId, Error)
+            pendingErpTable.setData("/api/erp-transaction/horizontal-report/pending-data", 
+                {page:"1", pageSize:"31",EmployeeId:EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId, Error}
+            );
+        });
+
+        $("#copy_timesheet").click(async(e)=>{
+            showLoadingIndicator();
+            let url='/api/erp-transaction/copy-timesheet';
+            let response = await fetch(url);
+            let data = await response.json();
+            if(data){
+                hideLoadingIndicator();
+            }
+            if(data.status == "not ok"){
+                alert(data.error);
+                location.reload(true);
+            }else{
+                alert(`Added or Updated ${data.data[0],data.data[1]} records to ERP`);
+                location.reload(true);
+            }
+        })
         
         let temppendingErpTable = new Tabulator("#temppendingErpTable", {
             columns:[
@@ -267,40 +303,24 @@
             ],
         });
 
-        $("#search_submit").click(function(e){
-            e.preventDefault();
-            let EmployeeId = $("#emp_id").val();
-            let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":''
-            let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":''
-            let JobCode=$('#job_code').val()
-            let DepartmentId=$('#department_id').val()
-            let UserCategoryId=$('#user_category').val()
-            let EmployeeCategoryId=$('#employee_category').val()
-            let DesignationId=$('#designation_id').val()
-            let SectionId=$('#section_id').val()
-            let Error = $("#error").val()
-            console.log(EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId, Error)
-            pendingErpTable.setData("/api/erp-transaction/horizontal-report/pending-data", 
-                {page:"1", pageSize:"31",EmployeeId:EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId, Error}
-            );
+         temppendingErpTable.on("tableBuilt", function(){
+            switch (daysInCurrentMonth()){
+                case 30:
+                    pendingErpTable.hideColumn("31")
+                    break;
+                case 29:
+                    pendingErpTable.hideColumn("31")
+                    pendingErpTable.hideColumn("30")
+                    break;
+                case 28:
+                    pendingErpTable.hideColumn("31")
+                    pendingErpTable.hideColumn("30")
+                    pendingErpTable.hideColumn("29")
+                    break;
+            }
+
         });
 
-        $("#copy_timesheet").click(async(e)=>{
-            showLoadingIndicator();
-            let url='/api/erp-transaction/copy-timesheet';
-            let response = await fetch(url);
-            let data = await response.json();
-            if(data){
-                hideLoadingIndicator();
-            }
-            if(data.status == "not ok"){
-                alert(data.error);
-                location.reload(true);
-            }else{
-                alert(`Added or Updated ${data.data[0],data.data[1]} records to ERP`);
-                location.reload(true);
-            }
-        })
         $("#download_table").click(function(e){
             e.preventDefault();
             let EmployeeId = $("#emp_id").val()
@@ -348,10 +368,6 @@
                 {title:"Sl#", field:"example", formatter:"rownum"},
                 {title:"Employee ID", field:"HcmWorker_PersonnelNumber"},
                 {title:"Job Code", field:"projId", hozAlign:"center"},
-                {title:"Department", field:"DepartmentName"},
-                {title:"User Category", field:"UserCategoryName"},
-                {title:"Designation", field:"DesignationName"},
-                {title:"Section", field:"SectionName"},
                 {title:"26", field:"26"},
                 {title:"27", field:"27"},
                 {title:"28", field:"28"},
@@ -383,7 +399,39 @@
                 {title:"23", field:"23"},
                 {title:"24", field:"21"},
                 {title:"25", field:"25"},
+                {title:"Total", field:"total",mutatorData:function(value, data){
+                    let totalWorkHours = 0.0;
+                    for (const property in data) {
+                        let workHours = parseFloat(data[property])
+                        if(parseInt(property) && workHours ){
+                            totalWorkHours = totalWorkHours + workHours;
+                        }
+                    }
+                    return totalWorkHours;
+                },},
+                {title:"Department", field:"DepartmentName"},
+                {title:"User Category", field:"UserCategoryName"},
+                {title:"Designation", field:"DesignationName"},
+                {title:"Section", field:"SectionName"},
             ],
+        });
+
+         tempExceptionTable.on("tableBuilt", function(){
+            switch (daysInCurrentMonth()){
+                case 30:
+                    pendingErpTable.hideColumn("31")
+                    break;
+                case 29:
+                    pendingErpTable.hideColumn("31")
+                    pendingErpTable.hideColumn("30")
+                    break;
+                case 28:
+                    pendingErpTable.hideColumn("31")
+                    pendingErpTable.hideColumn("30")
+                    pendingErpTable.hideColumn("29")
+                    break;
+            }
+
         });
 
          $("#download_exception").click(function(e){
