@@ -60,7 +60,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
                                 
             FROM [TNA_PROXY].[dbo].[Px_TimesheetMst] AS TSM
             LEFT JOIN [TNA_PROXY].[dbo].[Px_JPCJobMst] AS JPC ON TSM.JobCode = JPC.JobCode
-            LEFT JOIN [TNA_PROXY].[dbo].[Px_UserHourDeduTrn] AS UHD ON TSM.UserID = UHD.UserID
+            LEFT JOIN [TNA_PROXY].[dbo].[Px_UserHourDeduTrn] AS UHD ON TSM.UserID = UHD.UserID AND TSM.PDate BETWEEN UHD.FromDate AND UHD.ToDate
             WHERE
                 PDate BETWEEN '${FromDate}' AND '${ToDate}'
                 AND TSM.UserID IS NOT NULL AND TSM.UserID <> ''
