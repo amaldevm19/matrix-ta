@@ -109,7 +109,7 @@
                 let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":''
                 let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":''
                 let JobCode=$('#job_code').val()
-                let DepartmentId=$('#department_id').val()
+                let DepartmentId=$('#department_id').val()||$('#department').val();
                 let UserCategoryId=$('#user_category').val()
                 let EmployeeCategoryId=$('#employee_category').val()
                 let DesignationId=$('#designation_id').val()
@@ -221,7 +221,7 @@
             let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":''
             let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":''
             let JobCode=$('#job_code').val()
-            let DepartmentId=$('#department_id').val()
+            let DepartmentId=$('#department_id').val()||$('#department').val();
             let UserCategoryId=$('#user_category').val()
             let EmployeeCategoryId=$('#employee_category').val()
             let DesignationId=$('#designation_id').val()
