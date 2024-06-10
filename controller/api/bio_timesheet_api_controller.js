@@ -504,11 +504,11 @@ const bioTimesheetController ={
             JOIN [COSEC].[dbo].[Mx_SectionMst] AS SectionMst ON Subquery.SectionId = SectionMst.SECID
             JOIN [COSEC].[dbo].[Mx_BranchMst] AS BranchMst ON Subquery.BranchId = BranchMst.BRCID
             LEFT JOIN [TNA_PROXY].[dbo].[Px_ERPTransactionMst] AS ERPTransactionMst
-                ON Subquery.UserID = CONCAT(
-                    LEFT(ERPTransactionMst.HcmWorker_PersonnelNumber, PATINDEX('%[0-9]%', ERPTransactionMst.HcmWorker_PersonnelNumber) - 1),
+                ON CONCAT(
+                    LEFT(Subquery.UserID, PATINDEX('%[0-9]%', Subquery.UserID ) - 1),
                     '-',
-                    SUBSTRING(ERPTransactionMst.HcmWorker_PersonnelNumber, PATINDEX('%[0-9]%', ERPTransactionMst.HcmWorker_PersonnelNumber), LEN(ERPTransactionMst.HcmWorker_PersonnelNumber))
-                ) 
+                    SUBSTRING(Subquery.UserID, PATINDEX('%[0-9]%', Subquery.UserID), LEN(Subquery.UserID))
+                ) =  ERPTransactionMst.HcmWorker_PersonnelNumber
                 AND Subquery.PDate = ERPTransactionMst.TransDate
                 AND Subquery.JobCode = ERPTransactionMst.projId
             WHERE RowNum BETWEEN ${firstRow} AND ${lastRow}
