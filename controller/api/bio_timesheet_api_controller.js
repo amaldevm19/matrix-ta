@@ -470,6 +470,7 @@ const bioTimesheetController ={
         try {
             let db = req.app.locals.db;
             let {page,size, EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId} = req.query;
+            console.log(page,size, EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId)
             let firstRow = ((page-1) * size)+1
             let lastRow = page * size;
             let result = await db.query(`
