@@ -104,7 +104,7 @@ const bioTimesheetPageController = {
             FROM [COSEC].[dbo].[Mx_CategoryMst]
             `);
             await controllerLogger(req);
-            return res.render("bioTimesheet-compare", {page_header:"Timesheet comparison Table",
+            return res.render("bioTimesheet/bioTimesheet-compare", {page_header:"Timesheet comparison Table",
                 Department:Department.recordset,
                 UserCategory:UserCategory.recordset,
                 Designation:Designation.recordset,
