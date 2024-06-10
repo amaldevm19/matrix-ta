@@ -470,7 +470,7 @@ const bioTimesheetController ={
         try {
             let db = req.app.locals.db;
             let {page,size, EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId} = req.query;
-            console.log(page,size, EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId)
+            // console.log(page,size, EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId)
             let firstRow = ((page-1) * size)+1
             let lastRow = page * size;
             let result = await db.query(`
@@ -532,13 +532,64 @@ const bioTimesheetController ={
             return res.status(200).json({status:"OK", last_page, data:result.recordset});
 
         } catch (error) {
-            console.log("Error in getBioTimesheetHomePageData function : ", error)
+            console.log("Error in getBioTimesheetComparePageData function : ", error)
             await controllerLogger(req, res)
             return res.status(400).json({status:"not ok",error:error, data:""})
         }  
     },
     downloadBioTimesheetCompareData:async(req,res)=>{
-        return
+        try {
+            let db = req.app.locals.db;
+            let {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId} = req.query;
+            // console.log(page,size, EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId)
+            let result = await db.query(`
+            SELECT 
+                Subquery.*,
+                DepartmentMst.Name AS DepartmentName,
+                CustomGroup1Mst.Name AS UserCategoryName,
+                CategoryMst.Name AS EmployeeCategoryName,
+                DesignationMst.Name AS DesignationName,
+                SectionMst.Name AS SectionName,
+                BranchMst.Name AS BranchName,
+                COALESCE(ERPTransactionMst.TotalHours, 0) AS TotalHours
+            FROM (
+                SELECT
+                    Id, UserID, Name, PDate, JobCode, TotalJobTime, BranchId, DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,CreatedAt,LeaveID,
+                    ROW_NUMBER() OVER (ORDER BY Id) AS RowNum
+                FROM [TNA_PROXY].[dbo].[Px_TimesheetMst]
+                WHERE 
+                    ('${EmployeeId}' IS NULL OR '${EmployeeId}'='' OR UserID = '${EmployeeId}') AND
+                    ('${JobCode}' IS NULL OR '${JobCode}'='' OR JobCode ='${JobCode}') AND
+                    ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR DepartmentId = ${DepartmentId?DepartmentId:0}) AND
+                    ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR UserCategoryId = ${UserCategoryId?UserCategoryId:0}) AND
+                    ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId?EmployeeCategoryId:0}) AND
+                    ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
+                    ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
+                    (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}')
+            ) AS Subquery
+            JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
+            JOIN [COSEC].[dbo].[Mx_CustomGroup1Mst] AS CustomGroup1Mst ON Subquery.UserCategoryId = CustomGroup1Mst.CG1ID
+            JOIN [COSEC].[dbo].[Mx_CategoryMst] AS CategoryMst ON Subquery.EmployeeCategoryId = CategoryMst.CTGID
+            JOIN [COSEC].[dbo].[Mx_DesignationMst] AS DesignationMst ON Subquery.DesignationId = DesignationMst.DSGID
+            JOIN [COSEC].[dbo].[Mx_SectionMst] AS SectionMst ON Subquery.SectionId = SectionMst.SECID
+            JOIN [COSEC].[dbo].[Mx_BranchMst] AS BranchMst ON Subquery.BranchId = BranchMst.BRCID
+            LEFT JOIN [TNA_PROXY].[dbo].[Px_ERPTransactionMst] AS ERPTransactionMst
+                ON CONCAT(
+                    LEFT(Subquery.UserID, PATINDEX('%[0-9]%', Subquery.UserID ) - 1),
+                    '-',
+                    SUBSTRING(Subquery.UserID, PATINDEX('%[0-9]%', Subquery.UserID), LEN(Subquery.UserID))
+                ) =  ERPTransactionMst.HcmWorker_PersonnelNumber
+                AND Subquery.PDate = ERPTransactionMst.TransDate
+                AND Subquery.JobCode = ERPTransactionMst.projId
+            `);
+            await controllerLogger(req)
+            return res.status(200).json({status:"OK", data:result.recordset});
+
+        } catch (error) {
+            console.log("Error in downloadBioTimesheetCompareData function : ", error)
+            await controllerLogger(req, res)
+            return res.status(400).json({status:"not ok",error:error, data:""})
+        }  
     }
 }
 module.exports = {bioTimesheetController}
