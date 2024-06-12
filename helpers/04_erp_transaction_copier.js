@@ -79,8 +79,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
                 SUBSTRING(Source.HcmWorker_PersonnelNumber, PATINDEX('%[0-9]%', Source.HcmWorker_PersonnelNumber), LEN(Source.HcmWorker_PersonnelNumber))
             )
             AND Target.TransDate = Source.TransDate
-            AND Target.SyncCompleted = 0
-            WHEN MATCHED AND (
+            WHEN MATCHED AND Target.SyncCompleted = 0 AND (
                 (CAST(Target.TotalHours AS decimal(4, 1)) <> 
                     CAST( 
                         CASE  
