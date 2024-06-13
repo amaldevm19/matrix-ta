@@ -426,6 +426,7 @@ const transactionController = {
     copyTimesheetToErpTable:async(req,res)=>{
         try {
             let {DepartmentId} = req.query;
+            console.log(DepartmentId)
             let result = await PxERPTransactionTableBuilder({DepartmentId:parseInt(DepartmentId)});
             if(result.status == "ok"){
                 await controllerLogger(req)
