@@ -36,6 +36,8 @@ async function PxERPTransactionTableBuilderScheduler() {
                     }
                 }
               }
+              let message = `Completed all PxERPTransactionTableBuilderScheduler`;
+              console.log(message);
           } catch (error) {
             let message = `Error in PxERPTransactionTableBuilderScheduler function : ${error.message}`;
             console.log(message);
