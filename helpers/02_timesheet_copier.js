@@ -151,7 +151,8 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
         FROM #TempTimesheetWithoutDuplicates;
       `);
       if(result){
-        let message=`Successfully copied timesheet from [COSEC].[dbo].[Mx_JPCTimeSheet] to [TNA_PROXY].[dbo].[Px_TimesheetMst] in copyTimesheetFromCosecToProxyDbFunction From:${fromDate} To:${toDate}`
+        let message=`Successfully copied timesheet from [COSEC].[dbo].[Mx_JPCTimeSheet] to [TNA_PROXY].[dbo].[Px_TimesheetMst]
+         in copyTimesheetFromCosecToProxyDbFunction From:${fromDate} To:${toDate}`
         console.log(message)
         MiddlewareHistoryLogger({EventType:EventType.INFORMATION,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.SUCCESS,EventText:String(message)})
       }

@@ -30,7 +30,10 @@ async function erpTransactionScheduler() {
 
             let { TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentDate, CurrentHour } = ERPTransactionTriggerDateBuilder(sqlData);
             if((TriggerDate==CurrentDate) && (TriggerHour==CurrentHour)){
-              let message = `Starting ERP Synchronization for Department:${DepartmentId} and User Category:${UserCategoryId} in erpTransactionScheduler function From ${FromDate} To ${ToDate}`;
+              let message = `Starting ERP Synchronization for 
+              Department:${DepartmentId} and User Category:${UserCategoryId} 
+              From ${FromDate} To ${ToDate}
+              `;
               console.log(message);
               await MiddlewareHistoryLogger({
                 EventType: EventType.INFORMATION,

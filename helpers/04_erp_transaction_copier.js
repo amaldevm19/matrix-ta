@@ -32,7 +32,9 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
                 ToDate = ToDate.toISOString().replace("T"," ").replace("Z","")
             }
 
-            let message=`Started copying timesheet from [COSEC].[dbo].[Px_TimesheetMst] to [TNA_PROXY].[dbo].[Px_ERPTransactionMst] for Department:${DepartmentId} and User Category:${UserCategoryId} in PxERPTransactionTableBuilder function From ${FromDate} To ${ToDate}`;
+            let message=`Started copying timesheet from [COSEC].[dbo].[Px_TimesheetMst] to [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
+            for Department:${DepartmentId} and User Category:${UserCategoryId} 
+            in PxERPTransactionTableBuilder function From ${FromDate} To ${ToDate}`;
             console.log(message)
             await MiddlewareHistoryLogger({EventType:EventType.INFORMATION,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.STARTED,EventText:String(message)});
             const result = await request.query(`
@@ -137,7 +139,9 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
             );
             `)
             if(result.rowsAffected){
-                let message=`Successfully copied timesheet from [COSEC].[dbo].[Px_TimesheetMst] to [TNA_PROXY].[dbo].[Px_ERPTransactionMst] for Department:${DepartmentId} and User Category:${UserCategoryId} in PxERPTransactionTableBuilder function From ${FromDate} To ${ToDate}`;
+                let message=`Successfully copied timesheet from [COSEC].[dbo].[Px_TimesheetMst] to [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
+                 for Department:${DepartmentId} and User Category:${UserCategoryId} 
+                 in PxERPTransactionTableBuilder function From ${FromDate} To ${ToDate}`;
                 return {status:"ok",data:result.rowsAffected,message,error:""};
             }
       } catch (error) {
