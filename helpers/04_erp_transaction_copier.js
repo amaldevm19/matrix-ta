@@ -49,7 +49,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
                 END AS TotalHours,
                 BranchId,
                 TSM.DepartmentId AS DepartmentId,
-                UserCategoryId,
+                TSM.UserCategoryId AS UserCategoryId,
                 EmployeeCategoryId,
                 DesignationId,
                 CustomGroup3Id,
