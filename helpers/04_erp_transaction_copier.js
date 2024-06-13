@@ -32,7 +32,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
                 ToDate = ToDate.toISOString().replace("T"," ").replace("Z","")
             }
 
-            let message = `Started copying data from [TNA_PROXY].[dbo].[Px_TimesheetMst] to [TNA_PROXY].[dbo].[Px_ERPTransactionMst] for From ${FromDate} To ${ToDate} `;
+            let message=`Started copying timesheet from [COSEC].[dbo].[Px_TimesheetMst] to [TNA_PROXY].[dbo].[Px_ERPTransactionMst] for Department:${DepartmentId} and User Category:${UserCategoryId} in PxERPTransactionTableBuilder function From ${FromDate} To ${ToDate}`;
             console.log(message)
             await MiddlewareHistoryLogger({EventType:EventType.INFORMATION,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.STARTED,EventText:String(message)});
             const result = await request.query(`
@@ -137,14 +137,10 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
             );
             `)
             if(result.rowsAffected){
-                message = `Successfully copied data from [TNA_PROXY].[dbo].[Px_TimesheetMst] to [TNA_PROXY].[dbo].[Px_ERPTransactionMst] for From ${FromDate} To ${ToDate} `;
-                console.log(message)
-                await MiddlewareHistoryLogger({EventType:EventType.INFORMATION,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.SUCCESS,EventText:String(message)});
-                return {status:"ok",data:result.rowsAffected,error:""};
+                let message=`Successfully copied timesheet from [COSEC].[dbo].[Px_TimesheetMst] to [TNA_PROXY].[dbo].[Px_ERPTransactionMst] for Department:${DepartmentId} and User Category:${UserCategoryId} in PxERPTransactionTableBuilder function From ${FromDate} To ${ToDate}`;
+                return {status:"ok",data:result.rowsAffected,message,error:""};
             }
-            throw (new Error("PxERPTransactionTableBuilder function returned null"))
       } catch (error) {
-
         let message =`Error in PxERPTransactionTableBuilder function : ${error}`;
         console.log(message)
         await MiddlewareHistoryLogger({EventType:EventType.ERROR,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.FAILED,EventText:String(message)})

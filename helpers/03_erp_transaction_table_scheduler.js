@@ -8,7 +8,7 @@ const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require(".
 
 async function PxERPTransactionTableBuilderScheduler() {
     try {
-        let PxERPTransactionTableBuilderScheduler = cron.schedule('25,35,50 * * * *',async function () {
+        let PxERPTransactionTableBuilderScheduler = cron.schedule('20,30,52 * * * *',async function () {
           try {
               await ProxyDbPool.connect();
               const request = new sql.Request(ProxyDbPool);
@@ -29,17 +29,10 @@ async function PxERPTransactionTableBuilderScheduler() {
                     let UserCategoryId = element.UserCategoryId
             
                     let { FromDate, ToDate } = ERPTransactionTriggerDateBuilder(sqlData);
-                    let message=`Started copying timesheet from [COSEC].[dbo].[Px_TimesheetMst] to [TNA_PROXY].[dbo].[Px_ERPTransactionMst] for Department:${DepartmentId} and User Category:${UserCategoryId} in PxERPTransactionTableBuilder function From ${FromDate} To ${ToDate}`;
-                    console.log(message);
-                    await MiddlewareHistoryLogger({EventType:EventType.INFORMATION,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.STARTED,EventText:String(message)})
                     let result = await PxERPTransactionTableBuilder({DepartmentId,UserCategoryId});
                     if(result.status == 'ok'){
-                        let message=`Successfully copied timesheet from [COSEC].[dbo].[Px_TimesheetMst] to [TNA_PROXY].[dbo].[Px_ERPTransactionMst] for Department:${DepartmentId} and User Category:${UserCategoryId} in PxERPTransactionTableBuilder function From ${FromDate} To ${ToDate}`;
-                        console.log(message)
+                        console.log(result.message)
                         await MiddlewareHistoryLogger({EventType:EventType.INFORMATION,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.COMPLETED,EventText:String(message)}) 
-                        return;
-                    }else{
-                        throw result.error;
                     }
                 }
               }
