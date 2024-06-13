@@ -155,6 +155,7 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
          in copyTimesheetFromCosecToProxyDbFunction From:${fromDate} To:${toDate}`
         console.log(message)
         MiddlewareHistoryLogger({EventType:EventType.INFORMATION,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.SUCCESS,EventText:String(message)})
+        return 0;
       }
     } catch (error) {
       let message = `Error in copyTimesheetFromCosecToProxyDbFunction function : ${error.message}`
