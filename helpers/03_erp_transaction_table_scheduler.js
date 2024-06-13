@@ -28,7 +28,10 @@ async function PxERPTransactionTableBuilderScheduler() {
                     let DepartmentId=element.DepartmentId
                     let UserCategoryId = element.UserCategoryId
             
-                    let { FromDate, ToDate } = ERPTransactionTriggerDateBuilder(sqlData);
+                    let { TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentDate, CurrentHour } = ERPTransactionTriggerDateBuilder(sqlData);
+                    if((TriggerDate==CurrentDate) && (TriggerHour==CurrentHour)){
+                      continue;
+                    }
                     let result = await PxERPTransactionTableBuilder({DepartmentId,UserCategoryId});
                     if(result.status == 'ok'){
                         console.log(result.message)
