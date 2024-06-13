@@ -69,8 +69,8 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
                 AND TSM.JobCode IS NOT NULL AND TSM.JobCode <> ''
                 AND TotalJobTime IS NOT NULL AND TotalJobTime > (COALESCE(JPC.BreakHour, 1)*60 + COALESCE(JPC.TravelHour, 0)*60) + COALESCE(UHD.HoursPerDay, 0) + 15
                 AND BranchId = 1
-                AND ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR TSM.DepartmentId = '${DepartmentId}'
-                AND ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR TSM.UserCategoryId = '${UserCategoryId}'
+                AND ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR TSM.DepartmentId = '${DepartmentId}')
+                AND ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR TSM.UserCategoryId = '${UserCategoryId}')
                                 
             ) AS Source ON
             Target.HcmWorker_PersonnelNumber = CONCAT(
