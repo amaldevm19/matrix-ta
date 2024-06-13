@@ -14,7 +14,7 @@ async function copyTimesheetFromCosecToProxyDbSchedule() {
             MiddlewareHistoryLogger({EventType:EventType.INFORMATION,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.STARTED,EventText:String(message)})
             await copyTimesheetFromCosecToProxyDbFunction({fromDate, toDate})
         })
-        let message = `Successfully registered copyTimesheetFromCosecToProxyDbSchedule`
+        let message = `Successfully Scheduled copyTimesheetFromCosecToProxyDbSchedule`
         console.log(message)
         MiddlewareHistoryLogger({EventType:EventType.INFORMATION,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.COMPLETED,EventText:message})
         return copyTimesheetFromCosecToProxyDbScheduleHandle;
