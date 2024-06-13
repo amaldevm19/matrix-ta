@@ -3,7 +3,7 @@ const {ProxyDbPool, sql} = require("../config/db");
 const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require("../helpers/19_middleware_history_logger");
 
 
-async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId,UserCategoryId}) {
+async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId='',UserCategoryId=''}) {
     try {
         await ProxyDbPool.connect();
         const request = new sql.Request(ProxyDbPool);
