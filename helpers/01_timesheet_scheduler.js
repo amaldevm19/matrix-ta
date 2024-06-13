@@ -8,7 +8,7 @@ async function copyTimesheetFromCosecToProxyDbSchedule() {
         let copyTimesheetFromCosecToProxyDbScheduleHandle = cron.schedule(`0,20,40 * * * *`, async () => { 
             let backDate = 34;
             const { fromDate, toDate } = timesheetCopyDatesBuilder(backDate);
-            let message = `${new Date().toISOString()} : Running batchjob copyTimesheetFromCosecToProxyDbSchedule;
+            let message = `${new Date().toLocaleString()} : Running batchjob copyTimesheetFromCosecToProxyDbSchedule;
             Job will copy Timesheet from Cosec to Proxy DB from FromDate : ${fromDate} to ToDate : ${toDate};`
             console.log(message)
             MiddlewareHistoryLogger({EventType:EventType.INFORMATION,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.STARTED,EventText:String(message)})

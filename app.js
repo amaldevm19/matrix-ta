@@ -145,6 +145,6 @@ async function ScheduleCreator() {
 
 console.log( "Current DateTime: ",new Date().toLocaleString())
 
-//ScheduleCreator();
+ScheduleCreator();
 
 module.exports = app;

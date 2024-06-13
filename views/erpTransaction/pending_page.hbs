@@ -206,7 +206,8 @@
 
         $("#copy_timesheet").click(async(e)=>{
             showLoadingIndicator();
-            let url='/api/erp-transaction/copy-timesheet';
+            let DepartmentId=$('#department').val()
+            let url=`/api/erp-transaction/copy-timesheet?DepartmentId=${DepartmentId}`;
             let response = await fetch(url);
             let data = await response.json();
             if(data){

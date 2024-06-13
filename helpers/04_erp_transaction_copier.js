@@ -3,8 +3,10 @@ const {ProxyDbPool, sql} = require("../config/db");
 const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require("../helpers/19_middleware_history_logger");
 
 
-async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId=0,UserCategoryId=0,request}) {
+async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId,UserCategoryId}) {
     try {
+        await ProxyDbPool.connect();
+        const request = new sql.Request(ProxyDbPool);
       try {
             if(!FromDate){
                 FromDate = new Date();
@@ -62,15 +64,13 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
             LEFT JOIN [TNA_PROXY].[dbo].[Px_JPCJobMst] AS JPC ON TSM.JobCode = JPC.JobCode
             LEFT JOIN [TNA_PROXY].[dbo].[Px_UserHourDeduTrn] AS UHD ON TSM.UserID = UHD.UserID AND TSM.PDate BETWEEN UHD.FromDate AND UHD.ToDate
             WHERE
-                PDate BETWEEN '${FromDate}' AND '${ToDate}'
+                PDate BETWEEN '${FromDate}' AND '${ToDate}' AND PDate IS NOT NULL
                 AND TSM.UserID IS NOT NULL AND TSM.UserID <> ''
-                AND PDate IS NOT NULL
                 AND TSM.JobCode IS NOT NULL AND TSM.JobCode <> ''
-                AND TotalJobTime IS NOT NULL
+                AND TotalJobTime IS NOT NULL AND TotalJobTime > (COALESCE(JPC.BreakHour, 1)*60 + COALESCE(JPC.TravelHour, 0)*60) + COALESCE(UHD.HoursPerDay, 0) + 15
                 AND BranchId = 1
-                AND TotalJobTime > (COALESCE(JPC.BreakHour, 1)*60 + COALESCE(JPC.TravelHour, 0)*60) + COALESCE(UHD.HoursPerDay, 0) + 15
-                --AND TSM.DepartmentId = 2
-                --AND UserCategoryId = 2
+                AND ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR TSM.DepartmentId = '${DepartmentId}'
+                AND ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR TSM.UserCategoryId = '${UserCategoryId}'
                                 
             ) AS Source ON
             Target.HcmWorker_PersonnelNumber = CONCAT(

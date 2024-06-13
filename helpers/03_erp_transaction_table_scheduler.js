@@ -31,7 +31,7 @@ async function PxERPTransactionTableBuilderScheduler() {
                 let message=`Started copying timesheet from [COSEC].[dbo].[Px_TimesheetMst] to [TNA_PROXY].[dbo].[Px_ERPTransactionMst] for Department:${DepartmentId} and User Category:${UserCategoryId} in PxERPTransactionTableBuilder function From ${FromDate} To ${ToDate}`;
                 console.log(message);
                 await MiddlewareHistoryLogger({EventType:EventType.INFORMATION,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.STARTED,EventText:String(message)})
-                let result = await PxERPTransactionTableBuilder({FromDate, ToDate,DepartmentId,UserCategoryId,request});
+                let result = await PxERPTransactionTableBuilder({FromDate, ToDate,DepartmentId,UserCategoryId});
                 if(result.status == 'ok'){
                     let message=`Successfully copied timesheet from [COSEC].[dbo].[Px_TimesheetMst] to [TNA_PROXY].[dbo].[Px_ERPTransactionMst] for Department:${DepartmentId} and User Category:${UserCategoryId} in PxERPTransactionTableBuilder function From ${FromDate} To ${ToDate}`;
                     console.log(message)
