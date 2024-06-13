@@ -191,7 +191,7 @@
             }).done(function (data) {
                 if(data.status =="ok"){
                     tempstatusErpTable.setData(data.data);
-                    tempstatusErpTable.download("csv", "erptimesheet.csv", {delimiter:","})
+                    tempstatusErpTable.download("csv", `erptimesheet-${$('#department_id option:selected').text()}-${$("#from_date").val()}-${$("#to_date").val()}.csv`, {delimiter:","})
                 }else{
                     alert("Failed to download")
                 }

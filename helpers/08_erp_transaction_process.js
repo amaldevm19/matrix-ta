@@ -4,6 +4,7 @@ const {getTimesheetFromERPTransactionMstTable,updateERPTransactionStatus} = requ
 const {postTransactionToERP} = require("./09_post_transaction");
 const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require("../helpers/19_middleware_history_logger");
 
+/*
 async function startERPTransaction({
     FromDate='', 
     ToDate='',
@@ -85,6 +86,91 @@ async function startERPTransaction({
     }
 
 }
+*/
+
+async function startERPTransaction({
+    FromDate='', 
+    ToDate='',
+    EmployeeId='',
+    JobCode='',
+    DepartmentId='',
+    UserCategoryId='',
+    EmployeeCategoryId='',
+    DesignationId='',
+    SectionId='', 
+    SyncCompleted=0,
+    pendingD365ResponseArray=[]
+}) {
+    try {
+        console.log(`Starting getTimesheetFromERPTransactionMstTable for streaming data`);
+
+        const stream = await getTimesheetFromERPTransactionMstTable({
+            FromDate, 
+            ToDate, 
+            EmployeeId, 
+            JobCode,
+            DepartmentId,
+            UserCategoryId,
+            EmployeeCategoryId,
+            DesignationId,
+            SectionId,
+            SyncCompleted 
+        });
+
+        const pendingResponses = [];
+        let transactionData = [];
+        stream.on('row', async (row) => {
+            try {
+                transactionData.push(row);
+                if (transactionData.length >= 100) {
+                    stream.pause();
+                    const postingResult = await postTransactionToERP(transactionData);
+                    if (postingResult.status == "ok") {
+                        transactionData = []
+                        stream.resume()
+                        const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResult.data);
+                        if (updateERPTransactionStatusResult.status === "ok") {
+                            pendingResponses.push(updateERPTransactionStatusResult.data);
+                        }
+                    }
+                }
+                
+            } catch (error) {
+                const message = `Error processing row in startERPTransaction function : ${error}`;
+                console.log(message);
+                await MiddlewareHistoryLogger({EventType:EventType.ERROR, EventCategory:EventCategory.SYSTEM, EventStatus:EventStatus.FAILED, EventText:String(message)});
+            }
+        });
+
+        stream.on('end', async () => {
+            console.log(`Completed streaming data`);
+            const newPendingCount = await checkPendingCount({
+                DepartmentId,
+                UserCategoryId,
+                FromDate,
+                ToDate,
+            });
+            if (newPendingCount > 0) {
+                await startERPTransaction({
+                    FromDate,
+                    ToDate,
+                    DepartmentId,
+                    UserCategoryId,
+                    pendingD365ResponseArray:[...pendingD365ResponseArray, pendingResponses],
+                });
+            }else{
+                return { status: "ok", data: [...pendingD365ResponseArray, ...pendingResponses], error: "" };
+            }
+        });
+
+    } catch (error) {
+        const message = `Error in startERPTransaction function : ${error}`;
+        console.log(message);
+        await MiddlewareHistoryLogger({EventType:EventType.ERROR, EventCategory:EventCategory.SYSTEM, EventStatus:EventStatus.FAILED, EventText:String(message)});
+        return { status: "not ok", data: "", error: error };
+    }
+}
+
 
 async function checkPendingCount({DepartmentId,UserCategoryId, FromDate, ToDate}) {
     try {
@@ -98,13 +184,15 @@ async function checkPendingCount({DepartmentId,UserCategoryId, FromDate, ToDate}
         ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR DepartmentId = ${DepartmentId?DepartmentId:0}) AND
         ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR UserCategoryId = ${UserCategoryId?UserCategoryId:0}) AND
         (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-        SyncCompleted = 0 AND Error=0;
+        SyncCompleted=0 AND Error=0 AND readForERP=0;
         `);
         let pendingCount = result.recordset[0].TotalCount;
         console.log("Pending count: ",pendingCount)
         return pendingCount;
     } catch (error) {
-        
+        const message = `Error in checkPendingCount function : ${error}`;
+        console.log(message);
+        await MiddlewareHistoryLogger({EventType:EventType.ERROR, EventCategory:EventCategory.SYSTEM, EventStatus:EventStatus.FAILED, EventText:String(message)});
     }
 }
 

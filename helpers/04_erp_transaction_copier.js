@@ -1,7 +1,7 @@
 
 const {ProxyDbPool, sql} = require("../config/db");
 const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require("../helpers/19_middleware_history_logger");
-//const {dataBaseReadWriteEvents} = require("./08_erp_transaction_process");
+
 
 async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId=0,UserCategoryId=0,request}) {
     try {
@@ -79,7 +79,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
                 SUBSTRING(Source.HcmWorker_PersonnelNumber, PATINDEX('%[0-9]%', Source.HcmWorker_PersonnelNumber), LEN(Source.HcmWorker_PersonnelNumber))
             )
             AND Target.TransDate = Source.TransDate
-            WHEN MATCHED AND Target.SyncCompleted = 0 AND (
+            WHEN MATCHED AND Target.SyncCompleted=0 AND Target.readForERP=0 AND (
                 (CAST(Target.TotalHours AS decimal(4, 1)) <> 
                     CAST( 
                         CASE  
@@ -136,7 +136,6 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
                 Source.CategoryId
             );
             `)
-            // CAST(Source.TotalHours AS decimal(4, 1))
             if(result.rowsAffected){
                 message = `Successfully copied data from [TNA_PROXY].[dbo].[Px_TimesheetMst] to [TNA_PROXY].[dbo].[Px_ERPTransactionMst] for From ${FromDate} To ${ToDate} `;
                 console.log(message)
@@ -159,6 +158,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
         return {status:"not ok",data:"",error};
     }
 }
+/*
 async function getTimesheetFromERPTransactionMstTable({
     sendingCount,
     EmployeeId,
@@ -220,6 +220,8 @@ async function getTimesheetFromERPTransactionMstTable({
         return {data:"", error:message,status:"not ok"}
     }
 }
+
+
 async function updateERPTransactionStatus(pendingD365ResponseArray) {
     try {
         await ProxyDbPool.connect();
@@ -282,5 +284,165 @@ async function updateERPTransactionStatus(pendingD365ResponseArray) {
     }
 
 }
+
+
+*/
+
+async function getTimesheetFromERPTransactionMstTable({
+    EmployeeId,
+    JobCode,
+    DepartmentId,
+    UserCategoryId,
+    EmployeeCategoryId,
+    DesignationId,
+    SectionId, 
+    FromDate, 
+    ToDate,
+    SyncCompleted,
+}){
+    try {
+        await ProxyDbPool.connect();
+        const request = new sql.Request(ProxyDbPool);
+
+        const query = `
+            UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
+            SET readForERP = 1
+            OUTPUT INSERTED.[Id],
+                INSERTED.[HcmWorker_PersonnelNumber],
+                INSERTED.[TransDate],
+                INSERTED.[projId],
+                INSERTED.[TotalHours],
+                INSERTED.[CategoryId],
+                DELETED.[Id],
+                DELETED.[HcmWorker_PersonnelNumber],
+                DELETED.[TransDate],
+                DELETED.[projId],
+                DELETED.[TotalHours],
+                DELETED.[CategoryId]
+            FROM [TNA_PROXY].[dbo].[Px_ERPTransactionMst] WITH (UPDLOCK, READPAST)
+            WHERE 
+                ('${EmployeeId}' IS NULL OR '${EmployeeId}'='' OR HcmWorker_PersonnelNumber = '${EmployeeId}') AND
+                ('${JobCode}' IS NULL OR '${JobCode}'='' OR projId ='${JobCode}') AND
+                ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR DepartmentId = ${DepartmentId ? DepartmentId : 0}) AND
+                ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR UserCategoryId = ${UserCategoryId ? UserCategoryId : 0}) AND
+                ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId ? EmployeeCategoryId : 0}) AND
+                ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId ? DesignationId : 0}) AND
+                ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId ? SectionId : 0}) AND
+                (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
+                (SyncCompleted = ${SyncCompleted} AND Error = 0 AND readForERP = 0);
+        `;
+
+        const stream = request.query(query).stream();
+
+        stream.on('error', async (err) => {
+            const message = `Error in getTimesheetFromERPTransactionMstTable function : ${err}`;
+            console.log(message);
+            await MiddlewareHistoryLogger({EventType:EventType.ERROR, EventCategory:EventCategory.SYSTEM, EventStatus:EventStatus.FAILED, EventText:String(message)});
+            throw err;
+        });
+
+        return stream;
+
+    } catch (error) {
+        const message = `Error connecting to the database in getTimesheetFromERPTransactionMstTable function : ${error}`;
+        console.log(message);
+        await MiddlewareHistoryLogger({EventType:EventType.ERROR, EventCategory:EventCategory.SYSTEM, EventStatus:EventStatus.FAILED, EventText:String(message)});
+        throw error;
+    }
+}
+
+
+
+async function updateERPTransactionStatus(pendingD365ResponseArray) {
+    try {
+        await ProxyDbPool.connect();
+        let results = [];
+        const batchSize = 10; // Adjust batch size as needed
+
+        const message = `Starting batch updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
+        console.log(message);
+        await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.STARTED, EventText: String(message) });
+
+        for (let i = 0; i < pendingD365ResponseArray.length; i += batchSize) {
+            const batch = pendingD365ResponseArray.slice(i, i + batchSize);
+
+            try {
+                await ProxyDbPool.transaction(async (tx) => {
+                    const txRequest = new sql.Request(tx);
+
+                    for (const element of batch) {
+                        let query = "";
+                        let params = {};
+
+                        if (element.Error) {
+                            query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
+                                     SET Error = 1, ErrorText = @ErrorText 
+                                     WHERE HcmWorker_PersonnelNumber = @HcmWorker_PersonnelNumber
+                                     AND TransDate = @TransDate
+                                     AND projId = @ProjId`;
+                            params = {
+                                ErrorText: element.ErrorTxt,
+                                HcmWorker_PersonnelNumber: element.HcmWorker_PersonnelNumber,
+                                TransDate: `${element.TransDate.slice(0, 10)} 00:00:00.000`,
+                                ProjId: element.ProjId
+                            };
+                        } else {
+                            query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
+                                     SET SyncCompleted = 1 
+                                     WHERE HcmWorker_PersonnelNumber = @HcmWorker_PersonnelNumber
+                                     AND TransDate = @TransDate
+                                     AND projId = @ProjId`;
+                            params = {
+                                HcmWorker_PersonnelNumber: element.HcmWorker_PersonnelNumber,
+                                TransDate: `${element.TransDate.slice(0, 10)} 00:00:00.000`,
+                                ProjId: element.ProjId
+                            };
+                        }
+
+                        txRequest.input('ErrorText', sql.NVarChar, sanitizeInput(params.ErrorText));
+                        txRequest.input('HcmWorker_PersonnelNumber', sql.NVarChar, sanitizeInput(params.HcmWorker_PersonnelNumber));
+                        txRequest.input('TransDate', sql.DateTime, params.TransDate);
+                        txRequest.input('ProjId', sql.NVarChar, params.ProjId);
+
+                        const result = await txRequest.query(query);
+                        if (result?.rowsAffected[0]) {
+                            console.log({ ...element, SyncCompleted: 1 });
+                            results.push({ ...element, SyncCompleted: 1 });
+                        } else {
+                            results.push(element);
+                        }
+                    }
+                });
+            } catch (error) {
+                const message = `Error in batch update: ${error.message}`;
+                console.log(message);
+                await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.COMPLETED, EventText: String(message) });
+                results.push(...batch); // Keep elements for retry or logging purposes
+            }
+        }
+
+        const completionMessage = `Completed batch updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
+        console.log(completionMessage);
+        await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.COMPLETED, EventText: String(completionMessage) });
+
+        return { data: results, error: "", status: "ok" };
+    } catch (error) {
+        const connectionErrorMessage = `Error connecting to the database in updateERPTransactionStatus function : ${error}`;
+        console.log(connectionErrorMessage);
+        await MiddlewareHistoryLogger({ EventType: EventType.ERROR, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.FAILED, EventText: String(connectionErrorMessage) });
+        return { data: "", error: error, status: "not ok" };
+    }
+}
+
+ // Define a function to sanitize the input
+ function sanitizeInput(input) {
+    // Use a regular expression to remove characters other than a-zA-Z0-9 and hyphen (-)
+    return input.trim().replace(/[^a-zA-Z0-9-]/g, '');
+}
+
+
+
+
+
 
 module.exports={PxERPTransactionTableBuilder, getTimesheetFromERPTransactionMstTable, updateERPTransactionStatus};

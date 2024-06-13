@@ -147,7 +147,8 @@ async function ScheduleCreator() {
  
   copyTimesheetFromCosecToProxyDbScheduleHandle?.start();
 }
-//console.log( "Current DateTime: ",new Date().toISOString())
+
+console.log( "Current DateTime: ",new Date().toISOString())
 
 //ScheduleCreator();
 

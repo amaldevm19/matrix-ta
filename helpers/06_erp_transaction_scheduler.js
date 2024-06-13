@@ -3,28 +3,13 @@ const EventEmitter = require("node:events");
 const callBackDoneEvent = new EventEmitter();
 
 const { ProxyDbPool, sql } = require("../config/db");
-const {
-  ERPTransactionTriggerDateBuilder,
-} = require("./05_transaction_trigger_date_builder");
-const {
-  startERPTransaction,
-  checkPendingCount,
-} = require("./08_erp_transaction_process");
-const {
-  MiddlewareHistoryLogger,
-  EventCategory,
-  EventType,
-  EventStatus,
-} = require("../helpers/19_middleware_history_logger");
-const {
-  updateTransactionTriggerSettings,
-} = require("../helpers/20_update_transaction_trigger_settings");
-
-
+const { ERPTransactionTriggerDateBuilder} = require("./05_transaction_trigger_date_builder");
+const { startERPTransaction, checkPendingCount} = require("./08_erp_transaction_process");
+const {MiddlewareHistoryLogger,  EventCategory, EventType, EventStatus} = require("../helpers/19_middleware_history_logger");
+const { updateTransactionTriggerSettings } = require("../helpers/20_update_transaction_trigger_settings");
+  
 let erpTransactionScheduleHandleArray = [];
-// let callBackDoneArray = null;
-// let totalCallback = 0;
-// let cronJobStarted = false;
+
 async function erpTransactionScheduler(isRunning) {
   try {
     await ProxyDbPool.connect();
@@ -39,8 +24,6 @@ async function erpTransactionScheduler(isRunning) {
             WHERE Status=1
             `);
       if (db_response?.recordset) {
-        // totalCallback = db_response.recordset.length;
-        // callBackDoneArray = [];
         for (let index = 0; index < db_response.recordset.length; index++) {
           const element = db_response.recordset[index];
           let sqlData = {
@@ -52,21 +35,6 @@ async function erpTransactionScheduler(isRunning) {
           let erpTransactionScheduleHandle = cron.schedule(
             `${TriggerMinute} ${TriggerHour} ${TriggerDate} * *`,
             async () => {
-                /*
-                let thisJob = false;
-                while(!thisJob){
-                    if(!cronJobStarted){
-                        callBackDoneEvent.emit("cron job started");
-                        cronJobStarted = true;
-                        thisJob = true;
-                    }
-                }
-                callBackDoneEvent.on("cron job started", async ()=>{
-                    if(thisJob){
-                        
-                    }
-                });
-                */
                 try {
                     await ProxyDbPool.connect();
                     const request = new sql.Request(ProxyDbPool);
@@ -114,7 +82,6 @@ async function erpTransactionScheduler(isRunning) {
                         pendingCount,
                       });
                       if (result.status == "ok") {
-                        // cronJobStarted = false;
                         await updateTransactionTriggerSettings({
                           Id,
                           TriggerDate,
@@ -124,22 +91,14 @@ async function erpTransactionScheduler(isRunning) {
                           UserCategoryId,
                           request,
                         });
-                        // callBackDoneArray.push(element.DepartmentId);
                         let message = `Successfully completed ERP synchronization for Department:${DepartmentId} and User Category:${UserCategoryId} in erpTransactionScheduler function From ${FromDate} To ${ToDate}`;
                         console.log(message);
-                        // console.log(
-                        // // //   `callBackDoneArray: ${callBackDoneArray.length}`
-                        // );
-                        // console.log(`totalCallback : ${totalCallback}`);
                         await MiddlewareHistoryLogger({
                           EventType: EventType.INFORMATION,
                           EventCategory: EventCategory.SYSTEM,
                           EventStatus: EventStatus.COMPLETED,
                           EventText: String(message),
                         });
-                        // // if (callBackDoneArray.length == totalCallback) {
-                        //   callBackDoneEvent.emit("callBackDoneEvent");
-                        // }
                       } else {
                         throw result.error;
                       }
