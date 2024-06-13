@@ -8,10 +8,10 @@ const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require(".
 
 async function PxERPTransactionTableBuilderScheduler() {
     try {
-        await ProxyDbPool.connect();
-        const request = new sql.Request(ProxyDbPool);
-        let PxERPTransactionTableBuilderScheduler = cron.schedule('10,30,50 * * * *',async function (request) {
+        let PxERPTransactionTableBuilderScheduler = cron.schedule('15,30,50 * * * *',async function () {
           try {
+              await ProxyDbPool.connect();
+              const request = new sql.Request(ProxyDbPool);
               let db_response = await request.query(`
                 SELECT * 
                 FROM [TNA_PROXY].[dbo].[Px_TransTriggerMst] 
@@ -44,7 +44,8 @@ async function PxERPTransactionTableBuilderScheduler() {
                 }
               }
           } catch (error) {
-              console.log(error)
+            let message = `Error in PxERPTransactionTableBuilderScheduler function : ${error.message}`;
+            console.log(message);
           }
         })
         let message = `Successfully Scheduled PxERPTransactionTableBuilderScheduler`;
@@ -58,13 +59,13 @@ async function PxERPTransactionTableBuilderScheduler() {
         return PxERPTransactionTableBuilderScheduler;
       }catch(error){
         let message = `Error in PxERPTransactionTableBuilderScheduler function : ${error.message}`;
-          console.log(message);
-          await MiddlewareHistoryLogger({
-            EventType: EventType.ERROR,
-            EventCategory: EventCategory.SYSTEM,
-            EventStatus: EventStatus.FAILED,
-            EventText: String(message),
-          });
+        console.log(message);
+        await MiddlewareHistoryLogger({
+          EventType: EventType.ERROR,
+          EventCategory: EventCategory.SYSTEM,
+          EventStatus: EventStatus.FAILED,
+          EventText: String(message),
+        });
         return null;
     }
 }
