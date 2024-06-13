@@ -210,7 +210,19 @@
             );
         });
         $("#update_table").click(function(e){
-            bioTimesheetTable.setData("/api/bio-timesheet/update-timesheet", {page:"1", pageSize:"31"});
+            e.preventDefault();
+            showLoadingIndicator();
+             $.ajax({
+                url: '/api/bio-timesheet/update-timesheet',
+            }).done(function (data) {
+                 hideLoadingIndicator();
+                if(data.status =="ok"){
+                   location.reload();
+                }else{
+                    alert("Failed to download")
+                }
+                
+            });
         });
         $("#download_table").click(function(e){
             e.preventDefault();
