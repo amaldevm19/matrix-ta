@@ -8,7 +8,7 @@ const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require(".
 
 async function PxERPTransactionTableBuilderScheduler() {
     try {
-        let PxERPTransactionTableBuilderScheduler = cron.schedule('10,30,52 * * * *',async function () {
+        let PxERPTransactionTableBuilderScheduler = cron.schedule('16,30,52 * * * *',async function () {
           try {
               await ProxyDbPool.connect();
               const request = new sql.Request(ProxyDbPool);
@@ -32,7 +32,7 @@ async function PxERPTransactionTableBuilderScheduler() {
                     let result = await PxERPTransactionTableBuilder({DepartmentId,UserCategoryId});
                     if(result.status == 'ok'){
                         console.log(result.message)
-                        await MiddlewareHistoryLogger({EventType:EventType.INFORMATION,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.COMPLETED,EventText:String(message)}) 
+                        await MiddlewareHistoryLogger({EventType:EventType.INFORMATION,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.COMPLETED,EventText:String(result.message)}) 
                     }
                 }
               }
