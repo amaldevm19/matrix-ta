@@ -65,8 +65,6 @@ const erpTransactionPageController = {
             console.log("Error in erpTransactionPendingDataPage function : ",error)
             await controllerLogger(req,error);
             return res.render("erpTransaction/pending_page", {page_header:"ERP Timesheet Data Pending"});
-        }finally{
-            ProxyDbPool.close();
         }
     },
     erpTransactionStatusPage:async(req, res)=>{
@@ -107,10 +105,7 @@ const erpTransactionPageController = {
             console.log("Error in erpTransactionStatusPage function : ",error);
             await controllerLogger(req,error);
             return res.render("erpTransaction/status_page", {page_header:"ERP Timesheet Sync Completed"});
-        }finally{
-            ProxyDbPool.close();
         }
-
     },
     erpTransactionSettingsPage:async(req, res)=>{
         try {

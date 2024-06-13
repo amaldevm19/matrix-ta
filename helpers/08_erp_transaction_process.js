@@ -159,7 +159,10 @@ async function startERPTransaction({
                     pendingD365ResponseArray:[...pendingD365ResponseArray, pendingResponses],
                 });
             }else{
-                return { status: "ok", data: [...pendingD365ResponseArray, ...pendingResponses], error: "" };
+                
+                let startErpTransactionResultData = [...pendingD365ResponseArray, ...pendingResponses]
+                console.log(startErpTransactionResultData)
+                return { status: "ok", data: startErpTransactionResultData, error: "" };
             }
         });
 

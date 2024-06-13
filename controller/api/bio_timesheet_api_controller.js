@@ -72,8 +72,6 @@ const bioTimesheetController ={
             console.log("Error in getBioTimesheetHomePageData function : ", error)
             await controllerLogger(req, res)
             return res.status(400).json({status:"not ok",error:error, data:""})
-        }finally{
-            ProxyDbPool.close();
         }
     },
     updateTimesheetData: async (req, res)=>{
@@ -153,8 +151,6 @@ const bioTimesheetController ={
             console.log("Error in updateTimesheetData function : ", error)
             await controllerLogger(req, res)
             return res.status(400).json({status:"not ok",error:error, data:""})
-        }finally{
-            ProxyDbPool.close();
         }
     },
     downloadTimesheetData: async (req, res)=>{
@@ -203,8 +199,6 @@ const bioTimesheetController ={
             console.log("Error in downloadTimesheetData function : ", error);
             await controllerLogger(req, error)
             return res.status(400).json({status:"not ok",error:error, data:""})
-        }finally{
-            ProxyDbPool.close();
         }
     },
     bioTimesheetReportHorizontalPageData:async(req, res)=>{

@@ -2,6 +2,8 @@
 // Function to generate trigger date, from date, and to date for a given month
 function ERPTransactionTriggerDateBuilder(sqlData) {
     // Extract day values from SQL data
+    let CurrentDate = new Date().getDate();
+    let CurrentHour = new Date().getHours();
     let triggerDay = new Date(sqlData.TriggerDate).getDate();
     let triggerHour = new Date(sqlData.TriggerDate).getHours();
     let triggerMinute = new Date(sqlData.TriggerDate).getMinutes();
@@ -11,6 +13,8 @@ function ERPTransactionTriggerDateBuilder(sqlData) {
       TriggerMinute:triggerMinute,
       FromDate: formatSQLDatetime(new Date(sqlData.FromDate)),
       ToDate: formatSQLDatetime(new Date(sqlData.ToDate)),
+      CurrentDate,
+      CurrentHour
     };
 }
 
@@ -21,8 +25,6 @@ function formatSQLDatetime(date) {
   let day = ('0' + date.getDate()).slice(-2);
   return `${year}-${month}-${day} 00:00:00.000`;
 }
-
-  
 function timesheetCopyDatesBuilder(backDate) {
     const today = new Date();
     const fromDate = new Date(today);
@@ -35,9 +37,8 @@ function timesheetCopyDatesBuilder(backDate) {
       fromDate: formattedFromDate,
       toDate: formattedToDate
     };
-  }
-
-  function updateTriggerSettingToNextMonth({ TriggerDate, FromDate, ToDate }) {
+}
+function updateTriggerSettingToNextMonth({ TriggerDate, FromDate, ToDate }) {
     FromDate = FromDate.split(" ")[0];
     ToDate = ToDate.split(" ")[0];
     // Convert string dates to Date objects
@@ -59,6 +60,6 @@ function timesheetCopyDatesBuilder(backDate) {
       updatedFromDate,
       updatedToDate,
     };
-  }
+}
 
 module.exports={ERPTransactionTriggerDateBuilder, timesheetCopyDatesBuilder, updateTriggerSettingToNextMonth}

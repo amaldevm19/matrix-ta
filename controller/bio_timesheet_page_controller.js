@@ -39,9 +39,7 @@ const bioTimesheetPageController = {
             console.log("Error in bioTimesheetHomePage function : ",error)
             await controllerLogger(req,error);
             return res.render("bioTimesheet", {page_header:"Timesheet for last 34 days"});
-        }finally{
-            ProxyDbPool.close();
-        } 
+        }
     },
     bioTimesheetReportHorizontalPage:async(req, res)=>{
         try {

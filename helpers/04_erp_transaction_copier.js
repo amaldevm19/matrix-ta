@@ -353,79 +353,62 @@ async function getTimesheetFromERPTransactionMstTable({
 
 
 
-async function updateERPTransactionStatus(pendingD365ResponseArray) {
+async function updateERPTransactionStatus(postingResult) {
     try {
         await ProxyDbPool.connect();
         let results = [];
-        const batchSize = 10; // Adjust batch size as needed
-
-        const message = `Starting batch updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
+        const message = `Starting updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
         console.log(message);
         await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.STARTED, EventText: String(message) });
 
-        for (let i = 0; i < pendingD365ResponseArray.length; i += batchSize) {
-            const batch = pendingD365ResponseArray.slice(i, i + batchSize);
+        await ProxyDbPool.transaction(async (tx) => {
+            const txRequest = new sql.Request(tx);
 
-            try {
-                await ProxyDbPool.transaction(async (tx) => {
-                    const txRequest = new sql.Request(tx);
+            for (const element of postingResult) {
+                let query = "";
+                let params = {};
 
-                    for (const element of batch) {
-                        let query = "";
-                        let params = {};
+                if (element.Error) {
+                    query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
+                             SET Error = 1, ErrorText = @ErrorText 
+                             WHERE HcmWorker_PersonnelNumber = @HcmWorker_PersonnelNumber
+                             AND TransDate = @TransDate
+                             AND projId = @ProjId`;
+                    params = {
+                        ErrorText: element.ErrorTxt,
+                        HcmWorker_PersonnelNumber: element.HcmWorker_PersonnelNumber,
+                        TransDate: `${element.TransDate.slice(0, 10)} 00:00:00.000`,
+                        ProjId: element.ProjId
+                    };
+                    results.push({ ...element, SyncCompleted: 0 });
+                } else {
+                    query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
+                             SET SyncCompleted = 1 
+                             WHERE HcmWorker_PersonnelNumber = @HcmWorker_PersonnelNumber
+                             AND TransDate = @TransDate
+                             AND projId = @ProjId`;
+                    params = {
+                        HcmWorker_PersonnelNumber: element.HcmWorker_PersonnelNumber,
+                        TransDate: `${element.TransDate.slice(0, 10)} 00:00:00.000`,
+                        ProjId: element.ProjId
+                    };
+                    results.push({ ...element, SyncCompleted: 1 });
+                }
 
-                        if (element.Error) {
-                            query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
-                                     SET Error = 1, ErrorText = @ErrorText 
-                                     WHERE HcmWorker_PersonnelNumber = @HcmWorker_PersonnelNumber
-                                     AND TransDate = @TransDate
-                                     AND projId = @ProjId`;
-                            params = {
-                                ErrorText: element.ErrorTxt,
-                                HcmWorker_PersonnelNumber: element.HcmWorker_PersonnelNumber,
-                                TransDate: `${element.TransDate.slice(0, 10)} 00:00:00.000`,
-                                ProjId: element.ProjId
-                            };
-                        } else {
-                            query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
-                                     SET SyncCompleted = 1 
-                                     WHERE HcmWorker_PersonnelNumber = @HcmWorker_PersonnelNumber
-                                     AND TransDate = @TransDate
-                                     AND projId = @ProjId`;
-                            params = {
-                                HcmWorker_PersonnelNumber: element.HcmWorker_PersonnelNumber,
-                                TransDate: `${element.TransDate.slice(0, 10)} 00:00:00.000`,
-                                ProjId: element.ProjId
-                            };
-                        }
+                txRequest.input('ErrorText', sql.NVarChar, sanitizeInput(params.ErrorText));
+                txRequest.input('HcmWorker_PersonnelNumber', sql.NVarChar, sanitizeInput(params.HcmWorker_PersonnelNumber));
+                txRequest.input('TransDate', sql.DateTime, params.TransDate);
+                txRequest.input('ProjId', sql.NVarChar, params.ProjId);
 
-                        txRequest.input('ErrorText', sql.NVarChar, sanitizeInput(params.ErrorText));
-                        txRequest.input('HcmWorker_PersonnelNumber', sql.NVarChar, sanitizeInput(params.HcmWorker_PersonnelNumber));
-                        txRequest.input('TransDate', sql.DateTime, params.TransDate);
-                        txRequest.input('ProjId', sql.NVarChar, params.ProjId);
-
-                        const result = await txRequest.query(query);
-                        if (result?.rowsAffected[0]) {
-                            console.log({ ...element, SyncCompleted: 1 });
-                            results.push({ ...element, SyncCompleted: 1 });
-                        } else {
-                            results.push(element);
-                        }
-                    }
-                });
-            } catch (error) {
-                const message = `Error in batch update: ${error.message}`;
-                console.log(message);
-                await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.COMPLETED, EventText: String(message) });
-                results.push(...batch); // Keep elements for retry or logging purposes
+                const result = await txRequest.query(query);
+                if (result?.rowsAffected[0]) {
+                    const completionMessage = `Completed updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
+                    console.log(completionMessage);
+                    await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.COMPLETED, EventText: String(completionMessage) });
+                    return { data: results, error: "", status: "ok" };
+                } 
             }
-        }
-
-        const completionMessage = `Completed batch updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
-        console.log(completionMessage);
-        await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.COMPLETED, EventText: String(completionMessage) });
-
-        return { data: results, error: "", status: "ok" };
+        });
     } catch (error) {
         const connectionErrorMessage = `Error connecting to the database in updateERPTransactionStatus function : ${error}`;
         console.log(connectionErrorMessage);

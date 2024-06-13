@@ -33,7 +33,7 @@ const {isAuthenticated, isAdmin} = require("./middlewares/isAuthenticated")
 
 const { copyTimesheetFromCosecToProxyDbSchedule } = require("./helpers/01_timesheet_scheduler")
 let {PxERPTransactionTableBuilderScheduler, PxERPTransactionTableBuilderScheduleHandleArray} = require("./helpers/03_erp_transaction_table_scheduler");
-let {erpTransactionScheduler,erpTransactionScheduleHandleArray} = require("./helpers/06_erp_transaction_scheduler");
+let {erpTransactionScheduler} = require("./helpers/06_erp_transaction_scheduler");
 
 //API Routes
 const atdApiRouter = require('./routes/api/atd_timesheet_api_router');
@@ -135,16 +135,11 @@ app.use('/', homeRouter);
 
 
 async function ScheduleCreator() {
-  await erpTransactionScheduler(false);
-  await PxERPTransactionTableBuilderScheduler(false);
-  let copyTimesheetFromCosecToProxyDbScheduleHandle = await copyTimesheetFromCosecToProxyDbSchedule(false);
-  for (let index = 0; index < erpTransactionScheduleHandleArray.length; index++) {
-    erpTransactionScheduleHandleArray[index].start();
-  }
-  for (let index = 0; index < PxERPTransactionTableBuilderScheduleHandleArray.length; index++) {
-    PxERPTransactionTableBuilderScheduleHandleArray[index].start();
-  }
- 
+  let erpTransactionSchedulerHandle = await erpTransactionScheduler();
+  let PxERPTransactionTableBuilderSchedulerHandle = await PxERPTransactionTableBuilderScheduler();
+  let copyTimesheetFromCosecToProxyDbScheduleHandle = await copyTimesheetFromCosecToProxyDbSchedule();
+  PxERPTransactionTableBuilderSchedulerHandle?.start();
+  erpTransactionSchedulerHandle?.start();
   copyTimesheetFromCosecToProxyDbScheduleHandle?.start();
 }
 

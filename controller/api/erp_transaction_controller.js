@@ -80,8 +80,6 @@ const transactionController = {
             console.log("Error in getErpPendingData function : ", error.message)
             await controllerLogger(req, error)
             return res.status(400).json({status:"not ok",error:error, data:""})
-        }finally{
-            ProxyDbPool.close();
         }
     },
     getErpStatusData:async(req,res)=>{
@@ -155,8 +153,6 @@ const transactionController = {
             console.log("Error in getErpStatusData function : ", error)
             await controllerLogger(req, error)
             return res.status(400).json({status:"not ok",error:error, data:""})
-        }finally{
-            ProxyDbPool.close();
         }
     },
     downloadErpStatusData:async(req,res)=>{
@@ -218,8 +214,6 @@ const transactionController = {
             console.log("Error in downloadTimesheetData function : ", error)
             await controllerLogger(req, error)
             return res.status(400).json({status:"not ok",error:error, data:""})
-        }finally{
-            ProxyDbPool.close();
         }
     },
     getErpSettings:async(req,res)=>{
@@ -261,8 +255,6 @@ const transactionController = {
             console.log("Error in getErpSettings function : ", error.message)
             await controllerLogger(req,error)
             return res.status(200).json({status:"not ok",error:"Server Error", data:[]})
-        }finally{
-            ProxyDbPool.close();
         }
     },
     getAllErpTimesheet:async(req,res)=>{
@@ -310,8 +302,6 @@ const transactionController = {
             console.log("Error in getAllErpTimesheet function : ", error);
             await controllerLogger(req, res)
             return res.status(400).json({status:"not ok",error:error, data:""})
-        }finally{
-            ProxyDbPool.close();
         }
     },
     postErpSettings:async(req,res)=>{
@@ -348,8 +338,6 @@ const transactionController = {
             console.log("Error in postErpSettings function : ", error.message)
             await controllerLogger(req, error)
             return res.status(200).json({status:"not ok",error:`Server Error : ${error.message}`, data:""})
-        }finally{
-            ProxyDbPool.close();
         }
     },
     deleteErpSettings:async(req,res)=>{
@@ -385,8 +373,6 @@ const transactionController = {
             console.log("Error in deleteErpSettings function : ", error.message)
             await controllerLogger(req,error)
             return res.status(200).json({status:"not ok",error:`Server Error : ${error.message}`, data:""})
-        }finally{
-            ProxyDbPool.close();
         }
     },
     updateErpSettings:async(req,res)=>{
@@ -435,10 +421,7 @@ const transactionController = {
             console.log("Error in updateErpSettings function : ", error.message);
             await controllerLogger(req, error)
             return res.status(200).json({status:"not ok",error:`Server Error : ${error.message}`, data:""})
-        }finally{
-            ProxyDbPool.close();
         }
-
     },
     copyTimesheetToErpTable:async(req,res)=>{
         try {
@@ -518,8 +501,6 @@ const transactionController = {
             console.log("Error in downloadTimesheetData function : ", error)
             await controllerLogger(req, error)
             return res.status(400).json({status:"not ok",error:error, data:""})
-        }finally{
-            ProxyDbPool.close();
         }
     },
     postSelectedErpTimesheet:async(req,res)=>{
@@ -604,8 +585,6 @@ const transactionController = {
             console.log("Error in downloadException function : ", error)
             await controllerLogger(req, error)
             return res.status(400).json({status:"not ok",error:error, data:""})
-        }finally{
-            ProxyDbPool.close();
         }
     },
     getErpTransactionPendingHorizontalData:async(req,res)=>{

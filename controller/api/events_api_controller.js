@@ -73,8 +73,6 @@ const eventsApiController = {
             console.log(error)
             await controllerLogger(req, error);
             return res.status(400).json({status:"not ok",error:error, data:""})
-        }finally{
-            ProxyDbPool.close();
         }
         
     },
