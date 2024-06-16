@@ -60,7 +60,7 @@ async function erpTransactionScheduler() {
                   pendingCount
                 });
                 if (result.status == "ok") {
-                  console.log("Called updateTransactionTriggerSettings()")
+                  // console.log("Called updateTransactionTriggerSettings()")
                   let updateTransactionTriggerSettingsStatus = await updateTransactionTriggerSettings({
                     Id,
                     TriggerDate:element.TriggerDate,

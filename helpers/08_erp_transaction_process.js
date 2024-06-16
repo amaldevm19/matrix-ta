@@ -134,7 +134,8 @@ async function startERPTransaction({
                         if (updateERPTransactionStatusResult.status === "ok") {
                             for (let index = 0; index < updateERPTransactionStatusResult.data.length; index++) {
                                 const element = updateERPTransactionStatusResult.data[index];
-                                pendingResponses.push(element)
+                                // pendingResponses.push(element)
+                                console.log(element)
                             }
                             transactionData = []
                             stream.resume()
@@ -206,7 +207,8 @@ async function handleStreamCompletion({stream,pendingResponses,transactionData,D
                         if (updateERPTransactionStatusResult.status === "ok") {
                             for (let index = 0; index < updateERPTransactionStatusResult.data.length; index++) {
                                 const element = updateERPTransactionStatusResult.data[index];
-                                pendingResponses.push(element);
+                                // pendingResponses.push(element)
+                                console.log(element)
                             }
                             transactionData = [];
                             const newPendingCount = await checkPendingCount({
@@ -223,8 +225,8 @@ async function handleStreamCompletion({stream,pendingResponses,transactionData,D
                                     UserCategoryId,
                                 });
                             } else {
-                                console.log(pendingResponses);
-                                resolve({ status: "ok", data: pendingResponses, error: "" });
+                                // console.log(pendingResponses);
+                                resolve({ status: "ok", data: "", error: "" });
                             }
                         }
                     }
