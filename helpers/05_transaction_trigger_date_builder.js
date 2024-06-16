@@ -5,7 +5,7 @@ function ERPTransactionTriggerDateBuilder(sqlData) {
     let CurrentDate = new Date().getDate();
     let CurrentHour = new Date().getHours();
     let triggerDay = new Date(sqlData.TriggerDate).getDate();
-    let triggerHour = new Date(sqlData.TriggerDate).getHours();
+    let triggerHour = new Date(sqlData.TriggerDate).split("T")[1].split(":")[0];
     let triggerMinute = new Date(sqlData.TriggerDate).getMinutes();
     return {
       TriggerDate: triggerDay,
