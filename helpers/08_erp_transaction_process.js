@@ -148,7 +148,7 @@ async function startERPTransaction({
             }
         });
 
-        const result = await handleStreamCompletion({stream,pendingResponses,transactionData});
+        const result = await handleStreamCompletion({stream,pendingResponses,transactionData,DepartmentId,UserCategoryId,FromDate,ToDate});
         if(result.status == 'ok'){
             return result
         }
@@ -187,14 +187,14 @@ async function startERPTransaction({
         // });
 
     } catch (error) {
-        const message = `Error in startERPTransaction function : ${error}`;
+        const message = `Error in startERPTransaction function : ${error.message}`;
         console.log(message);
         await MiddlewareHistoryLogger({EventType:EventType.ERROR, EventCategory:EventCategory.SYSTEM, EventStatus:EventStatus.FAILED, EventText:String(message)});
         return { status: "not ok", data: "", error: error };
     }
 }
 
-async function handleStreamCompletion({stream,pendingResponses,transactionData}) {
+async function handleStreamCompletion({stream,pendingResponses,transactionData,DepartmentId,UserCategoryId,FromDate,ToDate}) {
     return new Promise((resolve, reject) => {
         stream.on('done', async () => {
             try {
