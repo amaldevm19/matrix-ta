@@ -319,6 +319,9 @@ async function updateERPTransactionStatus(postingResult) {
 }
 
  function sanitizeInput(input) {
+    if(!input){
+        return input;
+    }
     // Use a regular expression to remove characters other than a-zA-Z0-9 and hyphen (-)
     return input.trim().replace(/[^a-zA-Z0-9-]/g, '');
 }
