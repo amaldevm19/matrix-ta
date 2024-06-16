@@ -259,7 +259,7 @@ async function updateERPTransactionStatus(postingResult) {
         console.log(message);
         await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.STARTED, EventText: String(message) });
 
-        await ProxyDbPool.transaction(async (tx) => {
+        ProxyDbPool.transaction(async (tx) => {
             const txRequest = new sql.Request(tx);
             console.log("Called ProxyDbPool.transaction()")
             for (const element of postingResult) {
@@ -299,6 +299,8 @@ async function updateERPTransactionStatus(postingResult) {
                 txRequest.input('ProjId', sql.NVarChar, params.ProjId);
 
                 const result = await txRequest.query(query);
+
+
                 if (result?.rowsAffected[0]) {
                     const completionMessage = `Completed updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
                     console.log(completionMessage);
