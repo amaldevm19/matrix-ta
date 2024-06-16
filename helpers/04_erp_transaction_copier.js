@@ -261,11 +261,11 @@ async function updateERPTransactionStatus(postingResult) {
 
         await ProxyDbPool.transaction(async (tx) => {
             const txRequest = new sql.Request(tx);
-
+            console.log("Called ProxyDbPool.transaction()")
             for (const element of postingResult) {
                 let query = "";
                 let params = {};
-
+                console.log("Called Loop")
                 if (element.Error) {
                     query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
                              SET Error = 1, ErrorText = @ErrorText 
