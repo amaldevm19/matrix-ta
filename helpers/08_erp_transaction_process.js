@@ -135,7 +135,6 @@ async function startERPTransaction({
                         }
                     }
                 }
-                
             } catch (error) {
                 const message = `Error processing row in startERPTransaction function : ${error}`;
                 console.log(message);
@@ -143,7 +142,7 @@ async function startERPTransaction({
             }
         });
 
-        stream.on('end', async () => {
+        stream.on('done', async () => {
             console.log(`Completed streaming data`);
             const newPendingCount = await checkPendingCount({
                 DepartmentId,
@@ -160,7 +159,6 @@ async function startERPTransaction({
                     pendingD365ResponseArray:[...pendingD365ResponseArray, pendingResponses],
                 });
             }else{
-                
                 let startErpTransactionResultData = [...pendingD365ResponseArray, ...pendingResponses]
                 console.log(startErpTransactionResultData)
                 return { status: "ok", data: startErpTransactionResultData, error: "" };
