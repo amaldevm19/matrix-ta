@@ -121,6 +121,7 @@ async function startERPTransaction({
         let transactionData = [];
         stream.on('row', async (row) => {
             try {
+                console.log(row);
                 transactionData.push(row);
                 if (transactionData.length >= 100) {
                     stream.pause();
