@@ -222,7 +222,14 @@ async function getTimesheetFromERPTransactionMstTable({
                 (SyncCompleted = ${SyncCompleted} AND Error = 0 AND readForERP = 0);
 
             -- You can now use the data in @OutputTable as needed
-            SELECT * FROM @OutputTable;
+            SELECT 
+                InsertedId AS Id,
+                InsertedHcmWorker_PersonnelNumber AS HcmWorker_PersonnelNumber,
+                InsertedTransDate AS TransDate,
+                InsertedProjId AS projId,
+                InsertedTotalHours AS TotalHours,
+                InsertedCategoryId AS CategoryId 
+            FROM @OutputTable;
         `;
 
         request.query(query);
