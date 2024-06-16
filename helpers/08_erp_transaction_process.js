@@ -1,5 +1,5 @@
 const {ProxyDbPool, sql} = require("../config/db");
-
+const EventEmitter = require('node:events');
 const {getTimesheetFromERPTransactionMstTable,updateERPTransactionStatus} = require("./04_erp_transaction_copier");
 const {postTransactionToERP} = require("./09_post_transaction");
 const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require("../helpers/19_middleware_history_logger");
@@ -87,6 +87,9 @@ async function startERPTransaction({
 
 }
 */
+class MyEmitter extends EventEmitter {}
+
+const myEmitter = new MyEmitter();
 
 async function startERPTransaction({
     FromDate='', 
@@ -99,6 +102,7 @@ async function startERPTransaction({
     DesignationId='',
     SectionId='', 
     SyncCompleted=0,
+    pendingCount
 }) {
     try {
         console.log(`Starting getTimesheetFromERPTransactionMstTable for streaming data`);
@@ -144,41 +148,43 @@ async function startERPTransaction({
             }
         });
 
-        stream.on('done', async () => {
-            console.log(`Completed streaming data`);
-            if(transactionData){
-                const postingResult = await postTransactionToERP(transactionData);
-                if (postingResult.status == "ok") {
-                    const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResult.data);
-                    if (updateERPTransactionStatusResult.status === "ok") {
-                        for (let index = 0; index < updateERPTransactionStatusResult.data.length; index++) {
-                            const element = updateERPTransactionStatusResult.data[index];
-                            pendingResponses.push(element)
-                        }
-                        transactionData = []
-                    }
-                }
-            }
-        });
-        if(pendingResponses){
-            const newPendingCount = await checkPendingCount({
-                DepartmentId,
-                UserCategoryId,
-                FromDate,
-                ToDate,
-            });
-            if (newPendingCount > 0) {
-                await startERPTransaction({
-                    FromDate,
-                    ToDate,
-                    DepartmentId,
-                    UserCategoryId,
-                });
-            }else{
-                console.log(pendingResponses)
-                return { status: "ok", data: pendingResponses, error: "" };
-            }
+        const result = await handleStreamCompletion({pendingResponses,transactionData});
+        if(result.status == 'ok'){
+            return result
         }
+        // stream.on('done', async () => {
+        //     console.log(`Completed streaming data`);
+        //     if(transactionData){
+        //         const postingResult = await postTransactionToERP(transactionData);
+        //         if (postingResult.status == "ok") {
+        //             const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResult.data);
+        //             if (updateERPTransactionStatusResult.status === "ok") {
+        //                 for (let index = 0; index < updateERPTransactionStatusResult.data.length; index++) {
+        //                     const element = updateERPTransactionStatusResult.data[index];
+        //                     pendingResponses.push(element)
+        //                 }
+        //                 transactionData = []
+        //                 const newPendingCount = await checkPendingCount({
+        //                     DepartmentId,
+        //                     UserCategoryId,
+        //                     FromDate,
+        //                     ToDate,
+        //                 });
+        //                 if (newPendingCount > 0) {
+        //                     await startERPTransaction({
+        //                         FromDate,
+        //                         ToDate,
+        //                         DepartmentId,
+        //                         UserCategoryId,
+        //                     });
+        //                 }else{
+        //                     console.log(pendingResponses)
+        //                     return { status: "ok", data: pendingResponses, error: "" };
+        //                 }
+        //             }
+        //         }
+        //     }
+        // });
 
     } catch (error) {
         const message = `Error in startERPTransaction function : ${error}`;
@@ -187,6 +193,49 @@ async function startERPTransaction({
         return { status: "not ok", data: "", error: error };
     }
 }
+
+async function handleStreamCompletion({pendingResponses,transactionData}) {
+    return new Promise((resolve, reject) => {
+        stream.on('done', async () => {
+            try {
+                console.log(`Completed streaming data`);
+                if (transactionData) {
+                    const postingResult = await postTransactionToERP(transactionData);
+                    if (postingResult.status === "ok") {
+                        const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResult.data);
+                        if (updateERPTransactionStatusResult.status === "ok") {
+                            for (let index = 0; index < updateERPTransactionStatusResult.data.length; index++) {
+                                const element = updateERPTransactionStatusResult.data[index];
+                                pendingResponses.push(element);
+                            }
+                            transactionData = [];
+                            const newPendingCount = await checkPendingCount({
+                                DepartmentId,
+                                UserCategoryId,
+                                FromDate,
+                                ToDate,
+                            });
+                            if (newPendingCount > 0) {
+                                await startERPTransaction({
+                                    FromDate,
+                                    ToDate,
+                                    DepartmentId,
+                                    UserCategoryId,
+                                });
+                            } else {
+                                console.log(pendingResponses);
+                                resolve({ status: "ok", data: pendingResponses, error: "" });
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                reject({ status: "error", data: null, error: error.message });
+            }
+        });
+    });
+}
+
 
 
 async function checkPendingCount({DepartmentId,UserCategoryId, FromDate, ToDate}) {
