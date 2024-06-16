@@ -124,18 +124,16 @@ async function startERPTransaction({
                 transactionData.push(row);
                 if (transactionData.length >= 100) {
                     stream.pause();
-                    const postingResult = await postTransactionToERP([...transactionData]);
+                    const postingResult = await postTransactionToERP(transactionData);
                     if (postingResult.status == "ok") {
-                        transactionData = []
-                        stream.resume()
-                        let postingResults =[...postingResult.data]
-                        const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResults);
+                        const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResult.data);
                         if (updateERPTransactionStatusResult.status === "ok") {
                             for (let index = 0; index < updateERPTransactionStatusResult.data.length; index++) {
                                 const element = updateERPTransactionStatusResult.data[index];
                                 pendingResponses.push(element)
-                                
                             }
+                            transactionData = []
+                            stream.resume()
                         }
                     }
                 }
@@ -149,16 +147,15 @@ async function startERPTransaction({
         stream.on('done', async () => {
             console.log(`Completed streaming data`);
             if(transactionData){
-                const postingResult = await postTransactionToERP([...transactionData]);
+                const postingResult = await postTransactionToERP(transactionData);
                 if (postingResult.status == "ok") {
-                    transactionData = []
-                    let postingResults =[...postingResult.data]
-                    const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResults);
+                    const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResult.data);
                     if (updateERPTransactionStatusResult.status === "ok") {
                         for (let index = 0; index < updateERPTransactionStatusResult.data.length; index++) {
                             const element = updateERPTransactionStatusResult.data[index];
                             pendingResponses.push(element)
                         }
+                        transactionData = []
                     }
                 }
             }

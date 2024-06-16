@@ -20,7 +20,7 @@ async function postTransactionToERP(transactionData) {
         if(d365_response?.ExceptionType){
             throw(d365_response)
         }
-        console.log('d365_response',d365_response)
+       // console.log('d365_response',d365_response)
         if(d365_response?.length > 0){
             console.log("Finished postTransactionToERP")
             return {data:d365_response, error:"", status:"ok"};
