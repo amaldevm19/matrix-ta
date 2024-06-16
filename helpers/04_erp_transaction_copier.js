@@ -176,9 +176,27 @@ async function getTimesheetFromERPTransactionMstTable({
         const request = new sql.Request(ProxyDbPool);
         request.stream = true 
         const query = `
+            -- Declare a table variable to store the output
+            DECLARE @OutputTable TABLE (
+                InsertedId INT,
+                InsertedHcmWorker_PersonnelNumber VARCHAR(50),
+                InsertedTransDate DATE,
+                InsertedProjId VARCHAR(50),
+                InsertedTotalHours DECIMAL(18, 2),
+                InsertedCategoryId INT,
+                DeletedId INT,
+                DeletedHcmWorker_PersonnelNumber VARCHAR(50),
+                DeletedTransDate DATE,
+                DeletedProjId VARCHAR(50),
+                DeletedTotalHours DECIMAL(18, 2),
+                DeletedCategoryId INT
+            );
+
+            -- Perform the update and output into the table variable
             UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
             SET readForERP = 1
-            OUTPUT INSERTED.[Id],
+            OUTPUT 
+                INSERTED.[Id],
                 INSERTED.[HcmWorker_PersonnelNumber],
                 INSERTED.[TransDate],
                 INSERTED.[projId],
@@ -190,6 +208,7 @@ async function getTimesheetFromERPTransactionMstTable({
                 DELETED.[projId],
                 DELETED.[TotalHours],
                 DELETED.[CategoryId]
+            INTO @OutputTable
             FROM [TNA_PROXY].[dbo].[Px_ERPTransactionMst] WITH (UPDLOCK, READPAST)
             WHERE 
                 ('${EmployeeId}' IS NULL OR '${EmployeeId}'='' OR HcmWorker_PersonnelNumber = '${EmployeeId}') AND
@@ -201,9 +220,12 @@ async function getTimesheetFromERPTransactionMstTable({
                 ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId ? SectionId : 0}) AND
                 (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
                 (SyncCompleted = ${SyncCompleted} AND Error = 0 AND readForERP = 0);
+
+            -- You can now use the data in @OutputTable as needed
+            SELECT * FROM @OutputTable;
         `;
 
-        await request.query(query);
+        request.query(query);
 
         request.on('error', async (err) => {
             const message = `Error in getTimesheetFromERPTransactionMstTable function : ${err}`;
