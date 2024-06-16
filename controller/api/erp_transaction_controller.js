@@ -394,25 +394,6 @@ const transactionController = {
             WHERE Id='${Id}'
             `);
             if(result.rowsAffected[0] > 0){
-                for (let index = 0; index < PxERPTransactionTableBuilderScheduleHandleArray.length; index++) {
-                    PxERPTransactionTableBuilderScheduleHandleArray[index].stop();
-                }
-                for (let index = 0; index < erpTransactionScheduleHandleArray.length; index++) {
-                    erpTransactionScheduleHandleArray[index].stop();
-                }
-                erpTransactionScheduleHandleArray = await erpTransactionScheduler(true);
-
-                if(erpTransactionScheduleHandleArray.length){
-                    for (let index = 0; index < erpTransactionScheduleHandleArray.length; index++) {
-                        erpTransactionScheduleHandleArray[index].start();
-                    }
-                }
-                PxERPTransactionTableBuilderScheduleHandleArray = await PxERPTransactionTableBuilderScheduler(true);
-                if(PxERPTransactionTableBuilderScheduleHandleArray.length){
-                    for (let index = 0; index < PxERPTransactionTableBuilderScheduleHandleArray.length; index++) {
-                        PxERPTransactionTableBuilderScheduleHandleArray[index].start();
-                    }
-                }
                 await controllerLogger(req)
                 return res.status(200).json({status:"ok",data:"",error:""});
             }
