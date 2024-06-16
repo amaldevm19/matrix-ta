@@ -132,11 +132,12 @@ async function startERPTransaction({
                     if (postingResult.status == "ok") {
                         const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResult.data);
                         if (updateERPTransactionStatusResult.status === "ok") {
-                            for (let index = 0; index < updateERPTransactionStatusResult.data.length; index++) {
-                                const element = updateERPTransactionStatusResult.data[index];
-                                // pendingResponses.push(element)
-                                console.log(element)
-                            }
+                            console.log(updateERPTransactionStatusResult.data)
+                            // for (let index = 0; index < updateERPTransactionStatusResult.data.length; index++) {
+                            //     const element = updateERPTransactionStatusResult.data[index];
+                            //     // pendingResponses.push(element)
+                            //     console.log(element)
+                            // }
                             transactionData = []
                             stream.resume()
                         }
@@ -149,7 +150,7 @@ async function startERPTransaction({
             }
         });
 
-        const result = await handleStreamCompletion({stream,pendingResponses,transactionData,DepartmentId,UserCategoryId,FromDate,ToDate});
+        const result = await handleStreamCompletion({stream,transactionData,DepartmentId,UserCategoryId,FromDate,ToDate});
         if(result.status == 'ok'){
             return result
         }
@@ -195,7 +196,7 @@ async function startERPTransaction({
     }
 }
 
-async function handleStreamCompletion({stream,pendingResponses,transactionData,DepartmentId,UserCategoryId,FromDate,ToDate}) {
+async function handleStreamCompletion({stream,transactionData,DepartmentId,UserCategoryId,FromDate,ToDate}) {
     return new Promise((resolve, reject) => {
         stream.on('done', async () => {
             try {
@@ -205,11 +206,12 @@ async function handleStreamCompletion({stream,pendingResponses,transactionData,D
                     if (postingResult.status === "ok") {
                         const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResult.data);
                         if (updateERPTransactionStatusResult.status === "ok") {
-                            for (let index = 0; index < updateERPTransactionStatusResult.data.length; index++) {
-                                const element = updateERPTransactionStatusResult.data[index];
-                                // pendingResponses.push(element)
-                                console.log(element)
-                            }
+                            console.log(updateERPTransactionStatusResult.data)
+                            // for (let index = 0; index < updateERPTransactionStatusResult.data.length; index++) {
+                            //     const element = updateERPTransactionStatusResult.data[index];
+                            //     // pendingResponses.push(element)
+                                
+                            // }
                             transactionData = [];
                             const newPendingCount = await checkPendingCount({
                                 DepartmentId,
