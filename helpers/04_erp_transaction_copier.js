@@ -174,7 +174,7 @@ async function getTimesheetFromERPTransactionMstTable({
     try {
         await ProxyDbPool.connect();
         const request = new sql.Request(ProxyDbPool);
-
+        request.stream = true 
         const query = `
             UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
             SET readForERP = 1
@@ -203,16 +203,16 @@ async function getTimesheetFromERPTransactionMstTable({
                 (SyncCompleted = ${SyncCompleted} AND Error = 0 AND readForERP = 0);
         `;
 
-        const stream = request.query(query).stream();
+        request.query(query);
 
-        stream.on('error', async (err) => {
+        request.on('error', async (err) => {
             const message = `Error in getTimesheetFromERPTransactionMstTable function : ${err}`;
             console.log(message);
             await MiddlewareHistoryLogger({EventType:EventType.ERROR, EventCategory:EventCategory.SYSTEM, EventStatus:EventStatus.FAILED, EventText:String(message)});
             throw err;
         });
 
-        return stream;
+        return request;
 
     } catch (error) {
         const message = `Error connecting to the database in getTimesheetFromERPTransactionMstTable function : ${error}`;
