@@ -203,7 +203,7 @@ async function getTimesheetFromERPTransactionMstTable({
                 (SyncCompleted = ${SyncCompleted} AND Error = 0 AND readForERP = 0);
         `;
 
-        request.query(query);
+        await request.query(query);
 
         request.on('error', async (err) => {
             const message = `Error in getTimesheetFromERPTransactionMstTable function : ${err}`;
