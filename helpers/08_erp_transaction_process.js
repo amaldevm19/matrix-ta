@@ -117,7 +117,7 @@ async function startERPTransaction({
             SyncCompleted 
         });
 
-        const pendingResponses = [];
+        let pendingResponses = [];
         let transactionData = [];
         stream.on('row', async (row) => {
             try {
