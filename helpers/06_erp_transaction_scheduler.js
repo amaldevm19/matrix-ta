@@ -32,6 +32,7 @@ async function erpTransactionScheduler() {
             let Id = element.Id
 
             let { TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentDate, CurrentHour } = ERPTransactionTriggerDateBuilder(sqlData);
+            console.log(TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentDate, CurrentHour)
             if((TriggerDate==CurrentDate) && (TriggerHour==CurrentHour)){
               let message = `Starting ERP Synchronization for 
               Department:${DepartmentId} and User Category:${UserCategoryId} 
