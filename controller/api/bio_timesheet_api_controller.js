@@ -304,7 +304,7 @@ const bioTimesheetController ={
                     BranchMst.Name AS BranchName
                 FROM (
                     SELECT
-                        Id, UserID, Name, PDate, JobCode, TotalJobTime, BranchId, DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,CreatedAt
+                        Id, UserID, Name, PDate, JobCode, TotalJobTime, BranchId, DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,CreatedAt, LeaveId
                     FROM [TNA_PROXY].[dbo].[Px_TimesheetMst]
                     WHERE 
                         ('${EmployeeId}' IS NULL OR '${EmployeeId}'='' OR UserID = '${EmployeeId}') AND

@@ -35,7 +35,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
             let message=`Started copying timesheet from [COSEC].[dbo].[Px_TimesheetMst] to [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
             for Department:${DepartmentId} and User Category:${UserCategoryId} 
             in PxERPTransactionTableBuilder function From ${FromDate} To ${ToDate}\n\n`;
-            console.log(message)
+            //console.log(message)
             await MiddlewareHistoryLogger({EventType:EventType.INFORMATION,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.STARTED,EventText:String(message)});
             const result = await request.query(`
             MERGE INTO [TNA_PROXY].[dbo].[Px_ERPTransactionMst] AS Target

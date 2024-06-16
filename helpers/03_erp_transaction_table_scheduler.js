@@ -34,7 +34,7 @@ async function PxERPTransactionTableBuilderScheduler() {
                     }
                     let result = await PxERPTransactionTableBuilder({DepartmentId,UserCategoryId});
                     if(result.status == 'ok'){
-                        console.log(result.message)
+                        //console.log(result.message)
                         await MiddlewareHistoryLogger({EventType:EventType.INFORMATION,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.COMPLETED,EventText:String(result.message)}) 
                     }
                 }

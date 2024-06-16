@@ -7,7 +7,8 @@ const { updateTransactionTriggerSettings } = require("../helpers/20_update_trans
   
 async function erpTransactionScheduler() {
   try {
-    let erpTransSchedule = cron.schedule('0 * * * *',async function () {
+    let cronString = process.env.CRON_STRING;
+    let erpTransSchedule = cron.schedule(cronString,async function () {
       try {
         await ProxyDbPool.connect();
         const request = new sql.Request(ProxyDbPool);
