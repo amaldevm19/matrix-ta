@@ -99,7 +99,6 @@ async function startERPTransaction({
     DesignationId='',
     SectionId='', 
     SyncCompleted=0,
-    pendingD365ResponseArray
 }) {
     try {
         console.log(`Starting getTimesheetFromERPTransactionMstTable for streaming data`);
@@ -132,7 +131,11 @@ async function startERPTransaction({
                         let postingResults =[...postingResult.data]
                         const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResults);
                         if (updateERPTransactionStatusResult.status === "ok") {
-                            pendingResponses = [...pendingResponses, ...updateERPTransactionStatusResult.data];
+                            for (let index = 0; index < updateERPTransactionStatusResult.data.length; index++) {
+                                const element = updateERPTransactionStatusResult.data[index];
+                                pendingResponses.push(element)
+                                
+                            }
                         }
                     }
                 }
@@ -152,7 +155,10 @@ async function startERPTransaction({
                     let postingResults =[...postingResult.data]
                     const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResults);
                     if (updateERPTransactionStatusResult.status === "ok") {
-                        pendingResponses = [...pendingResponses, ...updateERPTransactionStatusResult.data];
+                        for (let index = 0; index < updateERPTransactionStatusResult.data.length; index++) {
+                            const element = updateERPTransactionStatusResult.data[index];
+                            pendingResponses.push(element)
+                        }
                     }
                 }
             }
@@ -168,12 +174,10 @@ async function startERPTransaction({
                     ToDate,
                     DepartmentId,
                     UserCategoryId,
-                    pendingD365ResponseArray:[...pendingD365ResponseArray, ...pendingResponses],
                 });
             }else{
-                let startErpTransactionResultData = [...pendingD365ResponseArray, ...pendingResponses]
-                console.log(startErpTransactionResultData)
-                return { status: "ok", data: startErpTransactionResultData, error: "" };
+                console.log(pendingResponses)
+                return { status: "ok", data: pendingResponses, error: "" };
             }
         });
 

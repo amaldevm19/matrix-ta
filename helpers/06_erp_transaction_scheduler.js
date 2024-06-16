@@ -51,17 +51,16 @@ async function erpTransactionScheduler() {
                 FromDate,
                 ToDate,
               });
-              let pendingD365ResponseArray=[]
               if(pendingCount){
                 let result = await startERPTransaction({
                   FromDate,
                   ToDate,
                   DepartmentId,
                   UserCategoryId,
-                  pendingCount,
-                  pendingD365ResponseArray
+                  pendingCount
                 });
                 if (result.status == "ok") {
+                  console.log("Called updateTransactionTriggerSettings()")
                   let updateTransactionTriggerSettingsStatus = await updateTransactionTriggerSettings({
                     Id,
                     TriggerDate,
