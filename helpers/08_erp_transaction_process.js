@@ -99,7 +99,7 @@ async function startERPTransaction({
     DesignationId='',
     SectionId='', 
     SyncCompleted=0,
-    pendingD365ResponseArray=[]
+    pendingD365ResponseArray
 }) {
     try {
         console.log(`Starting getTimesheetFromERPTransactionMstTable for streaming data`);
