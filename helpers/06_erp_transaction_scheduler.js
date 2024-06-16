@@ -69,7 +69,7 @@ async function erpTransactionScheduler() {
                     DepartmentId,
                     UserCategoryId
                   });
-                  if(updateTransactionTriggerSettingsStatus){
+                  if(!updateTransactionTriggerSettingsStatus){
                     let message = `Failed to update Transaction Trigger Settings for Department:${DepartmentId} and User Category:${UserCategoryId} in erpTransactionScheduler function From ${FromDate} To ${ToDate}`;
                     console.log(message)
                   }
