@@ -5,7 +5,7 @@ const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require(".
 
 async function copyTimesheetFromCosecToProxyDbSchedule() {
     try {
-        let copyTimesheetFromCosecToProxyDbScheduleHandle = cron.schedule(`0 * * * *`, async () => { 
+        let copyTimesheetFromCosecToProxyDbScheduleHandle = cron.schedule(process.env.COPY_TIMESHEET_CRON_STRING, async () => { 
             let backDate = 34;
             const { fromDate, toDate } = timesheetCopyDatesBuilder(backDate);
             let message = `${new Date().toLocaleString()} : Running batchjob copyTimesheetFromCosecToProxyDbSchedule;
