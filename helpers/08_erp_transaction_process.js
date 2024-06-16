@@ -148,7 +148,7 @@ async function startERPTransaction({
             }
         });
 
-        const result = await handleStreamCompletion({pendingResponses,transactionData});
+        const result = await handleStreamCompletion({stream,pendingResponses,transactionData});
         if(result.status == 'ok'){
             return result
         }
@@ -194,7 +194,7 @@ async function startERPTransaction({
     }
 }
 
-async function handleStreamCompletion({pendingResponses,transactionData}) {
+async function handleStreamCompletion({stream,pendingResponses,transactionData}) {
     return new Promise((resolve, reject) => {
         stream.on('done', async () => {
             try {
