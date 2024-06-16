@@ -122,6 +122,7 @@ async function startERPTransaction({
 
         let pendingResponses = [];
         let transactionData = [];
+        let result = null;
         stream.on('row', async (row) => {
             try {
                 //console.log(row);
@@ -138,8 +139,9 @@ async function startERPTransaction({
                             //     // pendingResponses.push(element)
                             //     console.log(element)
                             // }
-                            transactionData = []
+                            transactionData.length=0;
                             stream.resume()
+                           // result = await handleStreamCompletion(stream,transactionData,DepartmentId,UserCategoryId,FromDate,ToDate);
                         }
                     }
                 }
@@ -150,8 +152,8 @@ async function startERPTransaction({
             }
         });
 
-        const result = await handleStreamCompletion(stream,transactionData,DepartmentId,UserCategoryId,FromDate,ToDate);
-        if(result.status == 'ok'){
+        result = await handleStreamCompletion(stream,transactionData,DepartmentId,UserCategoryId,FromDate,ToDate);
+        if(result?.status == 'ok'){
             return result
         }
         // stream.on('done', async () => {
