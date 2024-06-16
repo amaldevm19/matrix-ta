@@ -120,7 +120,7 @@ async function startERPTransaction({
         let transactionData = [];
         stream.on('row', async (row) => {
             try {
-                console.log(row);
+                //console.log(row);
                 transactionData.push(row);
                 if (transactionData.length >= 100) {
                     stream.pause();
@@ -159,6 +159,8 @@ async function startERPTransaction({
                     }
                 }
             }
+        });
+        if(pendingResponses){
             const newPendingCount = await checkPendingCount({
                 DepartmentId,
                 UserCategoryId,
@@ -176,7 +178,7 @@ async function startERPTransaction({
                 console.log(pendingResponses)
                 return { status: "ok", data: pendingResponses, error: "" };
             }
-        });
+        }
 
     } catch (error) {
         const message = `Error in startERPTransaction function : ${error}`;
