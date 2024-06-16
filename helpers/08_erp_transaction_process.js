@@ -132,7 +132,7 @@ async function startERPTransaction({
                         let postingResults =[...postingResult.data]
                         const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResults);
                         if (updateERPTransactionStatusResult.status === "ok") {
-                            pendingResponses.push(...updateERPTransactionStatusResult.data);
+                            pendingResponses = [...pendingResponses, ...updateERPTransactionStatusResult.data];
                         }
                     }
                 }
@@ -152,7 +152,7 @@ async function startERPTransaction({
                     let postingResults =[...postingResult.data]
                     const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResults);
                     if (updateERPTransactionStatusResult.status === "ok") {
-                        pendingResponses.push(...updateERPTransactionStatusResult.data);
+                        pendingResponses = [...pendingResponses, ...updateERPTransactionStatusResult.data];
                     }
                 }
             }
@@ -168,7 +168,7 @@ async function startERPTransaction({
                     ToDate,
                     DepartmentId,
                     UserCategoryId,
-                    pendingD365ResponseArray:[...pendingD365ResponseArray, pendingResponses],
+                    pendingD365ResponseArray:[...pendingD365ResponseArray, ...pendingResponses],
                 });
             }else{
                 let startErpTransactionResultData = [...pendingD365ResponseArray, ...pendingResponses]
