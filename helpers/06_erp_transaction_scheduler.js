@@ -63,7 +63,7 @@ async function erpTransactionScheduler() {
                   console.log("Called updateTransactionTriggerSettings()")
                   let updateTransactionTriggerSettingsStatus = await updateTransactionTriggerSettings({
                     Id,
-                    TriggerDate,
+                    TriggerDate:element.TriggerDate,
                     FromDate,
                     ToDate,
                     DepartmentId,
