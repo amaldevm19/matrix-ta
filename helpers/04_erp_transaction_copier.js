@@ -189,7 +189,7 @@ async function getTimesheetFromERPTransactionMstTable({
                 DeletedTransDate DATE,
                 DeletedProjId VARCHAR(50),
                 DeletedTotalHours DECIMAL(4, 1),
-                DeletedCategoryId VARCHAR(50),
+                DeletedCategoryId VARCHAR(50)
             );
 
             -- Perform the update and output into the table variable
