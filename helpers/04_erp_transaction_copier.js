@@ -259,14 +259,15 @@ async function updateERPTransactionStatus(postingResult) {
         console.log(message);
         await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.STARTED, EventText: String(message) });
     
-        const transaction = new sql.Transaction(ProxyDbPool);
-        await transaction.begin();
+        // const transaction = new sql.Transaction(ProxyDbPool);
+        // await transaction.begin();
+        const request = new sql.Request(ProxyDbPool);
         
         for (let index = 0; index < postingResult.length; index++) {
             const element = postingResult[index];
-            const txRequest = new sql.Request(transaction); // Create a new request for each iteration
             let query = "";
             let params = {};
+            let updatedQuery = {}
             if (element.Error) {
                 query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
                          SET Error = 1, ErrorText = @ErrorText 
@@ -279,7 +280,7 @@ async function updateERPTransactionStatus(postingResult) {
                     TransDate: `${element.TransDate.slice(0, 10)} 00:00:00.000`,
                     ProjId: element.ProjId
                 };
-                results.push({ ...element, SyncCompleted: 0 });
+                updatedQuery = {...element, SyncCompleted: 0}
             } else {
                 query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
                          SET SyncCompleted = 1 
@@ -291,34 +292,35 @@ async function updateERPTransactionStatus(postingResult) {
                     TransDate: `${element.TransDate.slice(0, 10)} 00:00:00.000`,
                     ProjId: element.ProjId
                 };
-                results.push({ ...element, SyncCompleted: 1 });
+                updatedQuery = {...element, SyncCompleted: 1}
             }
     
-            txRequest.input('HcmWorker_PersonnelNumber', sql.NVarChar, sanitizeInput(params.HcmWorker_PersonnelNumber));
-            txRequest.input('TransDate', sql.DateTime, params.TransDate);
-            txRequest.input('ProjId', sql.NVarChar, params.ProjId);
+            request.input('HcmWorker_PersonnelNumber', sql.NVarChar, sanitizeInput(params.HcmWorker_PersonnelNumber));
+            request.input('TransDate', sql.DateTime, params.TransDate);
+            request.input('ProjId', sql.NVarChar, params.ProjId);
             
             if (element.Error) {
-                txRequest.input('ErrorText', sql.NVarChar, sanitizeInput(params.ErrorText));
+                request.input('ErrorText', sql.NVarChar, sanitizeInput(params.ErrorText));
             }
-    
-            await txRequest.query(query);
-            
+            let db_response = await request.query(query);
+            if(db_response?.rowsAffected[0]){
+                results.push(updatedQuery)
+            }
         }
 
-        try {
-            await transaction.commit();
-    
-            const completionMessage = `Completed updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
-            console.log(completionMessage);
-            await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.COMPLETED, EventText: String(completionMessage) });
-    
-            return { data: results, error: "", status: "ok" };
-        } catch (commitError) {
-            const commitErrorMessage = `Error committing transaction in updateERPTransactionStatus function: ${commitError}`;
-            console.log(commitErrorMessage);
-            await MiddlewareHistoryLogger({ EventType: EventType.ERROR, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.FAILED, EventText: String(commitErrorMessage) });
-            return { data: "", error: commitError, status: "not ok" };
+        if(results){
+            try {
+                const completionMessage = `Completed updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
+                console.log(completionMessage);
+                await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.COMPLETED, EventText: String(completionMessage) });
+        
+                return { data: results, error: "", status: "ok" };
+            } catch (commitError) {
+                const commitErrorMessage = `Error committing transaction in updateERPTransactionStatus function: ${commitError}`;
+                console.log(commitErrorMessage);
+                await MiddlewareHistoryLogger({ EventType: EventType.ERROR, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.FAILED, EventText: String(commitErrorMessage) });
+                return { data: "", error: commitError, status: "not ok" };
+            }
         }
     
     } catch (error) {
