@@ -267,14 +267,12 @@ async function updateERPTransactionStatus(postingResult) {
             const txRequest = new sql.Request(transaction); // Create a new request for each iteration
             let query = "";
             let params = {};
-            console.log("Called Loop");
-            
             if (element.Error) {
                 query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
                          SET Error = 1, ErrorText = @ErrorText 
                          WHERE HcmWorker_PersonnelNumber = @HcmWorker_PersonnelNumber
                          AND TransDate = @TransDate
-                         AND ProjId = @ProjId`;
+                         AND projId = @ProjId`;
                 params = {
                     ErrorText: element.ErrorTxt,
                     HcmWorker_PersonnelNumber: element.HcmWorker_PersonnelNumber,
@@ -287,7 +285,7 @@ async function updateERPTransactionStatus(postingResult) {
                          SET SyncCompleted = 1 
                          WHERE HcmWorker_PersonnelNumber = @HcmWorker_PersonnelNumber
                          AND TransDate = @TransDate
-                         AND ProjId = @ProjId`;
+                         AND projId = @ProjId`;
                 params = {
                     HcmWorker_PersonnelNumber: element.HcmWorker_PersonnelNumber,
                     TransDate: `${element.TransDate.slice(0, 10)} 00:00:00.000`,
