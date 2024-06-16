@@ -2,19 +2,25 @@
 // Function to generate trigger date, from date, and to date for a given month
 function ERPTransactionTriggerDateBuilder(sqlData) {
     // Extract day values from SQL data
-    let CurrentDate = new Date().getDate();
-    let CurrentHour = new Date().getHours();
-    let triggerDay = new Date(sqlData.TriggerDate).toISOString().split("T")[0].split("-")[2];
-    let triggerHour = new Date(sqlData.TriggerDate).toISOString().split("T")[1].split(":")[0];
-    let triggerMinute = new Date(sqlData.TriggerDate).toISOString().split("T")[1].split(":")[1];
+    let CurrentDateTime = new Date()
+    let CurrentMonth = (CurrentDateTime.getMonth()+1).toString().padStart(2,"0");
+    let CurrentDate = CurrentDateTime.getDate().toString().padStart(2,"0");
+    let CurrentHour = CurrentDateTime.getHours().toString().padStart(2,"0");
+    let SqlDateTime = new Date(sqlData.TriggerDate.split(" ")[0])
+    let triggerMonth = SqlDateTime.toISOString().split("T")[0].split("-")[1];
+    let triggerDay = SqlDateTime.toISOString().split("T")[0].split("-")[2];
+    let triggerHour = SqlDateTime.toISOString().split("T")[1].split(":")[0];
+    let triggerMinute = SqlDateTime.toISOString().split("T")[1].split(":")[1];
     return {
+      triggerMonth,
       TriggerDate: triggerDay,
       TriggerHour: triggerHour,
       TriggerMinute:triggerMinute,
       FromDate: formatSQLDatetime(new Date(sqlData.FromDate)),
       ToDate: formatSQLDatetime(new Date(sqlData.ToDate)),
       CurrentDate,
-      CurrentHour
+      CurrentHour,
+      CurrentMonth
     };
 }
 
