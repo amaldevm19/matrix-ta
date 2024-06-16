@@ -258,58 +258,58 @@ async function updateERPTransactionStatus(postingResult) {
         const message = `Starting updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
         console.log(message);
         await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.STARTED, EventText: String(message) });
-
-        ProxyDbPool.transaction(async (tx) => {
-            const txRequest = new sql.Request(tx);
-            console.log("Called ProxyDbPool.transaction()")
-            for (const element of postingResult) {
-                let query = "";
-                let params = {};
-                console.log("Called Loop")
-                if (element.Error) {
-                    query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
-                             SET Error = 1, ErrorText = @ErrorText 
-                             WHERE HcmWorker_PersonnelNumber = @HcmWorker_PersonnelNumber
-                             AND TransDate = @TransDate
-                             AND projId = @ProjId`;
-                    params = {
-                        ErrorText: element.ErrorTxt,
-                        HcmWorker_PersonnelNumber: element.HcmWorker_PersonnelNumber,
-                        TransDate: `${element.TransDate.slice(0, 10)} 00:00:00.000`,
-                        ProjId: element.ProjId
-                    };
-                    results.push({ ...element, SyncCompleted: 0 });
-                } else {
-                    query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
-                             SET SyncCompleted = 1 
-                             WHERE HcmWorker_PersonnelNumber = @HcmWorker_PersonnelNumber
-                             AND TransDate = @TransDate
-                             AND projId = @ProjId`;
-                    params = {
-                        HcmWorker_PersonnelNumber: element.HcmWorker_PersonnelNumber,
-                        TransDate: `${element.TransDate.slice(0, 10)} 00:00:00.000`,
-                        ProjId: element.ProjId
-                    };
-                    results.push({ ...element, SyncCompleted: 1 });
-                }
-
-                txRequest.input('ErrorText', sql.NVarChar, sanitizeInput(params.ErrorText));
-                txRequest.input('HcmWorker_PersonnelNumber', sql.NVarChar, sanitizeInput(params.HcmWorker_PersonnelNumber));
-                txRequest.input('TransDate', sql.DateTime, params.TransDate);
-                txRequest.input('ProjId', sql.NVarChar, params.ProjId);
-
-                const result = await txRequest.query(query);
-
-
-                if (result?.rowsAffected[0]) {
-                    const completionMessage = `Completed updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
-                    console.log(completionMessage);
-                    await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.COMPLETED, EventText: String(completionMessage) });
-                    return { data: results, error: "", status: "ok" };
-                } 
-                console.log(result)
+        const transaction = new sql.Transaction(transaction)
+        await transaction.begin()
+        const txRequest =   new sql.Request(transaction)
+        for (const element of postingResult) {
+            let query = "";
+            let params = {};
+            console.log("Called Loop")
+            if (element.Error) {
+                query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
+                         SET Error = 1, ErrorText = @ErrorText 
+                         WHERE HcmWorker_PersonnelNumber = @HcmWorker_PersonnelNumber
+                         AND TransDate = @TransDate
+                         AND projId = @ProjId`;
+                params = {
+                    ErrorText: element.ErrorTxt,
+                    HcmWorker_PersonnelNumber: element.HcmWorker_PersonnelNumber,
+                    TransDate: `${element.TransDate.slice(0, 10)} 00:00:00.000`,
+                    ProjId: element.ProjId
+                };
+                results.push({ ...element, SyncCompleted: 0 });
+            } else {
+                query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
+                         SET SyncCompleted = 1 
+                         WHERE HcmWorker_PersonnelNumber = @HcmWorker_PersonnelNumber
+                         AND TransDate = @TransDate
+                         AND projId = @ProjId`;
+                params = {
+                    HcmWorker_PersonnelNumber: element.HcmWorker_PersonnelNumber,
+                    TransDate: `${element.TransDate.slice(0, 10)} 00:00:00.000`,
+                    ProjId: element.ProjId
+                };
+                results.push({ ...element, SyncCompleted: 1 });
             }
-        });
+
+            txRequest.input('ErrorText', sql.NVarChar, sanitizeInput(params.ErrorText));
+            txRequest.input('HcmWorker_PersonnelNumber', sql.NVarChar, sanitizeInput(params.HcmWorker_PersonnelNumber));
+            txRequest.input('TransDate', sql.DateTime, params.TransDate);
+            txRequest.input('ProjId', sql.NVarChar, params.ProjId);
+
+            const result = await txRequest.query(query);
+
+            await transaction.commit()
+
+            if (result?.rowsAffected[0]) {
+                const completionMessage = `Completed updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
+                console.log(completionMessage);
+                await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.COMPLETED, EventText: String(completionMessage) });
+                return { data: results, error: "", status: "ok" };
+            } 
+            console.log(result)
+        }
+       
     } catch (error) {
         const connectionErrorMessage = `Error connecting to the database in updateERPTransactionStatus function : ${error}`;
         console.log(connectionErrorMessage);
