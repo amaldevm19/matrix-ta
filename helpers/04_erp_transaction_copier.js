@@ -261,9 +261,9 @@ async function updateERPTransactionStatus(postingResult) {
     
         const transaction = new sql.Transaction(ProxyDbPool);
         await transaction.begin();
-        const txRequest = new sql.Request(transaction);
     
         for (const element of postingResult) {
+            const txRequest = new sql.Request(transaction); // Create a new request for each iteration
             let query = "";
             let params = {};
             console.log("Called Loop");
@@ -306,13 +306,20 @@ async function updateERPTransactionStatus(postingResult) {
             await txRequest.query(query);
         }
     
-        await transaction.commit();
+        try {
+            await transaction.commit();
     
-        const completionMessage = `Completed updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
-        console.log(completionMessage);
-        await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.COMPLETED, EventText: String(completionMessage) });
+            const completionMessage = `Completed updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
+            console.log(completionMessage);
+            await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.COMPLETED, EventText: String(completionMessage) });
     
-        return { data: results, error: "", status: "ok" };
+            return { data: results, error: "", status: "ok" };
+        } catch (commitError) {
+            const commitErrorMessage = `Error committing transaction in updateERPTransactionStatus function: ${commitError}`;
+            console.log(commitErrorMessage);
+            await MiddlewareHistoryLogger({ EventType: EventType.ERROR, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.FAILED, EventText: String(commitErrorMessage) });
+            return { data: "", error: commitError, status: "not ok" };
+        }
     
     } catch (error) {
         const connectionErrorMessage = `Error connecting to the database in updateERPTransactionStatus function: ${error}`;
@@ -320,6 +327,7 @@ async function updateERPTransactionStatus(postingResult) {
         await MiddlewareHistoryLogger({ EventType: EventType.ERROR, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.FAILED, EventText: String(connectionErrorMessage) });
         return { data: "", error: error, status: "not ok" };
     }
+    
 }
 
  function sanitizeInput(input) {
