@@ -51,38 +51,42 @@ async function erpTransactionScheduler() {
                 FromDate,
                 ToDate,
               });
-              let result = await startERPTransaction({
-                FromDate,
-                ToDate,
-                DepartmentId,
-                UserCategoryId,
-                pendingCount,
-              });
-              if (result.status == "ok") {
-                let updateTransactionTriggerSettingsStatus = await updateTransactionTriggerSettings({
-                  Id,
-                  TriggerDate,
+              if(pendingCount){
+                let result = await startERPTransaction({
                   FromDate,
                   ToDate,
                   DepartmentId,
-                  UserCategoryId
+                  UserCategoryId,
+                  pendingCount,
                 });
-                if(updateTransactionTriggerSettingsStatus){
-                  let message = `Failed to update Transaction Trigger Settings for Department:${DepartmentId} and User Category:${UserCategoryId} in erpTransactionScheduler function From ${FromDate} To ${ToDate}`;
-                  console.log(message)
+                if (result.status == "ok") {
+                  let updateTransactionTriggerSettingsStatus = await updateTransactionTriggerSettings({
+                    Id,
+                    TriggerDate,
+                    FromDate,
+                    ToDate,
+                    DepartmentId,
+                    UserCategoryId
+                  });
+                  if(updateTransactionTriggerSettingsStatus){
+                    let message = `Failed to update Transaction Trigger Settings for Department:${DepartmentId} and User Category:${UserCategoryId} in erpTransactionScheduler function From ${FromDate} To ${ToDate}`;
+                    console.log(message)
+                  }
+                  let message = `Successfully completed ERP synchronization for Department:${DepartmentId} and User Category:${UserCategoryId} in erpTransactionScheduler function From ${FromDate} To ${ToDate}`;
+                  console.log(message);
+                  await MiddlewareHistoryLogger({
+                    EventType: EventType.INFORMATION,
+                    EventCategory: EventCategory.SYSTEM,
+                    EventStatus: EventStatus.COMPLETED,
+                    EventText: String(message),
+                  });
+                  return;
+                } else {
+                  throw result.error;
                 }
-                let message = `Successfully completed ERP synchronization for Department:${DepartmentId} and User Category:${UserCategoryId} in erpTransactionScheduler function From ${FromDate} To ${ToDate}`;
-                console.log(message);
-                await MiddlewareHistoryLogger({
-                  EventType: EventType.INFORMATION,
-                  EventCategory: EventCategory.SYSTEM,
-                  EventStatus: EventStatus.COMPLETED,
-                  EventText: String(message),
-                });
-                return;
-              } else {
-                throw result.error;
               }
+              let new_message = `No Items available for Sync`;
+              console.log(new_message)
             }
           }
         }
