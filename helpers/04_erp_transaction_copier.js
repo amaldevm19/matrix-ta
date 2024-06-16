@@ -261,8 +261,9 @@ async function updateERPTransactionStatus(postingResult) {
     
         const transaction = new sql.Transaction(ProxyDbPool);
         await transaction.begin();
-    
-        for (const element of postingResult) {
+        
+        for (let index = 0; index < postingResult.length; index++) {
+            const element = postingResult[index];
             const txRequest = new sql.Request(transaction); // Create a new request for each iteration
             let query = "";
             let params = {};
@@ -304,8 +305,9 @@ async function updateERPTransactionStatus(postingResult) {
             }
     
             await txRequest.query(query);
+            
         }
-    
+
         try {
             await transaction.commit();
     
