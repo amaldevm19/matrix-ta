@@ -150,7 +150,7 @@ async function startERPTransaction({
             }
         });
 
-        const result = await handleStreamCompletion({stream,transactionData,DepartmentId,UserCategoryId,FromDate,ToDate});
+        const result = await handleStreamCompletion(stream,transactionData,DepartmentId,UserCategoryId,FromDate,ToDate);
         if(result.status == 'ok'){
             return result
         }
@@ -196,7 +196,7 @@ async function startERPTransaction({
     }
 }
 
-async function handleStreamCompletion({stream,transactionData,DepartmentId,UserCategoryId,FromDate,ToDate}) {
+async function handleStreamCompletion(stream,transactionData,DepartmentId,UserCategoryId,FromDate,ToDate) {
     return new Promise((resolve, reject) => {
         stream.on('done', async () => {
             try {
