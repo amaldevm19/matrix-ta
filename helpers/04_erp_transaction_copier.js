@@ -258,7 +258,7 @@ async function updateERPTransactionStatus(postingResult) {
         const message = `Starting updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
         console.log(message);
         await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.STARTED, EventText: String(message) });
-        const transaction = new sql.Transaction(transaction)
+        const transaction = new sql.Transaction(ProxyDbPool)
         await transaction.begin()
         const txRequest =   new sql.Request(transaction)
         for (const element of postingResult) {
