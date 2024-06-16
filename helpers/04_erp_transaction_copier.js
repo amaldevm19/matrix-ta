@@ -270,37 +270,18 @@ async function updateERPTransactionStatus(postingResult) {
             let updatedQuery = {}
             if (element.Error) {
                 query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
-                         SET Error = 1, ErrorText = @ErrorText 
-                         WHERE HcmWorker_PersonnelNumber = @HcmWorker_PersonnelNumber
-                         AND TransDate = @TransDate
-                         AND projId = @ProjId`;
-                params = {
-                    ErrorText: element.ErrorTxt,
-                    HcmWorker_PersonnelNumber: element.HcmWorker_PersonnelNumber,
-                    TransDate: `${element.TransDate.slice(0, 10)} 00:00:00.000`,
-                    ProjId: element.ProjId
-                };
+                         SET Error = 1, ErrorText = '${sanitizeInput(element.ErrorTxt)}'
+                         WHERE HcmWorker_PersonnelNumber = '${sanitizeInput(element.HcmWorker_PersonnelNumber)}' 
+                         AND TransDate = '${element.TransDate.slice(0, 10)} 00:00:00.000'
+                         AND projId = '${sanitizeInput(element.ProjId)}'`;
                 updatedQuery = {...element, SyncCompleted: 0}
             } else {
                 query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
                          SET SyncCompleted = 1 
-                         WHERE HcmWorker_PersonnelNumber = @HcmWorker_PersonnelNumber
-                         AND TransDate = @TransDate
-                         AND projId = @ProjId`;
-                params = {
-                    HcmWorker_PersonnelNumber: element.HcmWorker_PersonnelNumber,
-                    TransDate: `${element.TransDate.slice(0, 10)} 00:00:00.000`,
-                    ProjId: element.ProjId
-                };
+                         WHERE HcmWorker_PersonnelNumber = '${sanitizeInput(element.HcmWorker_PersonnelNumber)}'
+                         AND TransDate = '${element.TransDate.slice(0, 10)} 00:00:00.000'
+                         AND projId = '${sanitizeInput(element.ProjId)}'`;
                 updatedQuery = {...element, SyncCompleted: 1}
-            }
-    
-            request.input('HcmWorker_PersonnelNumber', sql.NVarChar, sanitizeInput(params.HcmWorker_PersonnelNumber));
-            request.input('TransDate', sql.DateTime, params.TransDate);
-            request.input('ProjId', sql.NVarChar, params.ProjId);
-            
-            if (element.Error) {
-                request.input('ErrorText', sql.NVarChar, sanitizeInput(params.ErrorText));
             }
             let db_response = await request.query(query);
             if(db_response?.rowsAffected[0]){
@@ -313,7 +294,6 @@ async function updateERPTransactionStatus(postingResult) {
                 const completionMessage = `Completed updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
                 console.log(completionMessage);
                 await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.COMPLETED, EventText: String(completionMessage) });
-        
                 return { data: results, error: "", status: "ok" };
             } catch (commitError) {
                 const commitErrorMessage = `Error committing transaction in updateERPTransactionStatus function: ${commitError}`;
