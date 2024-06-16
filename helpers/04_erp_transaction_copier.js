@@ -305,6 +305,7 @@ async function updateERPTransactionStatus(postingResult) {
                     await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.COMPLETED, EventText: String(completionMessage) });
                     return { data: results, error: "", status: "ok" };
                 } 
+                console.log(result)
             }
         });
     } catch (error) {
