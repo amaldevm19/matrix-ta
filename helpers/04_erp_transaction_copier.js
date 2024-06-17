@@ -209,7 +209,7 @@ async function getTimesheetFromERPTransactionMstTable({
                 DELETED.[TotalHours],
                 DELETED.[CategoryId]
             INTO @OutputTable
-            FROM [TNA_PROXY].[dbo].[Px_ERPTransactionMst] WITH (UPDLOCK, READPAST)
+            FROM [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
             WHERE 
                 ('${EmployeeId}' IS NULL OR '${EmployeeId}'='' OR HcmWorker_PersonnelNumber = '${EmployeeId}') AND
                 ('${JobCode}' IS NULL OR '${JobCode}'='' OR projId ='${JobCode}') AND
