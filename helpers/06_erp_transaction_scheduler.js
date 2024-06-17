@@ -91,6 +91,89 @@ async function erpTransactionScheduler() {
             }
           }
         }
+        // if (db_response?.recordset) {
+        //   const promises = db_response.recordset.map(async (element) => {
+        //     let sqlData = {
+        //       TriggerDate: element.TriggerDate,
+        //       FromDate: element.FromDate,
+        //       ToDate: element.ToDate,
+        //     };
+        //     let DepartmentId = element.DepartmentId;
+        //     let UserCategoryId = element.UserCategoryId;
+        //     let Id = element.Id;
+        
+        //     let { triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentDate, CurrentHour, CurrentMonth } = ERPTransactionTriggerDateBuilder(sqlData);
+        //     console.log(triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentMonth, CurrentDate, CurrentHour);
+            
+        //     if ((TriggerDate == CurrentDate) && (triggerMonth == CurrentMonth) && (TriggerHour == CurrentHour)) {
+        //       let message = `Starting ERP Synchronization for 
+        //       Department:${DepartmentId} and User Category:${UserCategoryId} 
+        //       From ${FromDate} To ${ToDate}
+        //       `;
+        //       console.log(message);
+              
+        //       await MiddlewareHistoryLogger({
+        //         EventType: EventType.INFORMATION,
+        //         EventCategory: EventCategory.SYSTEM,
+        //         EventStatus: EventStatus.STARTED,
+        //         EventText: String(message),
+        //       });
+              
+        //       let pendingCount = await checkPendingCount({
+        //         DepartmentId,
+        //         UserCategoryId,
+        //         FromDate,
+        //         ToDate,
+        //       });
+              
+        //       if (pendingCount) {
+        //         let result = await startERPTransaction({
+        //           FromDate,
+        //           ToDate,
+        //           DepartmentId,
+        //           UserCategoryId,
+        //           pendingCount,
+        //         });
+                
+        //         if (result.status == "ok") {
+        //           let updateTransactionTriggerSettingsStatus = await updateTransactionTriggerSettings({
+        //             Id,
+        //             TriggerDate: element.TriggerDate,
+        //             FromDate,
+        //             ToDate,
+        //             DepartmentId,
+        //             UserCategoryId,
+        //           });
+                  
+        //           if (!updateTransactionTriggerSettingsStatus) {
+        //             let message = `Failed to update Transaction Trigger Settings for Department:${DepartmentId} and User Category:${UserCategoryId} in erpTransactionScheduler function From ${FromDate} To ${ToDate}`;
+        //             console.log(message);
+        //           }
+                  
+        //           let message = `Successfully completed ERP synchronization for Department:${DepartmentId} and User Category:${UserCategoryId} in erpTransactionScheduler function From ${FromDate} To ${ToDate}`;
+        //           console.log(message);
+                  
+        //           await MiddlewareHistoryLogger({
+        //             EventType: EventType.INFORMATION,
+        //             EventCategory: EventCategory.SYSTEM,
+        //             EventStatus: EventStatus.COMPLETED,
+        //             EventText: String(message),
+        //           });
+                  
+        //           return;
+        //         } else {
+        //           throw result.error;
+        //         }
+        //       }
+        //       let new_message = `No Items available for Sync`;
+        //       console.log(new_message);
+        //     }
+        //   });
+        
+        //   // Wait for all promises to complete
+        //   await Promise.all(promises);
+        // }
+        
       } catch (error) {
         let message = `Error in erpTransactionScheduler function : ${error.message}`;
         console.log(message)
