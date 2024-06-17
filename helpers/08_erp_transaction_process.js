@@ -106,17 +106,14 @@ async function startERPTransaction(obj) {
                 firstRow=false;
                 obj.stream = stream;
                 await updateReadForERP(obj);
-                // if(!db_lock){
-                   
-                // }else{
-                //     updateReadForERPQue.push(obj)
-                // }
             }
             try {
                 transactionData.push(row)
-                if(transactionData.length >= 10){
+                if(transactionData.length >= 100){
                     stream.pause()
-                    const postingResult = await postTransactionToERP(transactionData);
+                    const postingResult = await postTransactionToERP([...transactionData]);
+                    transactionData.length=0;
+                    stream.resume()
                     if (postingResult.status == "ok") {
                         const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResult.data);
                         if (updateERPTransactionStatusResult.status === "ok") {

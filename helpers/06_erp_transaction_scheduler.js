@@ -19,64 +19,9 @@ async function erpTransactionScheduler() {
           FROM [TNA_PROXY].[dbo].[Px_TransTriggerMst] 
           WHERE Status=1
         `);
-        // if(db_response?.recordset){
-        //   for (let index = 0; index < db_response.recordset.length; index++) {
-        //     const element = db_response.recordset[index];
-        //     let sqlData = {
-        //       TriggerDate: element.TriggerDate,
-        //       FromDate: element.FromDate,
-        //       ToDate: element.ToDate,
-        //     };
-        //     let DepartmentId=element.DepartmentId
-        //     let UserCategoryId = element.UserCategoryId
-        //     let Id = element.Id
-
-        //     let { triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentDate, CurrentHour,CurrentMonth } = ERPTransactionTriggerDateBuilder(sqlData);
-        //     //console.log(triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentMonth, CurrentDate, CurrentHour )
-        //     if((TriggerDate==CurrentDate) && (triggerMonth == CurrentMonth) && (TriggerHour<=CurrentHour)){
-        //       let message = `Starting ERP Synchronization for 
-        //       Department:${DepartmentId} and User Category:${UserCategoryId} 
-        //       From ${FromDate} To ${ToDate}
-        //       `;
-        //       console.log(message);
-        //       await MiddlewareHistoryLogger({
-        //         EventType: EventType.INFORMATION,
-        //         EventCategory: EventCategory.SYSTEM,
-        //         EventStatus: EventStatus.STARTED,
-        //         EventText: String(message),
-        //       });
-        //       let result = await startERPTransaction({FromDate,ToDate,DepartmentId,UserCategoryId});
-        //       if (result.status == "ok") {
-        //         let updateTransactionTriggerSettingsStatus = await updateTransactionTriggerSettings({
-        //           Id,
-        //           TriggerDate:element.TriggerDate,
-        //           FromDate,
-        //           ToDate,
-        //           DepartmentId,
-        //           UserCategoryId
-        //         });
-        //         if(!updateTransactionTriggerSettingsStatus){
-        //           let message = `Failed to update Transaction Trigger Settings for Department:${DepartmentId} and User Category:${UserCategoryId} in erpTransactionScheduler function From ${FromDate} To ${ToDate}`;
-        //           console.log(message)
-        //         }else{
-        //           let message = `Successfully completed ERP synchronization for Department:${DepartmentId} and User Category:${UserCategoryId} in erpTransactionScheduler function From ${FromDate} To ${ToDate}`;
-        //           console.log(message);
-        //           await MiddlewareHistoryLogger({
-        //             EventType: EventType.INFORMATION,
-        //             EventCategory: EventCategory.SYSTEM,
-        //             EventStatus: EventStatus.COMPLETED,
-        //             EventText: String(message),
-        //           });
-        //           return;
-        //         }
-        //       } else {
-        //         throw result.error;
-        //       }
-        //     }
-        //   }
-        // }
-        if (db_response?.recordset) {
-          const promises = db_response.recordset.map(async (element) => {
+        if(db_response?.recordset){
+          for (let index = 0; index < db_response.recordset.length; index++) {
+            const element = db_response.recordset[index];
             let sqlData = {
               TriggerDate: element.TriggerDate,
               FromDate: element.FromDate,
@@ -89,18 +34,73 @@ async function erpTransactionScheduler() {
             let { triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentDate, CurrentHour,CurrentMonth } = ERPTransactionTriggerDateBuilder(sqlData);
             //console.log(triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentMonth, CurrentDate, CurrentHour )
             if((TriggerDate==CurrentDate) && (triggerMonth == CurrentMonth) && (TriggerHour<=CurrentHour)){
-              await startERPSyncAndUpdate({Id,FromDate,ToDate,DepartmentId,UserCategoryId,TriggerDate:element.TriggerDate,})
-              // if(db_lock){
-              //   pending.push({Id,FromDate,ToDate,DepartmentId,UserCategoryId,TriggerDate:element.TriggerDate,})
-              // }else{
-              //   await startERPSyncAndUpdate({Id,FromDate,ToDate,DepartmentId,UserCategoryId,TriggerDate:element.TriggerDate,})
-              // }
+              let message = `Starting ERP Synchronization for 
+              Department:${DepartmentId} and User Category:${UserCategoryId} 
+              From ${FromDate} To ${ToDate}
+              `;
+              console.log(message);
+              await MiddlewareHistoryLogger({
+                EventType: EventType.INFORMATION,
+                EventCategory: EventCategory.SYSTEM,
+                EventStatus: EventStatus.STARTED,
+                EventText: String(message),
+              });
+              let result = await startERPTransaction({FromDate,ToDate,DepartmentId,UserCategoryId});
+              if (result.status == "ok") {
+                let updateTransactionTriggerSettingsStatus = await updateTransactionTriggerSettings({
+                  Id,
+                  TriggerDate:element.TriggerDate,
+                  FromDate,
+                  ToDate,
+                  DepartmentId,
+                  UserCategoryId
+                });
+                if(!updateTransactionTriggerSettingsStatus){
+                  let message = `Failed to update Transaction Trigger Settings for Department:${DepartmentId} and User Category:${UserCategoryId} in erpTransactionScheduler function From ${FromDate} To ${ToDate}`;
+                  console.log(message)
+                }else{
+                  let message = `Successfully completed ERP synchronization for Department:${DepartmentId} and User Category:${UserCategoryId} in erpTransactionScheduler function From ${FromDate} To ${ToDate}`;
+                  console.log(message);
+                  await MiddlewareHistoryLogger({
+                    EventType: EventType.INFORMATION,
+                    EventCategory: EventCategory.SYSTEM,
+                    EventStatus: EventStatus.COMPLETED,
+                    EventText: String(message),
+                  });
+                  return;
+                }
+              } else {
+                throw result.error;
+              }
             }
-          });
-        
-          // Wait for all promises to complete
-          await Promise.all(promises);
+          }
         }
+        // if (db_response?.recordset) {
+        //   const promises = db_response.recordset.map(async (element) => {
+        //     let sqlData = {
+        //       TriggerDate: element.TriggerDate,
+        //       FromDate: element.FromDate,
+        //       ToDate: element.ToDate,
+        //     };
+        //     let DepartmentId=element.DepartmentId
+        //     let UserCategoryId = element.UserCategoryId
+        //     let Id = element.Id
+
+        //     let { triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentDate, CurrentHour,CurrentMonth } = ERPTransactionTriggerDateBuilder(sqlData);
+        //     //console.log(triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentMonth, CurrentDate, CurrentHour )
+        //     if((TriggerDate==CurrentDate) && (triggerMonth == CurrentMonth) && (TriggerHour<=CurrentHour)){
+        //       await startERPSyncAndUpdate({Id,FromDate,ToDate,DepartmentId,UserCategoryId,TriggerDate:element.TriggerDate,})
+        //       // if(db_lock){
+        //       //   pending.push({Id,FromDate,ToDate,DepartmentId,UserCategoryId,TriggerDate:element.TriggerDate,})
+        //       // }else{
+        //       //   await startERPSyncAndUpdate({Id,FromDate,ToDate,DepartmentId,UserCategoryId,TriggerDate:element.TriggerDate,})
+        //       // }
+        //     }
+        //   });
+        
+        //   // Wait for all promises to complete
+        //   await Promise.all(promises);
+        // }
         
       } catch (error) {
         let message = `Error in erpTransactionScheduler function : ${error.message}`;
