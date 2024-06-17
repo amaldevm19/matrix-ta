@@ -33,7 +33,7 @@ async function erpTransactionScheduler() {
 
             let { triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentDate, CurrentHour,CurrentMonth } = ERPTransactionTriggerDateBuilder(sqlData);
             //console.log(triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentMonth, CurrentDate, CurrentHour )
-            if((TriggerDate==CurrentDate) && (triggerMonth == CurrentMonth) && (TriggerHour==CurrentHour)){
+            if((TriggerDate==CurrentDate) && (triggerMonth == CurrentMonth) && (TriggerHour<=CurrentHour)){
               let message = `Starting ERP Synchronization for 
               Department:${DepartmentId} and User Category:${UserCategoryId} 
               From ${FromDate} To ${ToDate}

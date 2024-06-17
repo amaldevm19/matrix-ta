@@ -122,7 +122,7 @@ async function startERPTransaction({
             try {
                 //console.log(row);
                 transactionData.push(row)
-                if(transactionData.length >= 100){
+                if(transactionData.length >= 1000){
                     stream.pause()
                     const postingResult = await postTransactionToERP(transactionData);
                     if (postingResult.status == "ok") {
