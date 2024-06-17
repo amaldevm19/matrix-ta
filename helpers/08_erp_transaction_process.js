@@ -105,11 +105,12 @@ async function startERPTransaction(obj) {
                 stream.pause();
                 firstRow=false;
                 obj.stream = stream;
-                if(!db_lock){
-                    await updateReadForERP(obj);
-                }else{
-                    updateReadForERPQue.push(obj)
-                }
+                await updateReadForERP(obj);
+                // if(!db_lock){
+                   
+                // }else{
+                //     updateReadForERPQue.push(obj)
+                // }
             }
             try {
                 transactionData.push(row)
@@ -196,25 +197,25 @@ async function checkPendingCount({DepartmentId,UserCategoryId, FromDate, ToDate}
     }
 }
 
-eventEmitter.on("db-lock",()=>{
-    console.log("db locked for updateReadForERP")
-    db_lock = true
-})
-eventEmitter.on("db-unlock",async ()=>{
-    console.log("db unlocked for updateReadForERP")
-    if(!db_lock){
-        if(updateReadForERPQue.length > 0){
-            let obj = updateReadForERPQue.pop()
-            await updateReadForERP(obj);
-        }
-    }
+// eventEmitter.on("db-lock",()=>{
+//     console.log("db locked for updateReadForERP")
+//     db_lock = true
+// })
+// eventEmitter.on("db-unlock",async ()=>{
+//     console.log("db unlocked for updateReadForERP")
+//     if(!db_lock){
+//         if(updateReadForERPQue.length > 0){
+//             let obj = updateReadForERPQue.pop()
+//             await updateReadForERP(obj);
+//         }
+//     }
     
 
-})
+// })
 
 async function updateReadForERP({FromDate, ToDate, UserCategoryId, DepartmentId, stream}){
     try {
-        eventEmitter.emit("db-lock");
+        // eventEmitter.emit("db-lock");
         await ProxyDbPool.connect();
         let request = new sql.Request(ProxyDbPool);
         let query = `
@@ -229,7 +230,7 @@ async function updateReadForERP({FromDate, ToDate, UserCategoryId, DepartmentId,
         let db_response = await request.query(query);
         console.log(db_response)
         if(db_response?.rowsAffected[0]){
-            eventEmitter.emit("db-unlock");
+            // eventEmitter.emit("db-unlock");
             stream.resume();
         }
     } catch (error) {

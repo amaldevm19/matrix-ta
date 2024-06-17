@@ -89,12 +89,12 @@ async function erpTransactionScheduler() {
             let { triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentDate, CurrentHour,CurrentMonth } = ERPTransactionTriggerDateBuilder(sqlData);
             //console.log(triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentMonth, CurrentDate, CurrentHour )
             if((TriggerDate==CurrentDate) && (triggerMonth == CurrentMonth) && (TriggerHour<=CurrentHour)){
-              // await startERPSyncAndUpdate({Id,FromDate,ToDate,DepartmentId,UserCategoryId,TriggerDate:element.TriggerDate,})
-              if(db_lock){
-                pending.push({Id,FromDate,ToDate,DepartmentId,UserCategoryId,TriggerDate:element.TriggerDate,})
-              }else{
-                await startERPSyncAndUpdate({Id,FromDate,ToDate,DepartmentId,UserCategoryId,TriggerDate:element.TriggerDate,})
-              }
+              await startERPSyncAndUpdate({Id,FromDate,ToDate,DepartmentId,UserCategoryId,TriggerDate:element.TriggerDate,})
+              // if(db_lock){
+              //   pending.push({Id,FromDate,ToDate,DepartmentId,UserCategoryId,TriggerDate:element.TriggerDate,})
+              // }else{
+              //   await startERPSyncAndUpdate({Id,FromDate,ToDate,DepartmentId,UserCategoryId,TriggerDate:element.TriggerDate,})
+              // }
             }
           });
         
@@ -173,20 +173,20 @@ async function startERPSyncAndUpdate({Id,FromDate,ToDate,DepartmentId,UserCatego
     console.log(error)
  }
 }
-eventEmitter.on("db-lock",()=>{
-  console.log("db locked for startERPSyncAndUpdate")
-  db_lock = true
-})
+// eventEmitter.on("db-lock",()=>{
+//   console.log("db locked for startERPSyncAndUpdate")
+//   db_lock = true
+// })
 
-eventEmitter.on("db-unlock",async()=>{
-  console.log("db unlocked for startERPSyncAndUpdate")
-  if(!db_lock){
-    if(pending.length > 0){
-      let obj = pending.pop();
-      await startERPSyncAndUpdate(obj)
-    }
-  }
+// eventEmitter.on("db-unlock",async()=>{
+//   console.log("db unlocked for startERPSyncAndUpdate")
+//   if(!db_lock){
+//     if(pending.length > 0){
+//       let obj = pending.pop();
+//       await startERPSyncAndUpdate(obj)
+//     }
+//   }
   
  
-})
+// })
 module.exports = { erpTransactionScheduler};
