@@ -158,7 +158,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
         return {status:"not ok",data:"",error};
     }
 }
-async function getTimesheetFromERPTransactionMstTable({DepartmentId,UserCategoryId,FromDate, ToDate, eventEmitter}){
+async function getTimesheetFromERPTransactionMstTable({DepartmentId,UserCategoryId,FromDate, ToDate}){
     try {
         await ProxyDbPool.connect();
         const request = new sql.Request(ProxyDbPool);

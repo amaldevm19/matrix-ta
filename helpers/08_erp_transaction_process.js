@@ -94,7 +94,6 @@ async function startERPTransaction({
 let db_lock = false;
 let updateReadForERPQue = []
 async function startERPTransaction(obj) {
-    {FromDate, ToDate, DepartmentId,UserCategoryId}
     try {
         console.log(`Starting getTimesheetFromERPTransactionMstTable for streaming data`);
         obj.eventEmitter= eventEmitter;
@@ -102,7 +101,6 @@ async function startERPTransaction(obj) {
         let transactionData = [];
         let firstRow = true;
         stream.on('row', async (row) => {
-            
             if(firstRow){
                 stream.pause();
                 firstRow=false;
