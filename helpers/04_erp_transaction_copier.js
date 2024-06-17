@@ -158,90 +158,33 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
         return {status:"not ok",data:"",error};
     }
 }
-let db_lock = false
-async function getTimesheetFromERPTransactionMstTable({
-    EmployeeId,
-    JobCode,
-    DepartmentId,
-    UserCategoryId,
-    EmployeeCategoryId,
-    DesignationId,
-    SectionId, 
-    FromDate, 
-    ToDate,
-    SyncCompleted,
-}){
+async function getTimesheetFromERPTransactionMstTable({DepartmentId,UserCategoryId,FromDate, ToDate, eventEmitter}){
     try {
-        db_lock = true
         await ProxyDbPool.connect();
         const request = new sql.Request(ProxyDbPool);
         request.stream = true 
         const query = `
-            -- Declare a table variable to store the output
-            DECLARE @OutputTable TABLE (
-                InsertedId INT,
-                InsertedHcmWorker_PersonnelNumber VARCHAR(50),
-                InsertedTransDate DATE,
-                InsertedProjId VARCHAR(50),
-                InsertedTotalHours DECIMAL(4, 1),
-                InsertedCategoryId VARCHAR(50),
-                DeletedId INT,
-                DeletedHcmWorker_PersonnelNumber VARCHAR(50),
-                DeletedTransDate DATE,
-                DeletedProjId VARCHAR(50),
-                DeletedTotalHours DECIMAL(4, 1),
-                DeletedCategoryId VARCHAR(50)
-            );
-
-            -- Perform the update and output into the table variable
-            UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
-            SET readForERP = 1
-            OUTPUT 
-                INSERTED.[Id],
-                INSERTED.[HcmWorker_PersonnelNumber],
-                INSERTED.[TransDate],
-                INSERTED.[projId],
-                INSERTED.[TotalHours],
-                INSERTED.[CategoryId],
-                DELETED.[Id],
-                DELETED.[HcmWorker_PersonnelNumber],
-                DELETED.[TransDate],
-                DELETED.[projId],
-                DELETED.[TotalHours],
-                DELETED.[CategoryId]
-            INTO @OutputTable
+            SELECT 
+                Id,
+                HcmWorker_PersonnelNumber,
+                TransDate,
+                projId,
+                TotalHours,
+                CategoryId 
             FROM [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
             WHERE 
-                ('${EmployeeId}' IS NULL OR '${EmployeeId}'='' OR HcmWorker_PersonnelNumber = '${EmployeeId}') AND
-                ('${JobCode}' IS NULL OR '${JobCode}'='' OR projId ='${JobCode}') AND
                 ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR DepartmentId = ${DepartmentId ? DepartmentId : 0}) AND
                 ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR UserCategoryId = ${UserCategoryId ? UserCategoryId : 0}) AND
-                ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId ? EmployeeCategoryId : 0}) AND
-                ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId ? DesignationId : 0}) AND
-                ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId ? SectionId : 0}) AND
                 (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                (SyncCompleted = ${SyncCompleted} AND Error = 0 AND readForERP = 0);
-
-            -- You can now use the data in @OutputTable as needed
-            SELECT 
-                InsertedId AS Id,
-                InsertedHcmWorker_PersonnelNumber AS HcmWorker_PersonnelNumber,
-                InsertedTransDate AS TransDate,
-                InsertedProjId AS projId,
-                InsertedTotalHours AS TotalHours,
-                InsertedCategoryId AS CategoryId 
-            FROM @OutputTable;
+                (SyncCompleted = 0 AND Error = 0 AND readForERP = 0);
         `;
-
         request.query(query);
-
         request.on('error', async (err) => {
             const message = `Error in getTimesheetFromERPTransactionMstTable function : ${err}`;
             console.log(message);
             await MiddlewareHistoryLogger({EventType:EventType.ERROR, EventCategory:EventCategory.SYSTEM, EventStatus:EventStatus.FAILED, EventText:String(message)});
             throw err;
         });
-
         return request;
     } catch (error) {
         const message = `Error connecting to the database in getTimesheetFromERPTransactionMstTable function : ${error}`;
@@ -263,7 +206,6 @@ async function updateERPTransactionStatus(postingResult) {
         for (let index = 0; index < postingResult.length; index++) {
             const element = postingResult[index];
             let query = "";
-            let params = {};
             let updatedQuery = {}
             if (element.Error) {
                 query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
@@ -287,17 +229,10 @@ async function updateERPTransactionStatus(postingResult) {
         }
 
         if(results){
-            try {
-                const completionMessage = `Completed updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
-                console.log(completionMessage);
-                await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.COMPLETED, EventText: String(completionMessage) });
-                return { data: results, error: "", status: "ok" };
-            } catch (commitError) {
-                const commitErrorMessage = `Error committing transaction in updateERPTransactionStatus function: ${commitError}`;
-                console.log(commitErrorMessage);
-                await MiddlewareHistoryLogger({ EventType: EventType.ERROR, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.FAILED, EventText: String(commitErrorMessage) });
-                return { data: "", error: commitError, status: "not ok" };
-            }
+            const completionMessage = `Completed updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
+            console.log(completionMessage);
+            await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.COMPLETED, EventText: String(completionMessage) });
+            return { data: results, error: "", status: "ok" };
         }
     
     } catch (error) {
@@ -307,6 +242,31 @@ async function updateERPTransactionStatus(postingResult) {
         return { data: "", error: error, status: "not ok" };
     }
     
+}
+
+async function updateReadForERP({FromDate, ToDate, UserCategoryId, DepartmentId,eventEmitter, stream}){
+    try {
+        eventEmitter.emit("db-lock");
+        await ProxyDbPool.connect();
+        const request = new sql.Request(ProxyDbPool);
+        const query = `
+            UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
+            SET readForERP = 1
+            WHERE 
+                ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR DepartmentId = ${DepartmentId ? DepartmentId : 0}) AND
+                ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR UserCategoryId = ${UserCategoryId ? UserCategoryId : 0}) AND
+                (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
+                (SyncCompleted = 0 AND Error = 0 AND readForERP = 0);
+        `
+        let db_response = await request.query(query);
+        if(db_response?.rowsAffected[0]){
+            eventEmitter.emit("db-unlock");
+            stream.resume();
+        }
+    } catch (error) {
+        
+    }
+
 }
 
  function sanitizeInput(input) {
@@ -322,4 +282,4 @@ async function updateERPTransactionStatus(postingResult) {
 
 
 
-module.exports={PxERPTransactionTableBuilder, getTimesheetFromERPTransactionMstTable, updateERPTransactionStatus,db_lock};
+module.exports={PxERPTransactionTableBuilder, getTimesheetFromERPTransactionMstTable, updateERPTransactionStatus,updateReadForERP};

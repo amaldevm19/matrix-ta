@@ -1,14 +1,13 @@
 const cron = require("node-cron");
 const { ProxyDbPool, sql } = require("../config/db");
 const { ERPTransactionTriggerDateBuilder} = require("./05_transaction_trigger_date_builder");
-const { startERPTransaction,eventEmitter} = require("./08_erp_transaction_process");
+const { startERPTransaction,eventEmitter,db_lock} = require("./08_erp_transaction_process");
 const {MiddlewareHistoryLogger,  EventCategory, EventType, EventStatus} = require("../helpers/19_middleware_history_logger");
 const { updateTransactionTriggerSettings } = require("../helpers/20_update_transaction_trigger_settings");
-let { db_lock } = require("./04_erp_transaction_copier");
+
 let pending = []
 async function erpTransactionScheduler() {
   try {
-   
     let erpTransSchedule = cron.schedule(process.env.ERP_TRANSACTION_CRON_STRING,async function () {
       try {
         let message = `Starting ERP Synchronization`
@@ -90,12 +89,16 @@ async function erpTransactionScheduler() {
             let { triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentDate, CurrentHour,CurrentMonth } = ERPTransactionTriggerDateBuilder(sqlData);
             //console.log(triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentMonth, CurrentDate, CurrentHour )
             if((TriggerDate==CurrentDate) && (triggerMonth == CurrentMonth) && (TriggerHour<=CurrentHour)){
+              // await startERPSyncAndUpdate({Id,FromDate,ToDate,DepartmentId,UserCategoryId,TriggerDate:element.TriggerDate,})
               if(db_lock){
-                pending.push({FromDate,ToDate,DepartmentId,UserCategoryId})
+                pending.push({Id,FromDate,ToDate,DepartmentId,UserCategoryId,TriggerDate:element.TriggerDate,})
               }else{
-                await startERPSyncAndUpdate({FromDate,ToDate,DepartmentId,UserCategoryId})
+                setTimeout(async()=>{
+                  if(!db_lock){
+                    await startERPSyncAndUpdate({Id,FromDate,ToDate,DepartmentId,UserCategoryId,TriggerDate:element.TriggerDate,})
+                  }
+                },200)
               }
-              
             }
           });
         
@@ -130,7 +133,7 @@ async function erpTransactionScheduler() {
   }
 }
 
-async function startERPSyncAndUpdate({FromDate,ToDate,DepartmentId,UserCategoryId}){
+async function startERPSyncAndUpdate({Id,FromDate,ToDate,DepartmentId,UserCategoryId,TriggerDate}){
  try {
   let message = `Starting ERP Synchronization for 
   Department:${DepartmentId} and User Category:${UserCategoryId} 
@@ -147,7 +150,7 @@ async function startERPSyncAndUpdate({FromDate,ToDate,DepartmentId,UserCategoryI
   if (result.status == "ok") {
     let updateTransactionTriggerSettingsStatus = await updateTransactionTriggerSettings({
       Id,
-      TriggerDate:element.TriggerDate,
+      TriggerDate,
       FromDate,
       ToDate,
       DepartmentId,
@@ -174,11 +177,21 @@ async function startERPSyncAndUpdate({FromDate,ToDate,DepartmentId,UserCategoryI
   
  }
 }
+eventEmitter.on("db-lock",()=>{
+  db_lock = true
+})
 
 eventEmitter.on("db-unlock",async()=>{
-  if(pending){
-    let obj = pending.pop();
-    await startERPSyncAndUpdate(obj)
-  }
+  console.log("db unlocked for startERPSyncAndUpdate")
+  setTimeout(async ()=>{
+    if(!db_lock){
+      if(pending.length > 0){
+        let obj = pending.pop();
+        await startERPSyncAndUpdate(obj)
+      }
+    }
+  },1000)
+  
+ 
 })
 module.exports = { erpTransactionScheduler};

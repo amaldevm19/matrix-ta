@@ -1,11 +1,11 @@
 const {ProxyDbPool, sql} = require("../config/db");
 
-let {getTimesheetFromERPTransactionMstTable,updateERPTransactionStatus,db_lock} = require("./04_erp_transaction_copier");
+let {getTimesheetFromERPTransactionMstTable,updateERPTransactionStatus,updateReadForERP} = require("./04_erp_transaction_copier");
 const {postTransactionToERP} = require("./09_post_transaction");
 const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require("../helpers/19_middleware_history_logger");
-
 const events = require('events');
 const eventEmitter = new events.EventEmitter();
+
 
 /*
 async function startERPTransaction({
@@ -91,42 +91,32 @@ async function startERPTransaction({
 }
 */
 
-async function startERPTransaction({
-    FromDate='', 
-    ToDate='',
-    EmployeeId='',
-    JobCode='',
-    DepartmentId='',
-    UserCategoryId='',
-    EmployeeCategoryId='',
-    DesignationId='',
-    SectionId='', 
-    SyncCompleted=0,
-}) {
+let db_lock = false;
+let updateReadForERPQue = []
+async function startERPTransaction(obj) {
+    {FromDate, ToDate, DepartmentId,UserCategoryId}
     try {
         console.log(`Starting getTimesheetFromERPTransactionMstTable for streaming data`);
-        const stream = await getTimesheetFromERPTransactionMstTable({
-            FromDate, 
-            ToDate, 
-            EmployeeId, 
-            JobCode,
-            DepartmentId,
-            UserCategoryId,
-            EmployeeCategoryId,
-            DesignationId,
-            SectionId,
-            SyncCompleted 
-        });
-        if(stream){
-            db_lock = false;
-            eventEmitter.emit("db-unlock")
-        }
-        stream.on('rowsaffected', rowCount => {
-            console.log(rowCount);
-            
-        })
+        obj.eventEmitter= eventEmitter;
+        const stream = await getTimesheetFromERPTransactionMstTable(obj);
         let transactionData = [];
+        let firstRow = true;
         stream.on('row', async (row) => {
+            
+            if(firstRow){
+                stream.pause();
+                firstRow=false;
+                obj.stream = stream;
+                if(!db_lock){
+                    setTimeout(async()=>{
+                        if(!db_lock){
+                            await updateReadForERP(obj);
+                        }
+                    },500)
+                }else{
+                    updateReadForERPQue.push(obj)
+                }
+            }
             try {
                 transactionData.push(row)
                 if(transactionData.length >= 10){
@@ -149,7 +139,7 @@ async function startERPTransaction({
             }
         });
         
-        let result = await handleStreamCompletion(stream,transactionData,DepartmentId,UserCategoryId,FromDate,ToDate);
+        let result = await handleStreamCompletion(stream,transactionData);
         if(result?.status == 'ok'){
             return result
         }
@@ -208,5 +198,22 @@ async function checkPendingCount({DepartmentId,UserCategoryId, FromDate, ToDate}
     }
 }
 
+eventEmitter.on("db-lock",()=>{
+    db_lock = true
+})
+eventEmitter.on("db-unlock",async ()=>{
+    console.log("db unlocked for updateReadForERP")
+    setTimeout(async ()=>{
+        if(!db_lock){
+            if(updateReadForERPQue.length > 0){
+                let obj = updateReadForERPQue.pop()
+                await updateReadForERP(obj);
+            }
+        }
+    }, 2000)
+    
 
-module.exports = {startERPTransaction,checkPendingCount,eventEmitter};
+})
+
+
+module.exports = {startERPTransaction,checkPendingCount,eventEmitter,db_lock};
