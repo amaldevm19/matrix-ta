@@ -108,11 +108,7 @@ async function startERPTransaction(obj) {
                 firstRow=false;
                 obj.stream = stream;
                 if(!db_lock){
-                    setTimeout(async()=>{
-                        if(!db_lock){
-                            await updateReadForERP(obj);
-                        }
-                    },500)
+                    await updateReadForERP(obj);
                 }else{
                     updateReadForERPQue.push(obj)
                 }
@@ -199,18 +195,17 @@ async function checkPendingCount({DepartmentId,UserCategoryId, FromDate, ToDate}
 }
 
 eventEmitter.on("db-lock",()=>{
+    console.log("db unlocked for updateReadForERP")
     db_lock = true
 })
 eventEmitter.on("db-unlock",async ()=>{
     console.log("db unlocked for updateReadForERP")
-    setTimeout(async ()=>{
-        if(!db_lock){
-            if(updateReadForERPQue.length > 0){
-                let obj = updateReadForERPQue.pop()
-                await updateReadForERP(obj);
-            }
+    if(!db_lock){
+        if(updateReadForERPQue.length > 0){
+            let obj = updateReadForERPQue.pop()
+            await updateReadForERP(obj);
         }
-    }, 2000)
+    }
     
 
 })

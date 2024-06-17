@@ -178,19 +178,18 @@ async function startERPSyncAndUpdate({Id,FromDate,ToDate,DepartmentId,UserCatego
  }
 }
 eventEmitter.on("db-lock",()=>{
+  console.log("db locked for startERPSyncAndUpdate")
   db_lock = true
 })
 
 eventEmitter.on("db-unlock",async()=>{
   console.log("db unlocked for startERPSyncAndUpdate")
-  setTimeout(async ()=>{
-    if(!db_lock){
-      if(pending.length > 0){
-        let obj = pending.pop();
-        await startERPSyncAndUpdate(obj)
-      }
+  if(!db_lock){
+    if(pending.length > 0){
+      let obj = pending.pop();
+      await startERPSyncAndUpdate(obj)
     }
-  },1000)
+  }
   
  
 })
