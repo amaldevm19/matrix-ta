@@ -93,11 +93,7 @@ async function erpTransactionScheduler() {
               if(db_lock){
                 pending.push({Id,FromDate,ToDate,DepartmentId,UserCategoryId,TriggerDate:element.TriggerDate,})
               }else{
-                setTimeout(async()=>{
-                  if(!db_lock){
-                    await startERPSyncAndUpdate({Id,FromDate,ToDate,DepartmentId,UserCategoryId,TriggerDate:element.TriggerDate,})
-                  }
-                },200)
+                await startERPSyncAndUpdate({Id,FromDate,ToDate,DepartmentId,UserCategoryId,TriggerDate:element.TriggerDate,})
               }
             }
           });

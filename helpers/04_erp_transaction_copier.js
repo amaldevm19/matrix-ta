@@ -259,6 +259,7 @@ async function updateReadForERP({FromDate, ToDate, UserCategoryId, DepartmentId,
                 (SyncCompleted = 0 AND Error = 0 AND readForERP = 0);
         `
         let db_response = await request.query(query);
+        console.log(db_response)
         if(db_response?.rowsAffected[0]){
             eventEmitter.emit("db-unlock");
             stream.resume();
