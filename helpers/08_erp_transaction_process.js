@@ -139,7 +139,7 @@ async function startERPTransaction(obj) {
         }
         
     } catch (error) {
-        const message = `Error in startERPTransaction function : ${error.message}`;
+        const message = `Error in startERPTransaction function : ${error}`;
         console.log(message);
         await MiddlewareHistoryLogger({EventType:EventType.ERROR, EventCategory:EventCategory.SYSTEM, EventStatus:EventStatus.FAILED, EventText:String(message)});
         return { status: "not ok", data: "", error: error };
