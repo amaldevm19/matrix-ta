@@ -4,7 +4,7 @@ const { ERPTransactionTriggerDateBuilder} = require("./05_transaction_trigger_da
 const { startERPTransaction,eventEmitter} = require("./08_erp_transaction_process");
 const {MiddlewareHistoryLogger,  EventCategory, EventType, EventStatus} = require("../helpers/19_middleware_history_logger");
 const { updateTransactionTriggerSettings } = require("../helpers/20_update_transaction_trigger_settings");
-const { db_lock } = require("./04_erp_transaction_copier");
+let { db_lock } = require("./04_erp_transaction_copier");
   
 async function erpTransactionScheduler() {
   try {
