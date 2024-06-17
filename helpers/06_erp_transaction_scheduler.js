@@ -92,6 +92,7 @@ async function erpTransactionScheduler() {
         //   }
         // }
         if (db_response?.recordset) {
+          let started = []
           const promises = db_response.recordset.map(async (element) => {
             let sqlData = {
               TriggerDate: element.TriggerDate,
@@ -106,6 +107,11 @@ async function erpTransactionScheduler() {
             console.log(triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentMonth, CurrentDate, CurrentHour);
             
             if ((TriggerDate == CurrentDate) && (triggerMonth == CurrentMonth) && (TriggerHour == CurrentHour)) {
+              
+              if(started.indexOf(Id)>=0){
+                return
+              }
+              started.push(Id)
               let message = `Starting ERP Synchronization for 
               Department:${DepartmentId} and User Category:${UserCategoryId} 
               From ${FromDate} To ${ToDate}
