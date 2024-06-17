@@ -1,6 +1,6 @@
 const {ProxyDbPool, sql} = require("../config/db");
-const EventEmitter = require('node:events');
-const {getTimesheetFromERPTransactionMstTable,updateERPTransactionStatus} = require("./04_erp_transaction_copier");
+
+const {getTimesheetFromERPTransactionMstTable,updateERPTransactionStatus,eventEmitter, dbLocked} = require("./04_erp_transaction_copier");
 const {postTransactionToERP} = require("./09_post_transaction");
 const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require("../helpers/19_middleware_history_logger");
 
@@ -87,10 +87,8 @@ async function startERPTransaction({
 
 }
 */
-class MyEmitter extends EventEmitter {}
 
-const myEmitter = new MyEmitter();
-
+let erpTransactionQue = [];
 async function startERPTransaction({
     FromDate='', 
     ToDate='',
@@ -102,54 +100,104 @@ async function startERPTransaction({
     DesignationId='',
     SectionId='', 
     SyncCompleted=0,
-    pendingCount
+    pendingCount,Id
 }) {
     try {
         console.log(`Starting getTimesheetFromERPTransactionMstTable for streaming data`);
-
-        const stream = await getTimesheetFromERPTransactionMstTable({
-            FromDate, 
-            ToDate, 
-            EmployeeId, 
-            JobCode,
-            DepartmentId,
-            UserCategoryId,
-            EmployeeCategoryId,
-            DesignationId,
-            SectionId,
-            SyncCompleted 
-        });
-
-        let transactionData = [];
-        stream.on('row', async (row) => {
-            try {
-                //console.log(row);
-                transactionData.push(row)
-                if(transactionData.length >= 100){
-                    stream.pause()
-                    const postingResult = await postTransactionToERP(transactionData);
-                    if (postingResult.status == "ok") {
-                        const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResult.data);
-                        if (updateERPTransactionStatusResult.status === "ok") {
-                            console.log(updateERPTransactionStatusResult.data)
-                            transactionData.length=0;
-                            stream.resume()
+        const stream = {}
+        if(dbLocked){
+            erpTransactionQue.push({
+                FromDate, 
+                ToDate, 
+                EmployeeId, 
+                JobCode,
+                DepartmentId,
+                UserCategoryId,
+                EmployeeCategoryId,
+                DesignationId,
+                SectionId,
+                SyncCompleted 
+            })
+        }else{
+            stream = await getTimesheetFromERPTransactionMstTable({
+                FromDate, 
+                ToDate, 
+                EmployeeId, 
+                JobCode,
+                DepartmentId,
+                UserCategoryId,
+                EmployeeCategoryId,
+                DesignationId,
+                SectionId,
+                SyncCompleted 
+            });
+    
+            let transactionData = [];
+            stream.on('row', async (row) => {
+                try {
+                    //console.log(row);
+                    transactionData.push(row)
+                    if(transactionData.length >= 100){
+                        stream.pause()
+                        const postingResult = await postTransactionToERP(transactionData);
+                        if (postingResult.status == "ok") {
+                            const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResult.data);
+                            if (updateERPTransactionStatusResult.status === "ok") {
+                                console.log(updateERPTransactionStatusResult.data)
+                                transactionData.length=0;
+                                stream.resume()
+                            }
                         }
                     }
+                    
+                } catch (error) {
+                    const message = `Error processing row in startERPTransaction function : ${error}`;
+                    console.log(message);
+                    await MiddlewareHistoryLogger({EventType:EventType.ERROR, EventCategory:EventCategory.SYSTEM, EventStatus:EventStatus.FAILED, EventText:String(message)});
                 }
-                
-            } catch (error) {
-                const message = `Error processing row in startERPTransaction function : ${error}`;
-                console.log(message);
-                await MiddlewareHistoryLogger({EventType:EventType.ERROR, EventCategory:EventCategory.SYSTEM, EventStatus:EventStatus.FAILED, EventText:String(message)});
+            });
+            
+            let result = await handleStreamCompletion(stream,transactionData,DepartmentId,UserCategoryId,FromDate,ToDate);
+            if(result?.status == 'ok'){
+                return result
             }
-        });
-        
-        let result = await handleStreamCompletion(stream,transactionData,DepartmentId,UserCategoryId,FromDate,ToDate);
-        if(result?.status == 'ok'){
-            return result
         }
-       
+        eventEmitter.on('db-unlocked',async()=>{
+            let obj = erpTransactionQue.pop();
+            if(obj){
+                stream = await getTimesheetFromERPTransactionMstTable(obj);
+                let transactionData = [];
+                stream.on('row', async (row) => {
+                    try {
+                        //console.log(row);
+                        transactionData.push(row)
+                        if(transactionData.length >= 100){
+                            stream.pause()
+                            const postingResult = await postTransactionToERP(transactionData);
+                            if (postingResult.status == "ok") {
+                                const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResult.data);
+                                if (updateERPTransactionStatusResult.status === "ok") {
+                                    console.log(updateERPTransactionStatusResult.data)
+                                    transactionData.length=0;
+                                    stream.resume()
+                                }
+                            }
+                        }
+                        
+                    } catch (error) {
+                        const message = `Error processing row in startERPTransaction function : ${error}`;
+                        console.log(message);
+                        await MiddlewareHistoryLogger({EventType:EventType.ERROR, EventCategory:EventCategory.SYSTEM, EventStatus:EventStatus.FAILED, EventText:String(message)});
+                    }
+                });
+                
+                let result = await handleStreamCompletion(stream,transactionData,DepartmentId,UserCategoryId,FromDate,ToDate);
+                if(result?.status == 'ok'){
+                    return result
+                }
+            }
+        })
+        
     } catch (error) {
         const message = `Error in startERPTransaction function : ${error.message}`;
         console.log(message);
