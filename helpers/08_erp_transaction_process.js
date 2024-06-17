@@ -3,8 +3,8 @@ const {ProxyDbPool, sql} = require("../config/db");
 let {getTimesheetFromERPTransactionMstTable,updateERPTransactionStatus,updateReadForERP} = require("./04_erp_transaction_copier");
 const {postTransactionToERP} = require("./09_post_transaction");
 const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require("../helpers/19_middleware_history_logger");
-let events = require('events');
-let eventEmitter = new events.EventEmitter();
+const events = require('events');
+const eventEmitter = new events.EventEmitter();
 
 
 /*
@@ -96,7 +96,7 @@ let updateReadForERPQue = []
 async function startERPTransaction(obj) {
     try {
         console.log(`Starting getTimesheetFromERPTransactionMstTable for streaming data`);
-        obj.eventEmitter= eventEmitter;
+        //obj.eventEmitter= eventEmitter;
         let stream = await getTimesheetFromERPTransactionMstTable(obj);
         let transactionData = [];
         let firstRow = true;

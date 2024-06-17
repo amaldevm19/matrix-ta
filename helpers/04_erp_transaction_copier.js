@@ -1,6 +1,7 @@
 
 const {ProxyDbPool, sql} = require("../config/db");
 const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require("../helpers/19_middleware_history_logger");
+const {eventEmitter} = require("./08_erp_transaction_process")
 
 
 async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId='',UserCategoryId=''}) {
@@ -244,7 +245,7 @@ async function updateERPTransactionStatus(postingResult) {
     
 }
 
-async function updateReadForERP({FromDate, ToDate, UserCategoryId, DepartmentId,eventEmitter, stream}){
+async function updateReadForERP({FromDate, ToDate, UserCategoryId, DepartmentId, stream}){
     try {
         eventEmitter.emit("db-lock");
         await ProxyDbPool.connect();
