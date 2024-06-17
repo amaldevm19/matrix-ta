@@ -1,7 +1,7 @@
 const cron = require("node-cron");
 const { ProxyDbPool, sql } = require("../config/db");
 const { ERPTransactionTriggerDateBuilder} = require("./05_transaction_trigger_date_builder");
-const { startERPTransaction,eventEmitter,db_lock} = require("./08_erp_transaction_process");
+let { startERPTransaction,eventEmitter,db_lock} = require("./08_erp_transaction_process");
 const {MiddlewareHistoryLogger,  EventCategory, EventType, EventStatus} = require("../helpers/19_middleware_history_logger");
 const { updateTransactionTriggerSettings } = require("../helpers/20_update_transaction_trigger_settings");
 
