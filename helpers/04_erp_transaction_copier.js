@@ -2,6 +2,7 @@
 const {ProxyDbPool, sql} = require("../config/db");
 const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require("../helpers/19_middleware_history_logger");
 
+
 async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId='',UserCategoryId=''}) {
     try {
         await ProxyDbPool.connect();
@@ -157,6 +158,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
         return {status:"not ok",data:"",error};
     }
 }
+let db_lock = false
 async function getTimesheetFromERPTransactionMstTable({
     EmployeeId,
     JobCode,
@@ -170,6 +172,7 @@ async function getTimesheetFromERPTransactionMstTable({
     SyncCompleted,
 }){
     try {
+        db_lock = true
         await ProxyDbPool.connect();
         const request = new sql.Request(ProxyDbPool);
         request.stream = true 
@@ -238,6 +241,7 @@ async function getTimesheetFromERPTransactionMstTable({
             await MiddlewareHistoryLogger({EventType:EventType.ERROR, EventCategory:EventCategory.SYSTEM, EventStatus:EventStatus.FAILED, EventText:String(message)});
             throw err;
         });
+
         return request;
     } catch (error) {
         const message = `Error connecting to the database in getTimesheetFromERPTransactionMstTable function : ${error}`;
@@ -318,4 +322,4 @@ async function updateERPTransactionStatus(postingResult) {
 
 
 
-module.exports={PxERPTransactionTableBuilder, getTimesheetFromERPTransactionMstTable, updateERPTransactionStatus};
+module.exports={PxERPTransactionTableBuilder, getTimesheetFromERPTransactionMstTable, updateERPTransactionStatus,db_lock};

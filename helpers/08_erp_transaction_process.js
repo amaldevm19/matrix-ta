@@ -1,8 +1,11 @@
 const {ProxyDbPool, sql} = require("../config/db");
 
-const {getTimesheetFromERPTransactionMstTable,updateERPTransactionStatus} = require("./04_erp_transaction_copier");
+const {getTimesheetFromERPTransactionMstTable,updateERPTransactionStatus,db_lock} = require("./04_erp_transaction_copier");
 const {postTransactionToERP} = require("./09_post_transaction");
 const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require("../helpers/19_middleware_history_logger");
+
+const events = require('events');
+const eventEmitter = new events.EventEmitter();
 
 /*
 async function startERPTransaction({
@@ -114,7 +117,11 @@ async function startERPTransaction({
             SectionId,
             SyncCompleted 
         });
-
+        stream.on('rowsaffected', rowCount => {
+            console.log(rowCount);
+            db_lock = false;
+            eventEmitter.emit("db-unlock")
+        })
         let transactionData = [];
         stream.on('row', async (row) => {
             try {
@@ -199,4 +206,4 @@ async function checkPendingCount({DepartmentId,UserCategoryId, FromDate, ToDate}
 }
 
 
-module.exports = {startERPTransaction,checkPendingCount};
+module.exports = {startERPTransaction,checkPendingCount,eventEmitter};
