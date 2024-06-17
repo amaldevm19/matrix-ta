@@ -126,13 +126,14 @@ async function startERPTransaction({
         stream.on('row', async (row) => {
             try {
                 //console.log(row);
+                stream.pause()
                 const postingResult = await postTransactionToERP([row]);
                 if (postingResult.status == "ok") {
                     const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResult.data);
                     if (updateERPTransactionStatusResult.status === "ok") {
                         console.log(updateERPTransactionStatusResult.data)
                         // transactionData.length=0;
-                        // stream.resume()
+                        stream.resume()
                     }
                 }
             } catch (error) {
