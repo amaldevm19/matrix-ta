@@ -170,7 +170,7 @@ async function startERPSyncAndUpdate({Id,FromDate,ToDate,DepartmentId,UserCatego
     throw result.error;
   }
  } catch (error) {
-  
+    console.log(error)
  }
 }
 eventEmitter.on("db-lock",()=>{
