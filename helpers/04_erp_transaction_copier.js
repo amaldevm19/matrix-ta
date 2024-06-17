@@ -260,4 +260,4 @@ async function updateERPTransactionStatus(postingResult) {
 
 
 
-module.exports={PxERPTransactionTableBuilder, getTimesheetFromERPTransactionMstTable, updateERPTransactionStatus,updateReadForERP};
+module.exports={PxERPTransactionTableBuilder, getTimesheetFromERPTransactionMstTable, updateERPTransactionStatus};
