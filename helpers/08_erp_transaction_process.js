@@ -1,6 +1,6 @@
 const {ProxyDbPool, sql} = require("../config/db");
 
-const {getTimesheetFromERPTransactionMstTable,updateERPTransactionStatus,eventEmitter, dbLocked} = require("./04_erp_transaction_copier");
+const {getTimesheetFromERPTransactionMstTable,updateERPTransactionStatus} = require("./04_erp_transaction_copier");
 const {postTransactionToERP} = require("./09_post_transaction");
 const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require("../helpers/19_middleware_history_logger");
 
