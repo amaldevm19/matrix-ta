@@ -197,7 +197,7 @@ async function checkPendingCount({DepartmentId,UserCategoryId, FromDate, ToDate}
 }
 
 eventEmitter.on("db-lock",()=>{
-    console.log("db unlocked for updateReadForERP")
+    console.log("db locked for updateReadForERP")
     db_lock = true
 })
 eventEmitter.on("db-unlock",async ()=>{

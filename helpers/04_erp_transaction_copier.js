@@ -264,7 +264,7 @@ async function updateReadForERP({FromDate, ToDate, UserCategoryId, DepartmentId,
             stream.resume();
         }
     } catch (error) {
-        
+        console.log(error)
     }
 
 }
