@@ -5,10 +5,10 @@ const { startERPTransaction,eventEmitter} = require("./08_erp_transaction_proces
 const {MiddlewareHistoryLogger,  EventCategory, EventType, EventStatus} = require("../helpers/19_middleware_history_logger");
 const { updateTransactionTriggerSettings } = require("../helpers/20_update_transaction_trigger_settings");
 let { db_lock } = require("./04_erp_transaction_copier");
-  
+let pending = []
 async function erpTransactionScheduler() {
   try {
-    let pending = []
+   
     let erpTransSchedule = cron.schedule(process.env.ERP_TRANSACTION_CRON_STRING,async function () {
       try {
         let message = `Starting ERP Synchronization`
