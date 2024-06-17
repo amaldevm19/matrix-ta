@@ -4,7 +4,7 @@ let {getTimesheetFromERPTransactionMstTable,updateERPTransactionStatus,updateRea
 const {postTransactionToERP} = require("./09_post_transaction");
 const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require("../helpers/19_middleware_history_logger");
 const events = require('events');
-const eventEmitter = new events.EventEmitter();
+let eventEmitter = new events.EventEmitter();
 
 
 /*
@@ -97,7 +97,7 @@ async function startERPTransaction(obj) {
     try {
         console.log(`Starting getTimesheetFromERPTransactionMstTable for streaming data`);
         obj.eventEmitter= eventEmitter;
-        const stream = await getTimesheetFromERPTransactionMstTable(obj);
+        let stream = await getTimesheetFromERPTransactionMstTable(obj);
         let transactionData = [];
         let firstRow = true;
         stream.on('row', async (row) => {
