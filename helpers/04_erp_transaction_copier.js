@@ -86,7 +86,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
                 (CAST(Target.TotalHours AS decimal(4, 1)) <> 
                     CAST( 
                         CASE  
-                            WHEN Source.TotalHours <= CAST( 8 AS DECIMAL(4,1)) AND Source.TotalHours > 0 THEN 8   
+                            WHEN Source.TotalHours <= CAST( 8 AS DECIMAL(4,1)) AND Source.TotalHours > 0 THEN Source.TotalHours   
                             WHEN Target.TotalHours > MaxJobHourPerDay 
                                 OR Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0)-COALESCE(DeductionHours, 0) > MaxJobHourPerDay THEN MaxJobHourPerDay
                             ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0) - COALESCE(DeductionHours, 0)
@@ -96,7 +96,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
         UPDATE SET
             TotalHours = CAST(
                         CASE 
-                            WHEN Source.TotalHours <= CAST( 8 AS DECIMAL(4,1)) AND Source.TotalHours > 0 THEN 8 
+                            WHEN Source.TotalHours <= CAST( 8 AS DECIMAL(4,1)) AND Source.TotalHours > 0 THEN Source.TotalHours 
                             WHEN Target.TotalHours > COALESCE(Source.MaxJobHourPerDay, Target.TotalHours) 
                                 OR Source.TotalHours-COALESCE(BreakHour, 1)-COALESCE(TravelHour, 0) - COALESCE(DeductionHours, 0) > COALESCE(Source.MaxJobHourPerDay, Source.TotalHours)  THEN MaxJobHourPerDay
                             ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0) - COALESCE(DeductionHours, 0)
@@ -125,7 +125,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
                 Source.TransDate,
                 Source.projId,
                 CASE
-                    WHEN Source.TotalHours <= CAST( 8 AS DECIMAL(4,1)) AND Source.TotalHours > 0 THEN 8 
+                    WHEN Source.TotalHours <= CAST( 8 AS DECIMAL(4,1)) AND Source.TotalHours > 0 THEN Source.TotalHours
                     WHEN Source.TotalHours-COALESCE(BreakHour, 1)-COALESCE(TravelHour, 0) - COALESCE(DeductionHours, 0) > COALESCE(Source.MaxJobHourPerDay, Source.TotalHours) THEN COALESCE(Source.MaxJobHourPerDay, Source.TotalHours)
                     ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0)-COALESCE(DeductionHours, 0)
                 END,

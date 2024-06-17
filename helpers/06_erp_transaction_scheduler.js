@@ -7,7 +7,7 @@ const { updateTransactionTriggerSettings } = require("../helpers/20_update_trans
   
 async function erpTransactionScheduler() {
   try {
-
+    let erpSyncRunning = false;
     let erpTransSchedule = cron.schedule(process.env.ERP_TRANSACTION_CRON_STRING,async function () {
       try {
         let message = `Starting ERP Synchronization`
@@ -34,6 +34,11 @@ async function erpTransactionScheduler() {
             let { triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentDate, CurrentHour,CurrentMonth } = ERPTransactionTriggerDateBuilder(sqlData);
             //console.log(triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentMonth, CurrentDate, CurrentHour )
             if((TriggerDate==CurrentDate) && (triggerMonth == CurrentMonth) && (TriggerHour<=CurrentHour)){
+              if(erpSyncRunning){
+                break;
+              }else{
+                erpSyncRunning = true;
+              }
               let message = `Starting ERP Synchronization for 
               Department:${DepartmentId} and User Category:${UserCategoryId} 
               From ${FromDate} To ${ToDate}
@@ -60,6 +65,7 @@ async function erpTransactionScheduler() {
                   pendingCount
                 });
                 if (result.status == "ok") {
+                  erpSyncRunning = false;
                   // console.log("Called updateTransactionTriggerSettings()")
                   let updateTransactionTriggerSettingsStatus = await updateTransactionTriggerSettings({
                     Id,
@@ -72,19 +78,48 @@ async function erpTransactionScheduler() {
                   if(!updateTransactionTriggerSettingsStatus){
                     let message = `Failed to update Transaction Trigger Settings for Department:${DepartmentId} and User Category:${UserCategoryId} in erpTransactionScheduler function From ${FromDate} To ${ToDate}`;
                     console.log(message)
+                  }else{
+                    let message = `Successfully completed ERP synchronization for Department:${DepartmentId} and User Category:${UserCategoryId} in erpTransactionScheduler function From ${FromDate} To ${ToDate}`;
+                    console.log(message);
+                    await MiddlewareHistoryLogger({
+                      EventType: EventType.INFORMATION,
+                      EventCategory: EventCategory.SYSTEM,
+                      EventStatus: EventStatus.COMPLETED,
+                      EventText: String(message),
+                    });
+    
+                    return;
                   }
-                  let message = `Successfully completed ERP synchronization for Department:${DepartmentId} and User Category:${UserCategoryId} in erpTransactionScheduler function From ${FromDate} To ${ToDate}`;
-                  console.log(message);
-                  await MiddlewareHistoryLogger({
-                    EventType: EventType.INFORMATION,
-                    EventCategory: EventCategory.SYSTEM,
-                    EventStatus: EventStatus.COMPLETED,
-                    EventText: String(message),
-                  });
-                  return;
+                 
                 } else {
                   throw result.error;
                 }
+              }else{
+                  erpSyncRunning = false;
+                  // console.log("Called updateTransactionTriggerSettings()")
+                  let updateTransactionTriggerSettingsStatus = await updateTransactionTriggerSettings({
+                    Id,
+                    TriggerDate:element.TriggerDate,
+                    FromDate,
+                    ToDate,
+                    DepartmentId,
+                    UserCategoryId
+                  });
+                  if(!updateTransactionTriggerSettingsStatus){
+                    let message = `Failed to update Transaction Trigger Settings for Department:${DepartmentId} and User Category:${UserCategoryId} in erpTransactionScheduler function From ${FromDate} To ${ToDate}`;
+                    console.log(message)
+                  }else{
+                    let message = `Successfully completed ERP synchronization for Department:${DepartmentId} and User Category:${UserCategoryId} in erpTransactionScheduler function From ${FromDate} To ${ToDate}`;
+                    console.log(message);
+                    await MiddlewareHistoryLogger({
+                      EventType: EventType.INFORMATION,
+                      EventCategory: EventCategory.SYSTEM,
+                      EventStatus: EventStatus.COMPLETED,
+                      EventText: String(message),
+                    });
+    
+                    return;
+                  }
               }
               let new_message = `No Items available for Sync`;
               console.log(new_message)
