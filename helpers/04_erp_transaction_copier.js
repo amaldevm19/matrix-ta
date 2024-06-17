@@ -248,8 +248,8 @@ async function updateReadForERP({FromDate, ToDate, UserCategoryId, DepartmentId,
     try {
         eventEmitter.emit("db-lock");
         await ProxyDbPool.connect();
-        const request = new sql.Request(ProxyDbPool);
-        const query = `
+        let request = new sql.Request(ProxyDbPool);
+        let query = `
             UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
             SET readForERP = 1
             WHERE 

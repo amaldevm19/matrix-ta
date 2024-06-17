@@ -3,7 +3,7 @@ const {ProxyDbPool, sql} = require("../config/db");
 let {getTimesheetFromERPTransactionMstTable,updateERPTransactionStatus,updateReadForERP} = require("./04_erp_transaction_copier");
 const {postTransactionToERP} = require("./09_post_transaction");
 const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require("../helpers/19_middleware_history_logger");
-const events = require('events');
+let events = require('events');
 let eventEmitter = new events.EventEmitter();
 
 
