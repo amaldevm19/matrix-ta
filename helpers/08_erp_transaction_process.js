@@ -88,7 +88,6 @@ async function startERPTransaction({
 }
 */
 
-let erpTransactionQue = [];
 async function startERPTransaction({
     FromDate='', 
     ToDate='',
@@ -100,7 +99,6 @@ async function startERPTransaction({
     DesignationId='',
     SectionId='', 
     SyncCompleted=0,
-    pendingCount,Id
 }) {
     try {
         console.log(`Starting getTimesheetFromERPTransactionMstTable for streaming data`);
@@ -120,9 +118,8 @@ async function startERPTransaction({
         let transactionData = [];
         stream.on('row', async (row) => {
             try {
-                //console.log(row);
                 transactionData.push(row)
-                if(transactionData.length >= 1000){
+                if(transactionData.length >= 10){
                     stream.pause()
                     const postingResult = await postTransactionToERP(transactionData);
                     if (postingResult.status == "ok") {
@@ -155,7 +152,7 @@ async function startERPTransaction({
     }
 }
 
-async function handleStreamCompletion(stream,transactionData,DepartmentId,UserCategoryId,FromDate,ToDate) {
+async function handleStreamCompletion(stream,transactionData) {
     return new Promise((resolve, reject) => {
         stream.on('done', async () => {
             try {
@@ -165,27 +162,10 @@ async function handleStreamCompletion(stream,transactionData,DepartmentId,UserCa
                     if (updateERPTransactionStatusResult.status === "ok") {
                         console.log(updateERPTransactionStatusResult.data)
                         transactionData.length=0;
+                        console.log(`Completed streaming data`);
+                        resolve({ status: "ok", data: "", error: "" });
                     }
                 }
-                const newPendingCount = await checkPendingCount({
-                    DepartmentId,
-                    UserCategoryId,
-                    FromDate,
-                    ToDate,
-                });
-                if (newPendingCount > 0) {
-                    await startERPTransaction({
-                        FromDate,
-                        ToDate,
-                        DepartmentId,
-                        UserCategoryId,
-                    });
-                } else {
-                    console.log(`Completed streaming data`);
-                    // console.log(pendingResponses);
-                    resolve({ status: "ok", data: "", error: "" });
-                }
-                
             } catch (error) {
                 reject({ status: "not ok", data: null, error: error.message });
             }
