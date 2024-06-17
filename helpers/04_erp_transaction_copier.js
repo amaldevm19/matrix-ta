@@ -1,7 +1,7 @@
 
 const {ProxyDbPool, sql} = require("../config/db");
 const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require("../helpers/19_middleware_history_logger");
-const {eventEmitter} = require("./08_erp_transaction_process")
+
 
 
 async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId='',UserCategoryId=''}) {
@@ -245,31 +245,7 @@ async function updateERPTransactionStatus(postingResult) {
     
 }
 
-async function updateReadForERP({FromDate, ToDate, UserCategoryId, DepartmentId, stream}){
-    try {
-        eventEmitter.emit("db-lock");
-        await ProxyDbPool.connect();
-        let request = new sql.Request(ProxyDbPool);
-        let query = `
-            UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
-            SET readForERP = 1
-            WHERE 
-                ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR DepartmentId = ${DepartmentId ? DepartmentId : 0}) AND
-                ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR UserCategoryId = ${UserCategoryId ? UserCategoryId : 0}) AND
-                (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                (SyncCompleted = 0 AND Error = 0 AND readForERP = 0);
-        `
-        let db_response = await request.query(query);
-        console.log(db_response)
-        if(db_response?.rowsAffected[0]){
-            eventEmitter.emit("db-unlock");
-            stream.resume();
-        }
-    } catch (error) {
-        console.log(error)
-    }
 
-}
 
  function sanitizeInput(input) {
     if(!input){
