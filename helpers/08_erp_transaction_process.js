@@ -132,8 +132,8 @@ async function startERPTransaction(obj) {
                 await MiddlewareHistoryLogger({EventType:EventType.ERROR, EventCategory:EventCategory.SYSTEM, EventStatus:EventStatus.FAILED, EventText:String(message)});
             }
         });
-        
-        let result = await handleStreamCompletion(stream,transactionData);
+        let { DepartmentId, UserCategoryId} = obj
+        let result = await handleStreamCompletion(stream,transactionData,DepartmentId,UserCategoryId);
         if(result?.status == 'ok'){
             return result
         }
@@ -146,17 +146,21 @@ async function startERPTransaction(obj) {
     }
 }
 
-async function handleStreamCompletion(stream,transactionData) {
+async function handleStreamCompletion(stream,transactionData,DepartmentId,UserCategoryId) {
     return new Promise((resolve, reject) => {
         stream.on('done', async () => {
             try {
+                if(transactionData.length==0){
+                    console.log(`Completed streaming data for Department ${DepartmentId} CategoryId ${UserCategoryId}`);
+                    resolve({ status: "ok", data: "", error: "" });
+                }
                 const postingResult = await postTransactionToERP(transactionData);
                 if (postingResult.status == "ok") {
                     const updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResult.data);
                     if (updateERPTransactionStatusResult.status === "ok") {
                         console.log(updateERPTransactionStatusResult.data)
                         transactionData.length=0;
-                        console.log(`Completed streaming data`);
+                        console.log(`Completed streaming data for Department ${DepartmentId} CategoryId ${UserCategoryId}`);
                         resolve({ status: "ok", data: "", error: "" });
                     }
                 }
