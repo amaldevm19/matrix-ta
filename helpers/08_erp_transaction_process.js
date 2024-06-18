@@ -244,9 +244,9 @@ async function startERPTransaction({pendingCount,DepartmentId,UserCategoryId,Fro
                         if(pendingCount < sendingCount){
                             sendingCount = pendingCount;
                         }
+                    }else{
+                        return {status:"not ok",data:"",error: error}
                     }
-                    return {status:"not ok",data:"",error: error}
-                   
                 }
 
             } catch (error) {
