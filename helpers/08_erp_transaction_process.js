@@ -157,6 +157,9 @@ async function startERPTransactionAndUpdateERPTransactionSetting({Id,TriggerDate
       if(pendingCountObj.pendingCount){
         let result = await startERPTransaction({Id,TriggerDate,pendingCount:pendingCountObj.pendingCount,FromDate,ToDate,DepartmentId,UserCategoryId})
         if (result.status == "ok") {
+            for(e in result.data){
+                console.log(e)
+            }
           let updateTransactionTriggerSettingsStatus = await updateTransactionTriggerSettings({
             Id,
             TriggerDate,
@@ -256,7 +259,7 @@ async function startERPTransaction({pendingCount,DepartmentId,UserCategoryId,Fro
             } 
 
         }
-        return {status:"ok",data:result,error:""};
+        return {status:"ok",data:pendingD365ResponseArray,error:""};
     } catch (error) {
         let message=`Error in startERPTransaction function : ${error}`;
         console.log(message)
