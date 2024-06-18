@@ -228,7 +228,7 @@ async function checkPendingCount({DepartmentId,UserCategoryId, FromDate, ToDate}
 async function startERPTransaction({pendingCount,DepartmentId,UserCategoryId,FromDate, ToDate}) {
     try {
         let pendingD365ResponseArray =[]
-        let sendingCount = pendingCount < 100 ? pendingCount : 100;
+        let sendingCount = pendingCount < 1000 ? pendingCount : 1000;
         while (pendingCount > 0) {    
             try {
                 console.log(`Starting getTimesheetFromERPTransactionMstTable for ${sendingCount}`);
