@@ -236,8 +236,7 @@ async function startERPTransaction({pendingCount,DepartmentId,UserCategoryId,Fro
                 if(updatingReadForERP){
                     let transactionData = await getTimesheetFromERPTransactionMstTable({sendingCount, FromDate, ToDate, DepartmentId,UserCategoryId});
                     if(transactionData?.status == "ok"){
-                        let updateERPTransactionStatusResult = await postAndUpdateTransactionStatus([...transactionData.data])
-                        pendingD365ResponseArray.push(updateERPTransactionStatusResult)
+                        await postAndUpdateTransactionStatus([...transactionData.data],pendingD365ResponseArray)
                         console.log(`Pending Count for Department : ${DepartmentId}`,pendingCount)
                         console.log(`Sending Count for Department : ${DepartmentId}`,sendingCount)
                         pendingCount -= sendingCount;
@@ -286,12 +285,13 @@ const updateTransactionTriggerSettings = async function({Id,TriggerDate,FromDate
     }
 }
 
-async function postAndUpdateTransactionStatus(data){
+async function postAndUpdateTransactionStatus(data,pendingD365ResponseArray){
     let postingResult = await postTransactionToERP(data);
     if(postingResult.status == "ok"){
         let updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResult.data)
         if(updateERPTransactionStatusResult.status = "ok"){
-            return updateERPTransactionStatusResult.data;
+            pendingD365ResponseArray.push(updateERPTransactionStatusResult.data)
+            return;
         } 
     }
 }
