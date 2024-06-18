@@ -217,17 +217,13 @@ async function updateReadForERP({sendingCount,DepartmentId,UserCategoryId,FromDa
             }
         } catch (error) {
             console.log(error.message)
-            setTimeout(async ()=>{
-                return false
-            },500)
+            return false
            
         }
         
     } catch (error) {
         console.log(error.message)
-        setTimeout(async ()=>{
-            return false
-        },500)
+        return false
     }
 
 }
@@ -248,12 +244,11 @@ async function getTimesheetFromERPTransactionMstTable({sendingCount,DepartmentId
                 ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR DepartmentId = ${DepartmentId?DepartmentId:0}) AND
                 ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR UserCategoryId = ${UserCategoryId?UserCategoryId:0}) AND
                 (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                (SyncCompleted = ${SyncCompleted} AND Error=0 AND readForERP = 1 );
+                (SyncCompleted = 0 AND Error=0 AND readForERP = 1 );
             `);
             if(result?.recordset){
                 let message = `Completed getting Transaction DepartmentId: ${DepartmentId},UserCategoryId: ${UserCategoryId}`;
                 console.log(message)
-                
                 return {data:result.recordset, error:"",status:"ok", request}
             }else{
                 let message = `Failed getting Transaction DepartmentId: ${DepartmentId},UserCategoryId: ${UserCategoryId}`;
@@ -266,16 +261,12 @@ async function getTimesheetFromERPTransactionMstTable({sendingCount,DepartmentId
         } catch (error) {
             let message =`Error in getTimesheetFromERPTransactionMstTable function : ${error}`;
             console.log(message)
-            setTimeout(async ()=>{
-                return {data:"", error:message,status:"not ok"}
-            },500)
+            return {data:"", error:message,status:"not ok"}
         }
     } catch (error) {
         let message =`Error connecting to the database in getTimesheetFromERPTransactionMstTable function : ${error}`;
         console.log(message)
-        setTimeout(async ()=>{
-            return {data:"", error:message,status:"not ok"}
-        },500)
+        return {data:"", error:message,status:"not ok"}
     }
 }
 async function updateERPTransactionStatus(postingResult) {
@@ -330,10 +321,7 @@ async function updateERPTransactionStatus(postingResult) {
         const connectionErrorMessage = `Error connecting to the database in updateERPTransactionStatus function: ${error}`;
         console.log(connectionErrorMessage);
         await MiddlewareHistoryLogger({ EventType: EventType.ERROR, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.FAILED, EventText: String(connectionErrorMessage) });
-        setTimeout(async ()=>{
-            return { data: "", error: error, status: "not ok" };
-        },500)
-        
+        return { data: "", error: error, status: "not ok" };
     }
     
 }

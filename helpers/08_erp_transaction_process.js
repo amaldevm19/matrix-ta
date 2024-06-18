@@ -232,7 +232,7 @@ async function startERPTransaction({pendingCount,DepartmentId,UserCategoryId,Fro
                 let updatingReadForERP = await updateReadForERP({sendingCount,DepartmentId,UserCategoryId,FromDate, ToDate})
                 if(updatingReadForERP){
                     let transactionData = await getTimesheetFromERPTransactionMstTable({sendingCount, FromDate, ToDate, DepartmentId,UserCategoryId});
-                    if(transactionData.status == "ok"){
+                    if(transactionData?.status == "ok"){
                         let postingResult = await postTransactionToERP(transactionData.data);
                         if(postingResult.status == "ok"){
                             let updateERPTransactionStatusResult = await updateERPTransactionStatus(postingResult.data)
