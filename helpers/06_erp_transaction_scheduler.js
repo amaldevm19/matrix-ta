@@ -37,7 +37,7 @@ async function erpTransactionScheduler() {
                   return;
                 }else{
                   started.push(Id)
-                  let result = await startERPTransactionAndUpdateERPTransactionSetting({Id,TriggerDate,DepartmentId,UserCategoryId,FromDate, ToDate}); 
+                  let result = await startERPTransactionAndUpdateERPTransactionSetting({Id,TriggerDate:element.TriggerDate,DepartmentId,UserCategoryId,FromDate, ToDate}); 
                   if(result){
                     started.splice(started.indexOf(Id),1)
                   }else{
