@@ -238,14 +238,15 @@ async function startERPTransaction({pendingCount,DepartmentId,UserCategoryId,Fro
                     if(transactionData?.status == "ok"){
                         let updateERPTransactionStatusResult = await postAndUpdateTransactionStatus([...transactionData.data])
                         pendingD365ResponseArray.push(updateERPTransactionStatusResult)
-                        continue;
+                        console.log(`Pending Count for Department : ${DepartmentId}`,pendingCount)
+                        console.log(`Sending Count for Department : ${DepartmentId}`,sendingCount)
+                        pendingCount -= sendingCount;
+                        if(pendingCount < sendingCount){
+                            sendingCount = pendingCount;
+                        }
                     }
-                    console.log(`Pending Count for Department : ${DepartmentId}`,pendingCount)
-                    console.log(`Sending Count for Department : ${DepartmentId}`,sendingCount)
-                    pendingCount -= sendingCount;
-                    if(pendingCount < sendingCount){
-                        sendingCount = pendingCount;
-                    }
+                    return {status:"not ok",data:"",error: error}
+                   
                 }
 
             } catch (error) {
