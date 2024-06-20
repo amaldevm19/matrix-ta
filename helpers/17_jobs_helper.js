@@ -62,7 +62,10 @@ const jobsHelper = {
                     VALUES (source.JobCode, source.MaxJobHourPerDay, source.BreakHour, source.TravelHour, source.ProjectType, source.UpdatedBy, source.Department);
                 `)
             if(updateMaxJobHourPerDayResponse.rowsAffected[0] > 0){
-                return {status:true,message:`Successfully updated project`}
+                return {status:true,message:`Successfully Updated Project`}
+            }
+            if(updateMaxJobHourPerDayResponse.rowsAffected[1] > 0){
+                return {status:true,message:`Successfully Added Project`}
             }
             console.log(updateMaxJobHourPerDayResponse);
             return {status:false,message:"Failed to update project, Either Project not found or DB Error"}
