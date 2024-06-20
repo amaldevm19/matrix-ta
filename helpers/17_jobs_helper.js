@@ -38,15 +38,24 @@ const jobsHelper = {
                 return {status:false,message:"Travel hours cannot be assigned to Bus or Site Project types"}
             }
             let updateMaxJobHourPerDayResponse = await db.query(`
-            UPDATE Px_JPCJobMst 
-            SET 
-                MaxJobHourPerDay=ROUND(${MaxJobHourPerDay}, 1),
-                BreakHour=ROUND(${BreakHour}, 1), 
-                TravelHour=ROUND(${TravelHour}, 1),
-                ProjectType='${ProjectType}',
-                UpdatedBy='${UpdatedBy}', 
-                DepartmentId='${Department}' 
-            WHERE JobCode='${JobCode}'`)
+                INSERT INTO Px_JPCJobMst (JobCode, MaxJobHourPerDay, BreakHour, TravelHour, ProjectType, UpdatedBy, DepartmentId)
+                VALUES (
+                    '${JobCode}',
+                    ROUND(${MaxJobHourPerDay}, 1),
+                    ROUND(${BreakHour}, 1),
+                    ROUND(${TravelHour}, 1),
+                    '${ProjectType}',
+                    '${UpdatedBy}',
+                    '${Department}'
+                )
+                ON DUPLICATE KEY UPDATE
+                    MaxJobHourPerDay = ROUND(${MaxJobHourPerDay}, 1),
+                    BreakHour = ROUND(${BreakHour}, 1),
+                    TravelHour = ROUND(${TravelHour}, 1),
+                    ProjectType = '${ProjectType}',
+                    UpdatedBy = '${UpdatedBy}',
+                    DepartmentId = '${Department}';
+                `)
             if(updateMaxJobHourPerDayResponse.rowsAffected[0] > 0){
                 return {status:true,message:`Successfully updated project`}
             }
