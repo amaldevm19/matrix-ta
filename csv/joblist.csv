@@ -1,4 +1,4 @@
-RowNum,JobCode,MaxJobHourPerDay,BreakHour,TravelHour,ProjectType,DepartmentId
-1,SRU-333333,12,1,2,Camp,2
-2,SRU-666666,11,1,2,Camp,2
+RowNum,JobCode,JobName,MaxJobHourPerDay,BreakHour,TravelHour,ProjectType,DepartmentId
+1,SRU-333333,test-1,12,1,2,Camp,2
+2,SRU-666666,test-2,11,1,2,Camp,2
 
