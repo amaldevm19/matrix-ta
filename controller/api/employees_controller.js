@@ -34,9 +34,9 @@ const employeesApiController = {
                 return res.status(200).json({status:"OK", last_page:lastPage, data:employeeWorkHourDeductionList.recordset})
              }
            
-            throw new Error("Error in getemployeeWorkHourDeductionListFromTnaproxy function")
+            throw new Error("Error in hourDeductionPageData function")
         } catch (error) {
-            console.log("Error in getemployeeWorkHourDeductionList function : ",error)
+            console.log("Error in hourDeductionPageData function : ",error)
             await controllerLogger(req, error)
             return res.status(200).json({status:"failed",last_page:"", data:"",error:error})
         }
@@ -155,6 +155,164 @@ const employeesApiController = {
             }
         } catch (error) {
             console.log("Error in maxJobHrCSV function : ",error)
+            await controllerLogger(req,error)
+            return res.status(200).json({status:"not ok",error:error.message,data:""})
+        }
+    },
+    maxWorkHourPageData:async(req,res)=>{
+        try {
+            let db = req.app.locals.db;
+            let page = req.query.page;
+            let pageSize = req.query.size;
+            let searchField = req.query.searchField;
+            let firstRow = ((page-1) * pageSize)+1
+            let lastRow = page * pageSize;
+            // console.log(`page : ${page}, pageSize : ${pageSize}, searchField : ${searchField} `)
+            let whereClause = ''
+            if(searchField){
+                whereClause = `WHERE UserID LIKE '%${searchField}%' OR UserName LIKE '%${searchField}%' OR UpdatedBy LIKE '%${searchField}%'`
+            }
+            let employeeMaxWorkHoursPerDayList =await db.query( `
+                SELECT *
+                FROM (
+                    SELECT
+                        UserID, UserName, MaxWorkHoursPerDay,FromDate,ToDate,Remarks, DepartmentId, UpdatedBy, UpdatedAt,
+                        ROW_NUMBER() OVER (ORDER BY UserID) AS RowNum
+                    FROM [TNA_PROXY].[dbo].[Px_UserMaxHourTrn]
+                    ${whereClause}
+                ) AS Subquery
+                WHERE RowNum BETWEEN ${firstRow} AND ${lastRow}
+            `);
+
+            let totalCount = await db.query( `SELECT COUNT(*) AS TotalRowCount FROM [TNA_PROXY].[dbo].[Px_UserMaxHourTrn] ${whereClause}`)
+            let lastPage = Math.ceil(totalCount.recordset[0].TotalRowCount / pageSize)
+            
+            if(employeeMaxWorkHoursPerDayList){
+                await controllerLogger(req)
+                return res.status(200).json({status:"OK", last_page:lastPage, data:employeeMaxWorkHoursPerDayList.recordset})
+             }
+           
+            throw new Error("Error in maxWorkHourPageData function")
+        } catch (error) {
+            console.log("Error in maxWorkHourPageData function : ",error)
+            await controllerLogger(req, error)
+            return res.status(200).json({status:"failed",last_page:"", data:"",error:error})
+        }
+    },
+    updateMaxWorkHourData:async(req,res)=>{
+        try {
+            let db = req.app.locals.db;
+            let {MaxWorkHoursPerDay,UserID,FromDate,ToDate,Remarks,UpdatedBy,Department } = req.body
+            const remarksRegex = /^[a-zA-Z0-9\s.,!?'-]*$/;
+            if (!remarksRegex.test(Remarks)) {
+                return res.status(400).json({status:"not ok",error:"Invalid input in Remarks.",data:{MaxWorkHoursPerDay,UserID,FromDate,ToDate,UpdatedBy,Department }})
+            } 
+            let response = await db.query(`
+                UPDATE [TNA_PROXY].[dbo].[Px_UserMaxHourTrn] 
+                SET 
+                    MaxWorkHoursPerDay=ROUND(${MaxWorkHoursPerDay}, 1),
+                    FromDate='${FromDate}', 
+                    ToDate='${ToDate}', 
+                    Remarks='${Remarks}', 
+                    UpdatedBy='${UpdatedBy}', 
+                    DepartmentId='${Department}' 
+                WHERE UserID='${UserID}'`)
+            if(response.rowsAffected[0] > 0){
+                await controllerLogger(req)
+                return res.status(200).json({status:"ok",error:"",data:{MaxWorkHoursPerDay,UserID,FromDate,ToDate,UpdatedBy,Department }})
+            }else{
+                await controllerLogger(req)
+                return res.status(200).json({status:"not ok",error:"Failed to update updateHourDeductionData",data:{MaxWorkHoursPerDay,UserID,FromDate,ToDate,UpdatedBy,Department }})
+            }
+        } catch (error) {
+            console.log("Error in updateHourDeductionData function : ",error)
+            await controllerLogger(req,error)
+            return res.status(200).json({status:"not ok",error:error.message,data:""})
+        }
+    },
+    updateMaxWorkHourViaCSVUpload:async(req, res)=>{
+        try {
+            let {jsonData,UpdatedBy} = req.body;
+            let db = req.app.locals.db;
+            let responseStatus = [];
+            const remarksRegex = /^[a-zA-Z0-9\s.,!?'-]*$/;
+            for (let index = 0; index < jsonData.length; index++) {
+                const element = jsonData[index];
+                if (!remarksRegex.test(element.Remarks)) {
+                    responseStatus.push({
+                        RowNum:element.RowNum,
+                        MaxWorkHoursPerDay:element.MaxWorkHoursPerDay,
+                        UserID:element.UserID,
+                        UserName:element.UserName,
+                        FromDate:element.FromDate,
+                        ToDate: element.ToDate,
+                        Remarks:element.Remarks,
+                        DepartmentId: element.DepartmentId,
+                        Status:`Fail`,
+                        Message:'Invalid input in Remarks.'
+                    })
+                    continue;
+                } 
+                let response = await db.query(`
+                    MERGE [TNA_PROXY].[dbo].[Px_UserMaxHourTrn] AS target
+                    USING (SELECT 
+                                '${element.UserID}' AS UserID, 
+                                '${element.UserName}' AS UserName, 
+                                ROUND(${element.MaxWorkHoursPerDay}, 1) AS MaxWorkHoursPerDay, 
+                                '${element.FromDate}' AS FromDate, 
+                                '${element.ToDate}' AS ToDate, 
+                                '${element.Remarks}' AS Remarks, 
+                                '${UpdatedBy}' AS UpdatedBy, 
+                                '${element.DepartmentId}' AS DepartmentId
+                            ) AS source
+                    ON (target.UserID = source.UserID)
+                    WHEN MATCHED THEN
+                        UPDATE SET 
+                            target.MaxWorkHoursPerDay = source.MaxWorkHoursPerDay,
+                            target.FromDate = source.FromDate, 
+                            target.ToDate = source.ToDate, 
+                            target.Remarks = source.Remarks, 
+                            target.UpdatedBy = source.UpdatedBy, 
+                            target.DepartmentId = source.DepartmentId
+                    WHEN NOT MATCHED THEN
+                        INSERT (UserID, UserName, MaxWorkHoursPerDay, FromDate, ToDate, Remarks, UpdatedBy, DepartmentId)
+                        VALUES (source.UserID, source.UserName, source.MaxWorkHoursPerDay, source.FromDate, source.ToDate, source.Remarks, source.UpdatedBy, source.DepartmentId);
+                `)
+                //console.log(response);
+                if(response.rowsAffected?.includes(1)){
+                    responseStatus.push({
+                        RowNum:element.RowNum,
+                        MaxWorkHoursPerDay:element.MaxWorkHoursPerDay,
+                        UserID:element.UserID,
+                        UserName:element.UserName,
+                        FromDate:element.FromDate,
+                        ToDate: element.ToDate,
+                        Remarks:element.Remarks,
+                        DepartmentId: element.DepartmentId,
+                        Status:`Success`,
+                        Message:'Successfully updated UserId'
+                    })
+                }else{
+                    responseStatus.push({
+                        RowNum:element.RowNum,
+                        MaxWorkHoursPerDay:element.MaxWorkHoursPerDay,
+                        UserID:element.UserID,
+                        UserName:element.UserName,
+                        FromDate:element.FromDate,
+                        ToDate: element.ToDate,
+                        Remarks:element.Remarks,
+                        DepartmentId: element.DepartmentId,
+                        Status:`Fail`,
+                        Message:'Failed to update UserId, Either UserId not found or DB Error'
+                    })
+                }
+            }
+            if(responseStatus.length>0){
+                await controllerLogger(req)
+                return res.status(200).json({status:"ok",error:"",data:responseStatus})
+            }
+        } catch (error) {
+            console.log("Error in updateMaxWorkHourViaCSVUpload function : ",error)
             await controllerLogger(req,error)
             return res.status(200).json({status:"not ok",error:error.message,data:""})
         }
