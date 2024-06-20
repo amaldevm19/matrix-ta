@@ -62,7 +62,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
                 JPC.BreakHour AS BreakHour,
                 JPC.TravelHour AS TravelHour,
                 UHD.HoursPerDay AS DeductionHours,
-                MWHD.HoursPerDay AS MaxWorkHoursPerDay
+                MWHD.MaxWorkHoursPerDay AS MaxWorkHoursPerDay
                                 
             FROM [TNA_PROXY].[dbo].[Px_TimesheetMst] AS TSM
             LEFT JOIN [TNA_PROXY].[dbo].[Px_JPCJobMst] AS JPC ON TSM.JobCode = JPC.JobCode
