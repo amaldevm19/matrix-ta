@@ -38,23 +38,28 @@ const jobsHelper = {
                 return {status:false,message:"Travel hours cannot be assigned to Bus or Site Project types"}
             }
             let updateMaxJobHourPerDayResponse = await db.query(`
-                INSERT INTO Px_JPCJobMst (JobCode, MaxJobHourPerDay, BreakHour, TravelHour, ProjectType, UpdatedBy, DepartmentId)
-                VALUES (
-                    '${JobCode}',
-                    ROUND(${MaxJobHourPerDay}, 1),
-                    ROUND(${BreakHour}, 1),
-                    ROUND(${TravelHour}, 1),
-                    '${ProjectType}',
-                    '${UpdatedBy}',
-                    '${Department}'
-                )
-                ON DUPLICATE KEY UPDATE
-                    MaxJobHourPerDay = ROUND(${MaxJobHourPerDay}, 1),
-                    BreakHour = ROUND(${BreakHour}, 1),
-                    TravelHour = ROUND(${TravelHour}, 1),
-                    ProjectType = '${ProjectType}',
-                    UpdatedBy = '${UpdatedBy}',
-                    DepartmentId = '${Department}';
+                MERGE INTO Px_JPCJobMst AS target
+                USING (SELECT 
+                        '${JobCode}' AS JobCode,
+                        ROUND(${MaxJobHourPerDay}, 1) AS MaxJobHourPerDay,
+                        ROUND(${BreakHour}, 1) AS BreakHour,
+                        ROUND(${TravelHour}, 1) AS TravelHour,
+                        '${ProjectType}' AS ProjectType,
+                        '${UpdatedBy}' AS UpdatedBy,
+                        '${Department}' AS Department
+                    ) AS source
+                ON (target.JobCode = source.JobCode)
+                WHEN MATCHED THEN 
+                    UPDATE SET 
+                        target.MaxJobHourPerDay = source.MaxJobHourPerDay,
+                        target.BreakHour = source.BreakHour,
+                        target.TravelHour = source.TravelHour,
+                        target.ProjectType = source.ProjectType,
+                        target.UpdatedBy = source.UpdatedBy,
+                        target.DepartmentId = source.Department
+                WHEN NOT MATCHED THEN
+                    INSERT (JobCode, MaxJobHourPerDay, BreakHour, TravelHour, ProjectType, UpdatedBy, DepartmentId)
+                    VALUES (source.JobCode, source.MaxJobHourPerDay, source.BreakHour, source.TravelHour, source.ProjectType, source.UpdatedBy, source.Department);
                 `)
             if(updateMaxJobHourPerDayResponse.rowsAffected[0] > 0){
                 return {status:true,message:`Successfully updated project`}
