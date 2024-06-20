@@ -330,6 +330,7 @@ const jobsController = {
                     element.TravelHour,
                     element.ProjectType,
                     element.JobCode, 
+                    element.JobName,
                     UpdatedBy,
                     element.DepartmentId
                 )

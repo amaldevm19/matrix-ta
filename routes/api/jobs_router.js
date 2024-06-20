@@ -15,7 +15,7 @@ router.get('/attendance-correction-history-data', jobsController.attendanceCorre
 router.get('/attendance-correction-history-data/download', jobsController.downloadAttendanceCorrectionHistory);
 router.get('/joblist', jobsController.getJobList);
 router.post('/joblist', jobsController.updateMaxJobHourPerDay);
-router.post('/max-jobhr-scv',jobsController.maxJobHrCSV)
+router.post('/max-jobhr-csv',jobsController.maxJobHrCSV)
 router.post('/search-jobs', jobsController.searchJobs);
 /* GET Assigned jobs CSV from tna.  */
 router.get('/get-assigned-jobs',  jobsController.getAssignedJobs );

@@ -32,7 +32,7 @@ const jobsHelper = {
         }
         
     },
-    updateMaxJobHourPerDay:async(db,MaxJobHourPerDay,BreakHour,TravelHour,ProjectType, JobCode, UpdatedBy, Department)=>{
+    updateMaxJobHourPerDay:async(db,MaxJobHourPerDay,BreakHour,TravelHour,ProjectType, JobCode,JobName, UpdatedBy, Department)=>{
         try {
             if(TravelHour != 0 && (ProjectType == "Bus" || ProjectType=="Site")){
                 return {status:false,message:"Travel hours cannot be assigned to Bus or Site Project types"}
@@ -41,6 +41,7 @@ const jobsHelper = {
                 MERGE INTO Px_JPCJobMst AS target
                 USING (SELECT 
                         '${JobCode}' AS JobCode,
+                        '${JobName}' AS JobName,
                         ROUND(${MaxJobHourPerDay}, 1) AS MaxJobHourPerDay,
                         ROUND(${BreakHour}, 1) AS BreakHour,
                         ROUND(${TravelHour}, 1) AS TravelHour,
@@ -52,14 +53,15 @@ const jobsHelper = {
                 WHEN MATCHED THEN 
                     UPDATE SET 
                         target.MaxJobHourPerDay = source.MaxJobHourPerDay,
+                        target.JobName = source.JobName,
                         target.BreakHour = source.BreakHour,
                         target.TravelHour = source.TravelHour,
                         target.ProjectType = source.ProjectType,
                         target.UpdatedBy = source.UpdatedBy,
                         target.DepartmentId = source.Department
                 WHEN NOT MATCHED THEN
-                    INSERT (JobCode, MaxJobHourPerDay, BreakHour, TravelHour, ProjectType, UpdatedBy, DepartmentId)
-                    VALUES (source.JobCode, source.MaxJobHourPerDay, source.BreakHour, source.TravelHour, source.ProjectType, source.UpdatedBy, source.Department);
+                    INSERT (JobCode,JobName, MaxJobHourPerDay, BreakHour, TravelHour, ProjectType, UpdatedBy, DepartmentId)
+                    VALUES (source.JobCode,source.JobName, source.MaxJobHourPerDay, source.BreakHour, source.TravelHour, source.ProjectType, source.UpdatedBy, source.Department);
                 `)
             if(updateMaxJobHourPerDayResponse.rowsAffected[0] > 0){
                 return {status:true,message:`Successfully Updated Project`}

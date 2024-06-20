@@ -176,6 +176,7 @@
                 MaxJobHourPerDay: joi.number().min(0).max(24).precision(2).required(),
                 BreakHour: joi.number().min(0).max(24).precision(2).required(),
                 TravelHour: joi.number().min(0).max(24).precision(2).required(),
+                JobName: joi.string(),
                 ProjectType: joi.string().required(),
                 JobCode: joi.string().required(),
                 DepartmentId: joi.number()
@@ -190,7 +191,7 @@
                     alert('Selected file data not matching with required data');
                     return;
                 }
-                const response = await axios.post('/api/jobs/max-jobhr-scv', {jsonData,UpdatedBy}, {
+                const response = await axios.post('/api/jobs/max-jobhr-csv', {jsonData,UpdatedBy}, {
                     headers: {
                         'Content-Type': 'application/json',
                     },
