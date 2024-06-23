@@ -164,7 +164,7 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
                 DATEPART(dw,  PDate) AS DayOfWeek
             FROM [TNA_PROXY].[dbo].[Px_TimesheetMst]
             WHERE DATEPART(dw,  PDate) = 1 -- Sunday
-            AND  [PDate] BETWEEN '2024-05-26' AND '2024-06-25'
+            AND  [PDate] BETWEEN '${fromDate}' AND '${fromDate}'
           AND [TotalJobTime] > 0 
         ),
         PreviousDays AS (
@@ -195,7 +195,7 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
                 ON pd.[UserID] = t1.[UserID]
                 AND pd.Monday = t1.[PDate]
             WHERE t1.[TotalJobTime]=0
-          AND pd.Monday BETWEEN '2024-05-26' AND '2024-06-25'
+          AND pd.Monday BETWEEN '${fromDate}' AND '${fromDate}'
             
           UNION ALL
             SELECT
@@ -210,7 +210,7 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
                 ON pd.[UserID] = t2.[UserID]
                 AND pd.Tuesday = t2.[PDate]
             WHERE t2.[TotalJobTime]=0
-          AND pd.Tuesday BETWEEN '2024-05-26' AND '2024-06-25'
+          AND pd.Tuesday BETWEEN '${fromDate}' AND '${fromDate}'
             
           UNION ALL
             SELECT
@@ -225,7 +225,7 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
                 ON pd.[UserID] = t3.[UserID]
                 AND pd.Wednesday = t3.[PDate]
             WHERE t3.[TotalJobTime]=0
-          AND pd.Wednesday BETWEEN '2024-05-26' AND '2024-06-25'
+          AND pd.Wednesday BETWEEN '${fromDate}' AND '${fromDate}'
             
           UNION ALL
             SELECT
@@ -240,7 +240,7 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
                 ON pd.[UserID] = t4.[UserID]
                 AND pd.Thursday = t4.[PDate]
             WHERE t4.[TotalJobTime]=0
-          AND pd.Thursday BETWEEN '2024-05-26' AND '2024-06-25'
+          AND pd.Thursday BETWEEN '${fromDate}' AND '${fromDate}'
             
           UNION ALL
             SELECT
@@ -255,7 +255,7 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
                 ON pd.[UserID] = t5.[UserID]
                 AND pd.Friday = t5.[PDate]
             WHERE t5.[TotalJobTime]=0
-          AND  pd.Friday BETWEEN '2024-05-26' AND '2024-06-25'
+          AND  pd.Friday BETWEEN '${fromDate}' AND '${fromDate}'
             
           UNION ALL
             SELECT
@@ -270,7 +270,7 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
                 ON pd.[UserID] = t6.[UserID]
                 AND pd.Saturday = t6.[PDate]
             WHERE t6.[TotalJobTime]=0
-          AND pd.Saturday BETWEEN '2024-05-26' AND '2024-06-25'
+          AND pd.Saturday BETWEEN '${fromDate}' AND '${fromDate}'
         ),
         FirstMissingDate AS (
           SELECT 
