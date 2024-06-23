@@ -150,7 +150,158 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
                 LeaveID
         FROM #TempTimesheetWithoutDuplicates;
       `);
-      if(result){
+
+      const result1 = await request.query(`
+        IF OBJECT_ID('tempdb..#FirstMissingDate') IS NOT NULL
+        DROP TABLE #FirstMissingDate;
+        WITH Sundays AS (
+            SELECT 
+                Id,
+                [UserID],
+                PDate,
+                [JobCode],
+                [TotalJobTime],
+                DATEPART(dw,  PDate) AS DayOfWeek
+            FROM [TNA_PROXY].[dbo].[Px_TimesheetMst]
+            WHERE DATEPART(dw,  PDate) = 1 -- Sunday
+            AND  [PDate] BETWEEN '2024-05-26' AND '2024-06-25'
+          AND [TotalJobTime] > 0 
+        ),
+        PreviousDays AS (
+            SELECT 
+                s.Id AS SundayId,
+                s.[UserID],
+            s.[JobCode],
+                s.[TotalJobTime],
+                s.PDate AS SundayTransDate,
+                DATEADD(day, -1, s.PDate) AS Saturday,
+                DATEADD(day, -2, s.PDate) AS Friday,
+                DATEADD(day, -3, s.PDate) AS Thursday,
+                DATEADD(day, -4, s.PDate) AS Wednesday,
+                DATEADD(day, -5, s.PDate) AS Tuesday,
+                DATEADD(day, -6, s.PDate) AS Monday
+            FROM Sundays s
+        ),
+        MissingDates AS (
+        SELECT
+                pd.SundayId,
+                pd. [UserID],
+            pd.[JobCode],
+                pd.[TotalJobTime],
+                pd.SundayTransDate,
+                pd.Monday AS MissingTransDate
+            FROM PreviousDays pd
+            LEFT JOIN [TNA_PROXY].[dbo].[Px_TimesheetMst] t1
+                ON pd.[UserID] = t1.[UserID]
+                AND pd.Monday = t1.[PDate]
+            WHERE t1.[TotalJobTime]=0
+          AND pd.Monday BETWEEN '2024-05-26' AND '2024-06-25'
+            
+          UNION ALL
+            SELECT
+                pd.SundayId,
+                pd.[UserID],
+            pd.[JobCode],
+                pd.[TotalJobTime],
+                pd.SundayTransDate,
+                pd.Tuesday AS MissingTransDate
+            FROM PreviousDays pd
+            LEFT JOIN [TNA_PROXY].[dbo].[Px_TimesheetMst] t2
+                ON pd.[UserID] = t2.[UserID]
+                AND pd.Tuesday = t2.[PDate]
+            WHERE t2.[TotalJobTime]=0
+          AND pd.Tuesday BETWEEN '2024-05-26' AND '2024-06-25'
+            
+          UNION ALL
+            SELECT
+                pd.SundayId,
+                pd.[UserID],
+            pd.[JobCode],
+                pd.[TotalJobTime],
+                pd.SundayTransDate,
+                pd.Wednesday AS MissingTransDate
+            FROM PreviousDays pd
+            LEFT JOIN [TNA_PROXY].[dbo].[Px_TimesheetMst] t3
+                ON pd.[UserID] = t3.[UserID]
+                AND pd.Wednesday = t3.[PDate]
+            WHERE t3.[TotalJobTime]=0
+          AND pd.Wednesday BETWEEN '2024-05-26' AND '2024-06-25'
+            
+          UNION ALL
+            SELECT
+                pd.SundayId,
+                pd.[UserID],
+            pd.[JobCode],
+                pd.[TotalJobTime],
+                pd.SundayTransDate,
+                pd.Thursday AS MissingTransDate
+            FROM PreviousDays pd
+            LEFT JOIN [TNA_PROXY].[dbo].[Px_TimesheetMst] t4
+                ON pd.[UserID] = t4.[UserID]
+                AND pd.Thursday = t4.[PDate]
+            WHERE t4.[TotalJobTime]=0
+          AND pd.Thursday BETWEEN '2024-05-26' AND '2024-06-25'
+            
+          UNION ALL
+            SELECT
+                pd.SundayId,
+                pd.[UserID],
+            pd.[JobCode],
+                pd.[TotalJobTime],
+                pd.SundayTransDate,
+                pd.Friday AS MissingTransDate
+            FROM PreviousDays pd
+            LEFT JOIN [TNA_PROXY].[dbo].[Px_TimesheetMst] t5
+                ON pd.[UserID] = t5.[UserID]
+                AND pd.Friday = t5.[PDate]
+            WHERE t5.[TotalJobTime]=0
+          AND  pd.Friday BETWEEN '2024-05-26' AND '2024-06-25'
+            
+          UNION ALL
+            SELECT
+                pd.SundayId,
+                pd.[UserID],
+            pd.[JobCode],
+                pd.[TotalJobTime],
+                pd.SundayTransDate,
+                pd.Saturday AS MissingTransDate
+            FROM PreviousDays pd
+            LEFT JOIN [TNA_PROXY].[dbo].[Px_TimesheetMst] t6
+                ON pd.[UserID] = t6.[UserID]
+                AND pd.Saturday = t6.[PDate]
+            WHERE t6.[TotalJobTime]=0
+          AND pd.Saturday BETWEEN '2024-05-26' AND '2024-06-25'
+        ),
+        FirstMissingDate AS (
+          SELECT 
+            SundayId,
+            [UserID],
+            [JobCode],
+            [TotalJobTime],
+            MIN(MissingTransDate) AS MissingTransDate
+          FROM MissingDates
+          GROUP BY SundayId,[TotalJobTime],[JobCode],[UserID]
+        )
+        -- Insert the results of FirstMissingDate into the temporary table
+        SELECT * INTO #FirstMissingDate FROM FirstMissingDate;
+
+        -- First update: update records with the missing date
+        UPDATE t
+        SET t.[TotalJobTime] = fmd.[TotalJobTime], t.[JobCode] = fmd.[JobCode]
+        FROM [TNA_PROXY].[dbo].[Px_TimesheetMst] t
+        INNER JOIN #FirstMissingDate fmd
+        ON t.[UserID] = fmd.[UserID] AND t.PDate = fmd.MissingTransDate;
+
+        -- Second update: update the Sunday entries
+        UPDATE t
+        SET t.[TotalJobTime] = 0, t.[JobCode] = NULL
+        FROM [TNA_PROXY].[dbo].[Px_TimesheetMst] t
+        INNER JOIN #FirstMissingDate fmd
+            ON t.Id = fmd.SundayId;
+        -- Drop the temporary table
+        DROP TABLE #FirstMissingDate;
+      `);
+      if(result && result1){
         let message=`Successfully copied timesheet from [COSEC].[dbo].[Mx_JPCTimeSheet] to [TNA_PROXY].[dbo].[Px_TimesheetMst]
          in copyTimesheetFromCosecToProxyDbFunction From:${fromDate} To:${toDate}`
         console.log(message)

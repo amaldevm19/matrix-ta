@@ -313,277 +313,282 @@ SELECT * FROM [TNA_PROXY].[dbo].[Px_ERPTransactionMst] WHERE SyncCompleted=0 AND
 
 
 
+--Moving Sunday TotalHours from Sunday to Prevoius zero TotalHours Weekday
 
-
--- Step 1: Fetch relevant data for the given week
-WITH WeeklyData AS (
+-- Step 1: Identify Sundays within the specified date range
+WITH Sundays AS (
     SELECT 
-        TSM.UserID AS HcmWorker_PersonnelNumber,
-        PDate,
-        DATENAME(WEEKDAY, PDate) AS DayName,
-        CASE 
-            WHEN TotalJobTime % 60 >= 15 AND TotalJobTime % 60 < 45 THEN CAST(FLOOR(TotalJobTime / 60) + 0.5 AS DECIMAL(4,1))
-            WHEN TotalJobTime % 60 >= 45 THEN CAST(FLOOR(TotalJobTime / 60) + 1 AS DECIMAL(4,1))
-            ELSE CAST(FLOOR(TotalJobTime / 60) AS DECIMAL(4,1))
-        END AS TotalHours,
-        TSM.JobCode,
-        BranchId,
-        TSM.DepartmentId,
-        TSM.UserCategoryId,
-        EmployeeCategoryId,
-        DesignationId,
-        CustomGroup3Id,
-        SectionId,
-        'Timesheet' AS CategoryId,
-        JPC.MaxJobHourPerDay,
-        JPC.BreakHour,
-        JPC.TravelHour,
-        UHD.HoursPerDay AS DeductionHours
-    FROM [TNA_PROXY].[dbo].[Px_TimesheetMst] AS TSM
-    LEFT JOIN [TNA_PROXY].[dbo].[Px_JPCJobMst] AS JPC ON TSM.JobCode = JPC.JobCode
-    LEFT JOIN [TNA_PROXY].[dbo].[Px_UserHourDeduTrn] AS UHD ON TSM.UserID = UHD.UserID AND TSM.PDate BETWEEN UHD.FromDate AND UHD.ToDate
-    WHERE PDate BETWEEN '${FromDate}' AND '${ToDate}'
-    AND TSM.UserID IS NOT NULL AND TSM.UserID <> ''
-    AND TSM.JobCode IS NOT NULL AND TSM.JobCode <> ''
-    AND BranchId = 1
-    AND ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR TSM.DepartmentId = '${DepartmentId}')
-    AND ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR TSM.UserCategoryId = '${UserCategoryId}')
-),
--- Step 2: Identify users with zero TotalHours on weekdays and non-zero TotalHours on Sunday
-ZeroHoursWeekdays AS (
-    SELECT 
-        HcmWorker_PersonnelNumber,
-        PDate AS WeekdayDate,
-        DayName,
-        TotalHours,
-        ROW_NUMBER() OVER (PARTITION BY HcmWorker_PersonnelNumber ORDER BY PDate) AS WeekdayRank
-    FROM WeeklyData
-    WHERE DayName IN ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday')
-    AND TotalHours = 0
-),
-NonZeroHoursSunday AS (
-    SELECT 
-        HcmWorker_PersonnelNumber,
-        PDate AS SundayDate,
-        TotalHours AS SundayHours
-    FROM WeeklyData
-    WHERE DayName = 'Sunday'
-    AND TotalHours > 0
-),
-
--- Step 3: Join the zero-hour weekdays with the non-zero-hour Sundays within the same week
-EarliestZeroHoursWeekday AS (
-    SELECT 
-        Z.HcmWorker_PersonnelNumber,
-        Z.WeekdayDate,
-        Z.DayName AS Weekday,
-        Z.TotalHours AS WeekdayHours,
-        S.SundayDate,
-        S.SundayHours,
-        ROW_NUMBER() OVER (PARTITION BY Z.HcmWorker_PersonnelNumber ORDER BY Z.WeekdayRank) AS PriorityRank
-    FROM ZeroHoursWeekdays Z
-    JOIN NonZeroHoursSunday S
-    ON Z.HcmWorker_PersonnelNumber = S.HcmWorker_PersonnelNumber
-    AND DATEDIFF(DAY, Z.WeekdayDate, S.SundayDate) BETWEEN 1 AND 6
-)
-
--- Step 4: Transform the data to move Sunday TotalHours to a zero-hours weekday
-TransformedData AS (
-    SELECT 
-        W.HcmWorker_PersonnelNumber,
-        W.PDate,
-        CASE
-            WHEN W.PDate = ES.WeekdayDate THEN  ES.WeekdayHours
-            WHEN W.PDate = ES.SundayDate THEN 0
-            ELSE W.TotalHours
-        END AS TotalHours,
-        W.JobCode,
-        W.BranchId,
-        W.DepartmentId,
-        W.UserCategoryId,
-        W.EmployeeCategoryId,
-        W.DesignationId,
-        W.CustomGroup3Id,
-        W.SectionId,
-        W.CategoryId,
-        W.MaxJobHourPerDay,
-        W.BreakHour,
-        W.TravelHour,
-        W.DeductionHours
-    FROM WeeklyData W
-    LEFT JOIN EarliestZeroHoursWeekday ES
-    ON W.HcmWorker_PersonnelNumber = ES.HcmWorker_PersonnelNumber
-    AND W.PDate = ES.WeekdayDate OR W.PDate = ES.SundayDate 
-    
-),
--- Step 5: Run the MERGE statement using the transformed data
-MERGE INTO [TNA_PROXY].[dbo].[Px_ERPTransactionMst] AS Target
-USING (
-    SELECT
-        HcmWorker_PersonnelNumber,
-        PDate AS TransDate,
-        JobCode AS projId,
-        TotalHours,
-        BranchId,
-        DepartmentId,
-        UserCategoryId,
-        EmployeeCategoryId,
-        DesignationId,
-        CustomGroup3Id,
-        SectionId,
-        CategoryId,
-        MaxJobHourPerDay,
-        BreakHour,
-        TravelHour,
-        DeductionHours
-    FROM TransformedData
-) AS Source
-ON Target.HcmWorker_PersonnelNumber = CONCAT(
-    LEFT(Source.HcmWorker_PersonnelNumber, PATINDEX('%[0-9]%', Source.HcmWorker_PersonnelNumber) - 1),
-    '-',
-    SUBSTRING(Source.HcmWorker_PersonnelNumber, PATINDEX('%[0-9]%', Source.HcmWorker_PersonnelNumber), LEN(Source.HcmWorker_PersonnelNumber))
-)
-AND Target.TransDate = Source.TransDate
-WHEN MATCHED AND Target.SyncCompleted=0 AND Target.readForERP=0 AND (
-    (CAST(Target.TotalHours AS decimal(4, 1)) <> 
-        CAST( 
-            CASE  
-                WHEN Source.TotalHours <= CAST( 8 AS DECIMAL(4,1)) AND Source.TotalHours > 0 THEN 8   
-                WHEN Target.TotalHours > MaxJobHourPerDay 
-                    OR Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0)-COALESCE(DeductionHours, 0) > MaxJobHourPerDay THEN MaxJobHourPerDay
-                ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0) - COALESCE(DeductionHours, 0)
-            END AS decimal(4, 1))
-    OR Target.projId <> Source.projId) 
-) THEN
-    UPDATE SET
-        TotalHours = CAST(
-            CASE 
-                WHEN Source.TotalHours <= CAST( 8 AS DECIMAL(4,1)) AND Source.TotalHours > 0 THEN 8 
-                WHEN Target.TotalHours > COALESCE(Source.MaxJobHourPerDay, Target.TotalHours) 
-                    OR Source.TotalHours-COALESCE(BreakHour, 1)-COALESCE(TravelHour, 0) - COALESCE(DeductionHours, 0) > COALESCE(Source.MaxJobHourPerDay, Source.TotalHours)  THEN MaxJobHourPerDay
-                ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0) - COALESCE(DeductionHours, 0)
-            END AS decimal(4, 1)),
-        projId = Source.projId
-WHEN NOT MATCHED THEN
-    INSERT (
+        Id,
         HcmWorker_PersonnelNumber,
         TransDate,
         projId,
         TotalHours,
-        BranchId,
-        DepartmentId,
-        UserCategoryId,
-        EmployeeCategoryId,
-        DesignationId,
-        SectionId,
-        CustomGroup3Id,
-        CategoryId
-    ) VALUES (
-        CONCAT(
-            LEFT(Source.HcmWorker_PersonnelNumber, PATINDEX('%[0-9]%', Source.HcmWorker_PersonnelNumber) - 1),
-            '-',
-            SUBSTRING(Source.HcmWorker_PersonnelNumber, PATINDEX('%[0-9]%', Source.HcmWorker_PersonnelNumber), LEN(Source.HcmWorker_PersonnelNumber))
-        ),
-        Source.TransDate,
-        Source.projId,
-        CASE
-            WHEN Source.TotalHours <= CAST( 8 AS DECIMAL(4,1)) AND Source.TotalHours > 0 THEN 8 
-            WHEN Source.TotalHours-COALESCE(BreakHour, 1)-COALESCE(TravelHour, 0) - COALESCE(DeductionHours, 0) > COALESCE(Source.MaxJobHourPerDay, Source.TotalHours) THEN COALESCE(Source.MaxJobHourPerDay, Source.TotalHours)
-            ELSE Source.TotalHours - COALESCE(BreakHour, 1) - COALESCE(TravelHour, 0)-COALESCE(DeductionHours, 0)
-        END,
-        Source.BranchId,
-        Source.DepartmentId,
-        Source.UserCategoryId,
-        Source.EmployeeCategoryId,
-        Source.DesignationId,
-        Source.SectionId,
-        Source.CustomGroup3Id,
-        Source.CategoryId
-    );
-
-
-
-
-
----------------------------------------------------
-
--- Step 1: Fetch relevant data for the given week
-WITH WeeklyData AS (
-    SELECT 
-        TSM.UserID AS HcmWorker_PersonnelNumber,
-        PDate,
-        DATENAME(WEEKDAY, PDate) AS DayName,
-        CASE 
-            WHEN TotalJobTime % 60 >= 15 AND TotalJobTime % 60 < 45 THEN CAST(FLOOR(TotalJobTime / 60) + 0.5 AS DECIMAL(4,1))
-            WHEN TotalJobTime % 60 >= 45 THEN CAST(FLOOR(TotalJobTime / 60) + 1 AS DECIMAL(4,1))
-            ELSE CAST(FLOOR(TotalJobTime / 60) AS DECIMAL(4,1))
-        END AS TotalHours,
-        TSM.JobCode,
-        BranchId,
-        TSM.DepartmentId,
-        TSM.UserCategoryId,
-        EmployeeCategoryId,
-        DesignationId,
-        CustomGroup3Id,
-        SectionId
-    FROM [TNA_PROXY].[dbo].[Px_TimesheetMst] AS TSM
-    LEFT JOIN [TNA_PROXY].[dbo].[Px_JPCJobMst] AS JPC ON TSM.JobCode = JPC.JobCode
-    LEFT JOIN [TNA_PROXY].[dbo].[Px_UserHourDeduTrn] AS UHD ON TSM.UserID = UHD.UserID AND TSM.PDate BETWEEN UHD.FromDate AND UHD.ToDate
-    WHERE PDate BETWEEN '2024-05-26' AND '2024-06-13'
-    AND TSM.UserID IS NOT NULL AND TSM.UserID <> ''
-    AND TSM.JobCode IS NOT NULL AND TSM.JobCode <> ''
-    AND BranchId = 1
-    --AND ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR TSM.DepartmentId = '${DepartmentId}')
-    --AND ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR TSM.UserCategoryId = '${UserCategoryId}')
+        DATEPART(dw, TransDate) AS DayOfWeek
+    FROM [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
+    WHERE DATEPART(dw, TransDate) = 1 -- Sunday
+      AND TransDate BETWEEN '2024-05-26' AND '2024-06-25'
 ),
--- Step 2: Identify users with zero TotalHours on weekdays and non-zero TotalHours on Sunday
-ZeroHoursWeekdays AS (
+-- Step 2: Generate the previous 6 dates for each Sunday
+PreviousDays AS (
     SELECT 
-        HcmWorker_PersonnelNumber,
-        PDate AS WeekdayDate,
-        DayName,
-        TotalHours,
-        ROW_NUMBER() OVER (PARTITION BY HcmWorker_PersonnelNumber ORDER BY PDate) AS WeekdayRank
-    FROM WeeklyData
-    WHERE DayName IN ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday')
-    AND TotalHours = 0
+        s.Id AS SundayId,
+        s.HcmWorker_PersonnelNumber,
+        s.TransDate AS SundayTransDate,
+        DATEADD(day, -1, s.TransDate) AS Saturday,
+        DATEADD(day, -2, s.TransDate) AS Friday,
+        DATEADD(day, -3, s.TransDate) AS Thursday,
+        DATEADD(day, -4, s.TransDate) AS Wednesday,
+        DATEADD(day, -5, s.TransDate) AS Tuesday,
+        DATEADD(day, -6, s.TransDate) AS Monday
+    FROM Sundays s
 ),
-NonZeroHoursSunday AS (
-    SELECT 
-        HcmWorker_PersonnelNumber,
-        PDate AS SundayDate,
-        TotalHours AS SundayHours
-    FROM WeeklyData
-    WHERE DayName = 'Sunday'
-    AND TotalHours > 0
+-- Step 3: Check for missing entries for each HcmWorker_PersonnelNumber within the date range
+MissingDates AS (
+    SELECT
+        pd.SundayId,
+        pd.HcmWorker_PersonnelNumber,
+        pd.SundayTransDate,
+        pd.Monday AS MissingTransDate
+    FROM PreviousDays pd
+    LEFT JOIN [TNA_PROXY].[dbo].[Px_ERPTransactionMst] t1
+        ON pd.HcmWorker_PersonnelNumber = t1.HcmWorker_PersonnelNumber
+        AND pd.Monday = t1.TransDate
+    WHERE t1.TransDate IS NULL
+      AND pd.Monday BETWEEN '2024-05-26' AND '2024-06-25'
+    UNION ALL
+    SELECT
+        pd.SundayId,
+        pd.HcmWorker_PersonnelNumber,
+        pd.SundayTransDate,
+        pd.Tuesday AS MissingTransDate
+    FROM PreviousDays pd
+    LEFT JOIN [TNA_PROXY].[dbo].[Px_ERPTransactionMst] t2
+        ON pd.HcmWorker_PersonnelNumber = t2.HcmWorker_PersonnelNumber
+        AND pd.Tuesday = t2.TransDate
+    WHERE t2.TransDate IS NULL
+      AND pd.Tuesday BETWEEN '2024-05-26' AND '2024-06-25'
+    UNION ALL
+    SELECT
+        pd.SundayId,
+        pd.HcmWorker_PersonnelNumber,
+        pd.SundayTransDate,
+        pd.Wednesday AS MissingTransDate
+    FROM PreviousDays pd
+    LEFT JOIN [TNA_PROXY].[dbo].[Px_ERPTransactionMst] t3
+        ON pd.HcmWorker_PersonnelNumber = t3.HcmWorker_PersonnelNumber
+        AND pd.Wednesday = t3.TransDate
+    WHERE t3.TransDate IS NULL
+      AND pd.Wednesday BETWEEN '2024-05-26' AND '2024-06-25'
+    UNION ALL
+    SELECT
+        pd.SundayId,
+        pd.HcmWorker_PersonnelNumber,
+        pd.SundayTransDate,
+        pd.Thursday AS MissingTransDate
+    FROM PreviousDays pd
+    LEFT JOIN [TNA_PROXY].[dbo].[Px_ERPTransactionMst] t4
+        ON pd.HcmWorker_PersonnelNumber = t4.HcmWorker_PersonnelNumber
+        AND pd.Thursday = t4.TransDate
+    WHERE t4.TransDate IS NULL
+      AND pd.Thursday BETWEEN '2024-05-26' AND '2024-06-25'
+    UNION ALL
+    SELECT
+        pd.SundayId,
+        pd.HcmWorker_PersonnelNumber,
+        pd.SundayTransDate,
+        pd.Friday AS MissingTransDate
+    FROM PreviousDays pd
+    LEFT JOIN [TNA_PROXY].[dbo].[Px_ERPTransactionMst] t5
+        ON pd.HcmWorker_PersonnelNumber = t5.HcmWorker_PersonnelNumber
+        AND pd.Friday = t5.TransDate
+    WHERE t5.TransDate IS NULL
+      AND pd.Friday BETWEEN '2024-05-26' AND '2024-06-25'
+    UNION ALL
+    SELECT
+        pd.SundayId,
+        pd.HcmWorker_PersonnelNumber,
+        pd.SundayTransDate,
+        pd.Saturday AS MissingTransDate
+    FROM PreviousDays pd
+    LEFT JOIN [TNA_PROXY].[dbo].[Px_ERPTransactionMst] t6
+        ON pd.HcmWorker_PersonnelNumber = t6.HcmWorker_PersonnelNumber
+        AND pd.Saturday = t6.TransDate
+    WHERE t6.TransDate IS NULL
+      AND pd.Saturday BETWEEN '2024-05-26' AND '2024-06-25'
 ),
--- Step 3: Join the zero-hour weekdays with the non-zero-hour Sundays within the same week
-EarliestZeroHoursWeekday AS (
+-- Step 4: Identify the first missing date for each Sunday
+FirstMissingDate AS (
     SELECT 
-        Z.HcmWorker_PersonnelNumber,
-        Z.WeekdayDate,
-        Z.DayName AS Weekday,
-        Z.TotalHours AS WeekdayHours,
-        S.SundayDate,
-        S.SundayHours,
-        ROW_NUMBER() OVER (PARTITION BY Z.HcmWorker_PersonnelNumber ORDER BY Z.WeekdayRank) AS PriorityRank
-    FROM ZeroHoursWeekdays Z
-    JOIN NonZeroHoursSunday S
-    ON Z.HcmWorker_PersonnelNumber = S.HcmWorker_PersonnelNumber
-    AND DATEDIFF(DAY, Z.WeekdayDate, S.SundayDate) BETWEEN 1 AND 6
+        SundayId,
+        MIN(MissingTransDate) AS MissingTransDate
+    FROM MissingDates
+    GROUP BY SundayId
 )
--- Step 4: Select the detailed report with Sunday hours moved to the earliest zero-hour weekday
-SELECT 
-    HcmWorker_PersonnelNumber,
-    WeekdayDate,
-    Weekday,
-    CASE 
-        WHEN PriorityRank = 1 THEN SundayHours
-        ELSE WeekdayHours
-    END AS TotalHours,
-    SundayDate,
-    SundayHours
-FROM EarliestZeroHoursWeekday
-WHERE PriorityRank = 1
-ORDER BY HcmWorker_PersonnelNumber, WeekdayDate;
+-- Step 5: Update the Sunday entry with the first missing date
+UPDATE t
+SET t.TransDate = fmd.MissingTransDate
+FROM [TNA_PROXY].[dbo].[Px_ERPTransactionMst] t
+INNER JOIN FirstMissingDate fmd
+    ON t.Id = fmd.SundayId;
+
+
+----------------------------------------------
+IF OBJECT_ID('tempdb..#FirstMissingDate') IS NOT NULL
+    DROP TABLE #FirstMissingDate;
+
+WITH Sundays AS (
+    SELECT 
+        Id,
+        [UserID],
+        PDate,
+        [JobCode],
+        [TotalJobTime],
+        DATEPART(dw,  PDate) AS DayOfWeek
+    FROM [TNA_PROXY].[dbo].[Px_TimesheetMst]
+    WHERE DATEPART(dw,  PDate) = 1 -- Sunday
+    AND  [PDate] BETWEEN '2024-05-26' AND '2024-06-25'
+	AND [TotalJobTime] > 0
+	  
+),
+
+ PreviousDays AS (
+    SELECT 
+        s.Id AS SundayId,
+        s.[UserID],
+		s.[JobCode],
+        s.[TotalJobTime],
+        s.PDate AS SundayTransDate,
+        DATEADD(day, -1, s.PDate) AS Saturday,
+        DATEADD(day, -2, s.PDate) AS Friday,
+        DATEADD(day, -3, s.PDate) AS Thursday,
+        DATEADD(day, -4, s.PDate) AS Wednesday,
+        DATEADD(day, -5, s.PDate) AS Tuesday,
+        DATEADD(day, -6, s.PDate) AS Monday
+    FROM Sundays s
+),
+MissingDates AS (
+SELECT
+        pd.SundayId,
+        pd. [UserID],
+		pd.[JobCode],
+        pd.[TotalJobTime],
+        pd.SundayTransDate,
+        pd.Monday AS MissingTransDate
+    FROM PreviousDays pd
+    LEFT JOIN [TNA_PROXY].[dbo].[Px_TimesheetMst] t1
+        ON pd.[UserID] = t1.[UserID]
+        AND pd.Monday = t1.[PDate]
+    WHERE t1.[TotalJobTime]=0
+	AND pd.Monday BETWEEN '2024-05-26' AND '2024-06-25'
+    
+	UNION ALL
+    SELECT
+        pd.SundayId,
+        pd.[UserID],
+		pd.[JobCode],
+        pd.[TotalJobTime],
+        pd.SundayTransDate,
+        pd.Tuesday AS MissingTransDate
+    FROM PreviousDays pd
+    LEFT JOIN [TNA_PROXY].[dbo].[Px_TimesheetMst] t2
+        ON pd.[UserID] = t2.[UserID]
+        AND pd.Tuesday = t2.[PDate]
+    WHERE t2.[TotalJobTime]=0
+	AND pd.Tuesday BETWEEN '2024-05-26' AND '2024-06-25'
+    
+	UNION ALL
+    SELECT
+        pd.SundayId,
+        pd.[UserID],
+		pd.[JobCode],
+        pd.[TotalJobTime],
+        pd.SundayTransDate,
+        pd.Wednesday AS MissingTransDate
+    FROM PreviousDays pd
+    LEFT JOIN [TNA_PROXY].[dbo].[Px_TimesheetMst] t3
+        ON pd.[UserID] = t3.[UserID]
+        AND pd.Wednesday = t3.[PDate]
+    WHERE t3.[TotalJobTime]=0
+	AND pd.Wednesday BETWEEN '2024-05-26' AND '2024-06-25'
+    
+	UNION ALL
+    SELECT
+        pd.SundayId,
+        pd.[UserID],
+		pd.[JobCode],
+        pd.[TotalJobTime],
+        pd.SundayTransDate,
+        pd.Thursday AS MissingTransDate
+    FROM PreviousDays pd
+    LEFT JOIN [TNA_PROXY].[dbo].[Px_TimesheetMst] t4
+        ON pd.[UserID] = t4.[UserID]
+        AND pd.Thursday = t4.[PDate]
+    WHERE t4.[TotalJobTime]=0
+	AND pd.Thursday BETWEEN '2024-05-26' AND '2024-06-25'
+    
+	UNION ALL
+    SELECT
+        pd.SundayId,
+        pd.[UserID],
+		pd.[JobCode],
+        pd.[TotalJobTime],
+        pd.SundayTransDate,
+        pd.Friday AS MissingTransDate
+    FROM PreviousDays pd
+    LEFT JOIN [TNA_PROXY].[dbo].[Px_TimesheetMst] t5
+        ON pd.[UserID] = t5.[UserID]
+        AND pd.Friday = t5.[PDate]
+    WHERE t5.[TotalJobTime]=0
+	AND  pd.Friday BETWEEN '2024-05-26' AND '2024-06-25'
+    
+	UNION ALL
+    SELECT
+        pd.SundayId,
+        pd.[UserID],
+		pd.[JobCode],
+        pd.[TotalJobTime],
+        pd.SundayTransDate,
+        pd.Saturday AS MissingTransDate
+    FROM PreviousDays pd
+    LEFT JOIN [TNA_PROXY].[dbo].[Px_TimesheetMst] t6
+        ON pd.[UserID] = t6.[UserID]
+        AND pd.Saturday = t6.[PDate]
+    WHERE t6.[TotalJobTime]=0
+	AND pd.Saturday BETWEEN '2024-05-26' AND '2024-06-25'
+),
+FirstMissingDate AS (
+	SELECT 
+		SundayId,
+		[UserID],
+		[JobCode],
+		[TotalJobTime],
+		MIN(MissingTransDate) AS MissingTransDate
+	FROM MissingDates
+	GROUP BY SundayId,[TotalJobTime],[JobCode],[UserID]
+)
+
+-- Insert the results of FirstMissingDate into the temporary table
+SELECT * INTO #FirstMissingDate FROM FirstMissingDate;
+
+BEGIN TRANSACTION;
+
+-- First update: update records with the missing date
+UPDATE t
+SET t.[TotalJobTime] = fmd.[TotalJobTime], t.[JobCode] = fmd.[JobCode]
+FROM [TNA_PROXY].[dbo].[Px_TimesheetMst] t
+INNER JOIN #FirstMissingDate fmd
+    ON t.[UserID] = fmd.[UserID] AND t.PDate = fmd.MissingTransDate;
+
+-- Second update: update the Sunday entries
+UPDATE t
+SET t.[TotalJobTime] = 0, t.[JobCode] = NULL
+FROM [TNA_PROXY].[dbo].[Px_TimesheetMst] t
+INNER JOIN #FirstMissingDate fmd
+    ON t.Id = fmd.SundayId;
+
+COMMIT TRANSACTION;
+
+-- Drop the temporary table
+DROP TABLE #FirstMissingDate;
+
 
