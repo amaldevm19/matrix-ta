@@ -150,7 +150,7 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
                 LeaveID
         FROM #TempTimesheetWithoutDuplicates;
       `);
-
+        /*
       const result1 = await request.query(`
         IF OBJECT_ID('tempdb..#FirstMissingDate') IS NOT NULL
         DROP TABLE #FirstMissingDate;
@@ -301,7 +301,9 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
         -- Drop the temporary table
         DROP TABLE #FirstMissingDate;
       `);
-      if(result && result1){
+      */
+      if(result){
+      //if(result && result1){
         let message=`Successfully copied timesheet from [COSEC].[dbo].[Mx_JPCTimeSheet] to [TNA_PROXY].[dbo].[Px_TimesheetMst]
          in copyTimesheetFromCosecToProxyDbFunction From:${fromDate} To:${toDate}`
         console.log(message)
