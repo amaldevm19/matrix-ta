@@ -141,40 +141,27 @@ const erpTransactionPageController = {
     erpTransactionPendingHorizontalPage:async(req, res)=>{
         try {
             let db = req.app.locals.db;
-            // await ProxyDbPool.connect();
-            // const transaction = new sql.Transaction(ProxyDbPool);
             try {
-                // await transaction.begin();
                 let Department = await db.query(`
                 SELECT DPTID, Name
                 FROM [COSEC].[dbo].[Mx_DepartmentMst]
                 `);
-                // await transaction.commit();
-                // await transaction.begin();
                 let UserCategory = await db.query(`
                 SELECT CG1ID, Name
                 FROM [COSEC].[dbo].[Mx_CustomGroup1Mst]
                 `);
-                // await transaction.commit();
-                // await transaction.begin();
                 let Designation = await db.query(`
                 SELECT DSGID, Name
                 FROM [COSEC].[dbo].[Mx_DesignationMst]
                 `);
-                // await transaction.commit();
-                // await transaction.begin();
                 let Section = await db.query(`
                 SELECT SECID, Name
                 FROM [COSEC].[dbo].[Mx_SectionMst]
                 `);
-                // await transaction.commit();
-                // await transaction.begin();
                 let Category = await db.query(`
                 SELECT CTGID, Name
                 FROM [COSEC].[dbo].[Mx_CategoryMst]
                 `);
-                // await transaction.commit();
-                // await transaction.begin();
                 await controllerLogger(req);
                 return res.render("erpTransaction/horizontal_report", {page_header:"ERP Timesheet Data for Sync",
                     Department:Department.recordset,
@@ -189,9 +176,52 @@ const erpTransactionPageController = {
             }
             
         } catch (error) {
-            console.log("Error in erpTransactionPendingDataPage function : ",error)
+            console.log("Error in erpTransactionPendingHorizontalPage function : ",error)
             await controllerLogger(req,error);
-            return res.render("erpTransaction/pending_page", {page_header:"ERP Timesheet Data Pending"});
+            return res.render("erpTransaction/horizontal_report", {page_header:"ERP Timesheet Data for Sync"});
+        }
+    },
+    erpTransactionCompletedHorizontalPage:async(req,res)=>{
+        try {
+            let db = req.app.locals.db;
+            try {
+                let Department = await db.query(`
+                SELECT DPTID, Name
+                FROM [COSEC].[dbo].[Mx_DepartmentMst]
+                `);
+                let UserCategory = await db.query(`
+                SELECT CG1ID, Name
+                FROM [COSEC].[dbo].[Mx_CustomGroup1Mst]
+                `);
+                let Designation = await db.query(`
+                SELECT DSGID, Name
+                FROM [COSEC].[dbo].[Mx_DesignationMst]
+                `);
+                let Section = await db.query(`
+                SELECT SECID, Name
+                FROM [COSEC].[dbo].[Mx_SectionMst]
+                `);
+                let Category = await db.query(`
+                SELECT CTGID, Name
+                FROM [COSEC].[dbo].[Mx_CategoryMst]
+                `);
+                await controllerLogger(req);
+                return res.render("erpTransaction/horizontal_report_completed", {page_header:"Sync Completed ERP Timesheet Data",
+                    Department:Department.recordset,
+                    UserCategory:UserCategory.recordset,
+                    Designation:Designation.recordset,
+                    Section:Section.recordset,
+                    Category:Category.recordset
+                });
+            } catch (error) {
+                await transaction.rollback()
+                throw error
+            }
+            
+        } catch (error) {
+            console.log("Error in erpTransactionCompletedHorizontalPage function : ",error)
+            await controllerLogger(req,error);
+            return res.render("erpTransaction/horizontal_report_completed", {page_header:"Sync Completed ERP Timesheet Data"});
         }
     }
 

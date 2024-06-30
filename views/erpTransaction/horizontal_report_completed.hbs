@@ -1,15 +1,9 @@
 <div class="row justify-content-start">
-    <div class="col-3">
-        <button class="btn btn-outline-success" type="button" id="copy_timesheet">Update Timesheet For ERP Sync</button>
-    </div>
     <div class="col-2">
         <button type="button" class="btn btn-primary mx-3" data-bs-toggle="modal" data-bs-target="#filter_modal">Apply Filter</button>
     </div>
     <div class="col-2">
         <button class="btn btn-outline-success " type="button" id="download_table">Download Table</button>
-    </div>
-    <div class="col-2">
-        <button class="btn btn-outline-success " type="button" id="download_exception">Download Exception</button>
     </div>
 </div>
 
@@ -21,7 +15,6 @@
 
 <div class="mt-2" id="pendingErpTable"></div>
 <div class="mt-2" id="temppendingErpTable" hidden></div>
-<div class="mt-2" id="tempExceptionTable" hidden></div>
 
 <input type="text" value="{{session.user.EmployeeId}}" id="employeeId" hidden>
 <input type="text" value="{{session.user.Department}}" id="department" hidden>
@@ -118,7 +111,7 @@
         let pendingErpTable = new Tabulator("#pendingErpTable", {
             pagination:true, //enable pagination
             paginationMode:"remote", //enable remote pagination
-            ajaxURL:"/api/erp-transaction/horizontal-report/pending-data", //ajax URL
+            ajaxURL:"/api/erp-transaction/horizontal-report/completed-data", //ajax URL
             ajaxParams: function(){
                 let EmployeeId = $("#emp_id").val()
                 let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":''
@@ -188,7 +181,6 @@
 
             ],
         });
-
         function daysInCurrentMonth() {
             const now = new Date();
             const year = now.getFullYear();
@@ -213,8 +205,6 @@
             }
 
         });
-
-        
         $("#search_submit").click(function(e){
             e.preventDefault();
             let EmployeeId = $("#emp_id").val();
@@ -228,29 +218,10 @@
             let SectionId=$('#section_id').val()
             let Error = $("#error").val()
             console.log(EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId, Error)
-            pendingErpTable.setData("/api/erp-transaction/horizontal-report/pending-data", 
+            pendingErpTable.setData("/api/erp-transaction/horizontal-report/completed-data", 
                 {page:"1", pageSize:"31",EmployeeId:EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId, Error}
             );
         });
-
-        $("#copy_timesheet").click(async(e)=>{
-            showLoadingIndicator();
-            let DepartmentId=$('#department').val()
-            let url=`/api/erp-transaction/copy-timesheet?DepartmentId=${DepartmentId}`;
-            let response = await fetch(url);
-            let data = await response.json();
-            if(data){
-                hideLoadingIndicator();
-            }
-            if(data.status == "not ok"){
-                alert(data.error);
-                location.reload(true);
-            }else{
-                alert(`Added or Updated ${data.data[0],data.data[1]} records to ERP`);
-                location.reload(true);
-            }
-        })
-        
         let temppendingErpTable = new Tabulator("#temppendingErpTable", {
             columns:[
                 {title:"Sl#", field:"rownum"},
@@ -303,8 +274,7 @@
                 {title:"Section", field:"SectionName"},
             ],
         });
-
-         temppendingErpTable.on("tableBuilt", function(){
+        temppendingErpTable.on("tableBuilt", function(){
             switch (daysInCurrentMonth()){
                 case 30:
                     pendingErpTable.hideColumn("31")
@@ -321,7 +291,6 @@
             }
 
         });
-
         $("#download_table").click(function(e){
             e.preventDefault();
             showLoadingIndicator();
@@ -336,13 +305,13 @@
             let SectionId=$('#section_id').val()
             let Error = $("#error").val()
             $.ajax({
-                url: '/api/erp-transaction/horizontal-report/download-erptimesheet',
+                url: '/api/erp-transaction/horizontal-report/download-erptimesheet-completed',
                 data:{EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,Error}
             }).done(function (data) {
                  hideLoadingIndicator();
                 if(data.status =="ok"){
                     temppendingErpTable.setData(data.data);
-                    temppendingErpTable.download("csv", "erptimesheet.csv", {delimiter:","})
+                    temppendingErpTable.download("csv", "erptimesheet-completed.csv", {delimiter:","})
                 }else{
                     alert("Failed to download")
                 }
@@ -351,7 +320,6 @@
         });
         flatpickr("#from_date", {dateFormat: "Y-m-d"});
         flatpickr("#to_date", {dateFormat: "Y-m-d"});
-
         $('#close_modal').click(()=>{
             $("#emp_id").val('');
             $("#from_date").val('');
@@ -365,96 +333,6 @@
             $('#section_id').val('')
             $("#search_submit").click()
         })
-        
-        let tempExceptionTable = new Tabulator("#tempExceptionTable", {
-            columns:[
-                {title:"Sl#", field:"rownum"},
-                {title:"Employee ID", field:"HcmWorker_PersonnelNumber"},
-                {title:"Job Code", field:"projId", hozAlign:"center"},
-                {title:"26", field:"26"},
-                {title:"27", field:"27"},
-                {title:"28", field:"28"},
-                {title:"29", field:"29"},
-                {title:"30", field:"30"},
-                {title:"31", field:"31"},
-                {title:"01", field:"01"},
-                {title:"02", field:"02"},
-                {title:"03", field:"03"},
-                {title:"04", field:"04"},
-                {title:"05", field:"05"},
-                {title:"06", field:"06"},
-                {title:"07", field:"07"},
-                {title:"08", field:"08"},
-                {title:"09", field:"09"},
-                {title:"10", field:"10"},
-                {title:"11", field:"11"},
-                {title:"12", field:"12"},
-                {title:"13", field:"13"},
-                {title:"14", field:"14"},
-                {title:"15", field:"15"},
-                {title:"16", field:"16"},
-                {title:"17", field:"17"},
-                {title:"18", field:"18"},
-                {title:"19", field:"19"},
-                {title:"20", field:"20"},
-                {title:"21", field:"21"},
-                {title:"22", field:"22"},
-                {title:"23", field:"23"},
-                {title:"24", field:"21"},
-                {title:"25", field:"25"},
-                {title:"Department", field:"DepartmentName"},
-                {title:"User Category", field:"UserCategoryName"},
-                {title:"Designation", field:"DesignationName"},
-                {title:"Section", field:"SectionName"},
-            ],
-        });
-
-         tempExceptionTable.on("tableBuilt", function(){
-            switch (daysInCurrentMonth()){
-                case 30:
-                    pendingErpTable.hideColumn("31")
-                    break;
-                case 29:
-                    pendingErpTable.hideColumn("31")
-                    pendingErpTable.hideColumn("30")
-                    break;
-                case 28:
-                    pendingErpTable.hideColumn("31")
-                    pendingErpTable.hideColumn("30")
-                    pendingErpTable.hideColumn("29")
-                    break;
-            }
-
-        });
-
-         $("#download_exception").click(function(e){
-            e.preventDefault();
-            showLoadingIndicator();
-            let EmployeeId = $("#emp_id").val()
-            let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":''
-            let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":''
-            let JobCode=$('#job_code').val()
-            let DepartmentId=$('#department_id').val()
-            let UserCategoryId=$('#user_category').val()
-            let EmployeeCategoryId=$('#employee_category').val()
-            let DesignationId=$('#designation_id').val()
-            let SectionId=$('#section_id').val()
-            $.ajax({
-                url: '/api/erp-transaction/horizontal-report/download-exception',
-                data:{EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId}
-            }).done(function (data) {
-                 hideLoadingIndicator();
-                if(data.status =="ok"){
-                    tempExceptionTable.setData(data.data);
-                    tempExceptionTable.download("csv", "ExceptionDetails.csv", {delimiter:","})
-                }else{
-                    alert("Failed to download")
-                }
-                
-            });
-        });
-        
-
     })
     
 </script>
