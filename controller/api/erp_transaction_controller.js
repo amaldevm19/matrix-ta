@@ -943,7 +943,7 @@ const transactionController = {
                         ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                         ('${Error}' IS NULL OR '${Error}'='' OR Error = ${Error?Error:0}) AND
                         (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                        SyncCompleted=0
+                        SyncCompleted=1
 
                 ) AS Subquery
                 JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
