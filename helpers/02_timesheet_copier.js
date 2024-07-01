@@ -170,7 +170,7 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
             SELECT 
                 s.Id AS SundayId,
                 s.[UserID],
-            s.[JobCode],
+                s.[JobCode],
                 s.[TotalJobTime],
                 s.PDate AS SundayTransDate,
                 DATEADD(day, -1, s.PDate) AS Saturday,
@@ -184,8 +184,8 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
         MissingDates AS (
         SELECT
                 pd.SundayId,
-                pd. [UserID],
-            pd.[JobCode],
+                pd.[UserID],
+                pd.[JobCode],
                 pd.[TotalJobTime],
                 pd.SundayTransDate,
                 pd.Monday AS MissingTransDate
@@ -193,14 +193,14 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
             LEFT JOIN [TNA_PROXY].[dbo].[Px_TimesheetMst] t1
                 ON pd.[UserID] = t1.[UserID]
                 AND pd.Monday = t1.[PDate]
-            WHERE t1.[TotalJobTime]=0
+            WHERE t1.[TotalJobTime]=0 AND t1.[LeaveID] IS NULL
           AND pd.Monday BETWEEN '${fromDate}' AND '${toDate}'
             
           UNION ALL
             SELECT
                 pd.SundayId,
                 pd.[UserID],
-            pd.[JobCode],
+                pd.[JobCode],
                 pd.[TotalJobTime],
                 pd.SundayTransDate,
                 pd.Tuesday AS MissingTransDate
@@ -208,14 +208,14 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
             LEFT JOIN [TNA_PROXY].[dbo].[Px_TimesheetMst] t2
                 ON pd.[UserID] = t2.[UserID]
                 AND pd.Tuesday = t2.[PDate]
-            WHERE t2.[TotalJobTime]=0
+            WHERE t2.[TotalJobTime]=0 AND t2.[LeaveID] IS NULL
           AND pd.Tuesday BETWEEN '${fromDate}' AND '${toDate}'
             
           UNION ALL
             SELECT
                 pd.SundayId,
                 pd.[UserID],
-            pd.[JobCode],
+                pd.[JobCode],
                 pd.[TotalJobTime],
                 pd.SundayTransDate,
                 pd.Wednesday AS MissingTransDate
@@ -223,14 +223,14 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
             LEFT JOIN [TNA_PROXY].[dbo].[Px_TimesheetMst] t3
                 ON pd.[UserID] = t3.[UserID]
                 AND pd.Wednesday = t3.[PDate]
-            WHERE t3.[TotalJobTime]=0
+            WHERE t3.[TotalJobTime]=0 AND t3.[LeaveID] IS NULL
           AND pd.Wednesday BETWEEN '${fromDate}' AND '${toDate}'
             
           UNION ALL
             SELECT
                 pd.SundayId,
                 pd.[UserID],
-            pd.[JobCode],
+                pd.[JobCode],
                 pd.[TotalJobTime],
                 pd.SundayTransDate,
                 pd.Thursday AS MissingTransDate
@@ -238,14 +238,14 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
             LEFT JOIN [TNA_PROXY].[dbo].[Px_TimesheetMst] t4
                 ON pd.[UserID] = t4.[UserID]
                 AND pd.Thursday = t4.[PDate]
-            WHERE t4.[TotalJobTime]=0
+            WHERE t4.[TotalJobTime]=0 AND t4.[LeaveID] IS NULL
           AND pd.Thursday BETWEEN '${fromDate}' AND '${toDate}'
             
           UNION ALL
             SELECT
                 pd.SundayId,
                 pd.[UserID],
-            pd.[JobCode],
+                pd.[JobCode],
                 pd.[TotalJobTime],
                 pd.SundayTransDate,
                 pd.Friday AS MissingTransDate
@@ -253,14 +253,14 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
             LEFT JOIN [TNA_PROXY].[dbo].[Px_TimesheetMst] t5
                 ON pd.[UserID] = t5.[UserID]
                 AND pd.Friday = t5.[PDate]
-            WHERE t5.[TotalJobTime]=0
+            WHERE t5.[TotalJobTime]=0 AND t5.[LeaveID] IS NULL
           AND  pd.Friday BETWEEN '${fromDate}' AND '${toDate}'
             
           UNION ALL
             SELECT
                 pd.SundayId,
                 pd.[UserID],
-            pd.[JobCode],
+                pd.[JobCode],
                 pd.[TotalJobTime],
                 pd.SundayTransDate,
                 pd.Saturday AS MissingTransDate
@@ -268,7 +268,7 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
             LEFT JOIN [TNA_PROXY].[dbo].[Px_TimesheetMst] t6
                 ON pd.[UserID] = t6.[UserID]
                 AND pd.Saturday = t6.[PDate]
-            WHERE t6.[TotalJobTime]=0
+            WHERE t6.[TotalJobTime]=0 AND t6.[LeaveID] IS NULL
           AND pd.Saturday BETWEEN '${fromDate}' AND '${toDate}'
         ),
         FirstMissingDate AS (
