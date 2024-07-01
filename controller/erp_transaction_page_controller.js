@@ -171,7 +171,7 @@ const erpTransactionPageController = {
                     Category:Category.recordset
                 });
             } catch (error) {
-                await transaction.rollback()
+                
                 throw error
             }
             
@@ -214,7 +214,7 @@ const erpTransactionPageController = {
                     Category:Category.recordset
                 });
             } catch (error) {
-                await transaction.rollback()
+                
                 throw error
             }
             
