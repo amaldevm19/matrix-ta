@@ -1,5 +1,5 @@
 const {sql,ProxyDbPool} = require('../../config/db');
-const {startERPTransaction} = require('../../helpers/08_erp_transaction_process');
+const {startERPTransaction,checkPendingCount} = require('../../helpers/08_erp_transaction_process');
 const {controllerLogger} = require("../../helpers/19_middleware_history_logger");
 const {PxERPTransactionTableBuilder} = require("../../helpers/04_erp_transaction_copier");
 let {PxERPTransactionTableBuilderScheduler,PxERPTransactionTableBuilderScheduleHandleArray} = require("../../helpers/03_erp_transaction_table_scheduler");
@@ -491,8 +491,17 @@ const transactionController = {
             if(!DepartmentId || !UserCategoryId || !FromDate || !ToDate){
                 return res.status(200).json({status:"not ok",error:"Required data missing", data:""});
             }
+            let pendingCountObj = await checkPendingCount({
+                DepartmentId,
+                UserCategoryId,
+                FromDate,
+                ToDate,
+              });
+              if(pendingCountObj.error){
+                return res.status(200).json({status:"not ok",error:"Required data missing", data:""});
+              }
             // console.log(Id, DepartmentId, UserCategoryId, FromDate, ToDate,UpdatedBy);
-            let {status,error,data} = await startERPTransaction({FromDate,ToDate,DepartmentId,UserCategoryId})
+            let {status,error,data} = await startERPTransaction({Id,TriggerDate,pendingCount:pendingCountObj.pendingCount,FromDate,ToDate,DepartmentId,UserCategoryId})
             if(status == "ok"){
                 await controllerLogger(req)
                 return res.status(200).json({status,error, data})
