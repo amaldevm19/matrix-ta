@@ -5,6 +5,7 @@ const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require(".
 
 async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
   try {
+    console.log(fromDate)
     await ProxyDbPool.connect();
     const request = new sql.Request(ProxyDbPool);
     try {
