@@ -296,10 +296,12 @@
                     projectType
                 },
             });
-            if (response.data) {
+            if (response.data.status == "OK") {
                 console.log(response.data.data);
                 existing_table.setData(response.data.data);
                 existing_table.download("csv", "JobHourSettingStatus.csv", {delimiter:","})
+            }else{
+                alert(response.data.error)
             }
         } 
         catch(error){

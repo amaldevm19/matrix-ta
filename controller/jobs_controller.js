@@ -79,7 +79,7 @@ const jobsController = {
                 FROM [COSEC].[dbo].[Mx_DepartmentMst]
             `);
             await controllerLogger(req);
-            return res.render('jobs/jobsListPage',{page_header:"Edit Maximum Allowed Job Hours Per Day",Department})
+            return res.render('jobs/jobsListPage',{page_header:"Edit Maximum Allowed Job Hours Per Day",Department:Department.recordset})
         } catch (error) {
             console.log("Error in JobsListPage function : ", error);
             await controllerLogger(req, error);
