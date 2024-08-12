@@ -3,7 +3,9 @@
     <div class="col-md-3">
         <button class="btn btn-outline-success" type="button" data-bs-toggle="modal" data-bs-target="#upload_modal">Upload CSV</button>
     </div>
-    <div class="col-md-3"></div>
+    <div class="col-md-3">
+        <button class="btn btn-outline-success" type="button" id="download_existing_csv" >Download CSV</button>
+    </div>
     <div class="col-md-3">
         <form class="d-flex flex-row my-2 my-lg-0">
             <input class="form-control mr-sm-2" type="search" placeholder="Search by Code or Name" aria-label="Search" id="searchElement">
@@ -51,7 +53,7 @@
 
 <script>
     $(document).ready(()=>{
-          var table = new Tabulator("#csvTable", {
+        var table = new Tabulator("#csvTable", {
         pagination:true, //enable pagination
         paginationMode:"remote", //enable remote pagination
         ajaxURL:"/api/jobs/joblist", //ajax URL
@@ -147,80 +149,88 @@
     })
 
 
-        const fileInput = $('#job_file')
-        const submitFile = $('#submitFile')
-        const UpdatedBy = $('#employeeId').val()
-        let file = null
-        fileInput.change((e)=>{
-            e.preventDefault();
-            file = e.target.files[0];
-        })
+    const fileInput = $('#job_file')
+    const submitFile = $('#submitFile')
+    const UpdatedBy = $('#employeeId').val()
+    let file = null
+    fileInput.change((e)=>{
+        e.preventDefault();
+        file = e.target.files[0];
+    })
 
-        let tempCsvTable = new Tabulator("#tempCsvTable", {
-            columns:[ //Define Table Columns
-                {title:"Row Num", field:"RowNum"},
-                {title:"Job Code", field:"JobCode"},
-                {title:"MaxJobHourPerDay", field:"MaxJobHourPerDay"},
-                {title:"BreakHour", field:"BreakHour"},
-                {title:"TravelHour", field:"TravelHour"},
-                {title:"ProjectType", field:"ProjectType"},
-                {title:"Department", field:"DepartmentId"},
-                {title:"Status", field:"Status"},
-                {title:"Message", field:"Message"},
-            ],
+    let tempCsvTable = new Tabulator("#tempCsvTable", {
+        columns:[ //Define Table Columns
+            {title:"Row Num", field:"RowNum"},
+            {title:"Job Code", field:"JobCode"},
+            {title:"MaxJobHourPerDay", field:"MaxJobHourPerDay"},
+            {title:"BreakHour", field:"BreakHour"},
+            {title:"TravelHour", field:"TravelHour"},
+            {title:"ProjectType", field:"ProjectType"},
+            {title:"Department", field:"DepartmentId"},
+            {title:"Status", field:"Status"},
+            {title:"Message", field:"Message"},
+        ],
+    });
+    submitFile.click(async(e)=>{
+        showLoadingIndicator();
+        const schema = joi.object({
+            RowNum: joi.number(),
+            MaxJobHourPerDay: joi.number().min(0).max(24).precision(2).required(),
+            BreakHour: joi.number().min(0).max(24).precision(2).required(),
+            TravelHour: joi.number().min(0).max(24).precision(2).required(),
+            JobName: joi.string(),
+            ProjectType: joi.string().required(),
+            JobCode: joi.string().required(),
+            DepartmentId: joi.number()
         });
-        submitFile.click(async(e)=>{
-            showLoadingIndicator();
-            const schema = joi.object({
-                RowNum: joi.number(),
-                MaxJobHourPerDay: joi.number().min(0).max(24).precision(2).required(),
-                BreakHour: joi.number().min(0).max(24).precision(2).required(),
-                TravelHour: joi.number().min(0).max(24).precision(2).required(),
-                JobName: joi.string(),
-                ProjectType: joi.string().required(),
-                JobCode: joi.string().required(),
-                DepartmentId: joi.number()
-            });
-            if (!file || file.type !== 'text/csv') {
-                alert('Please choose a CSV file');
+        if (!file || file.type !== 'text/csv') {
+            alert('Please choose a CSV file');
+            return;
+        }
+        try{
+            const {jsonData,errorData} = await parseCSV(file,schema);
+            if (!jsonData.length) {
+                alert('Selected file data not matching with required data');
                 return;
             }
-            try{
-                const {jsonData,errorData} = await parseCSV(file,schema);
-                if (!jsonData.length) {
-                    alert('Selected file data not matching with required data');
-                    return;
-                }
-                const response = await axios.post('/api/jobs/max-jobhr-csv', {jsonData,UpdatedBy}, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                });
-                if (response.data) {
-                    console.log(response.data)
-                    let fail = false;
-                    
-                    response.data.data.forEach((e)=>{
-                        if(e.Status == "Fail"){
-                            fail= true
-                        }
-                    })
-                    $('#file').val('');
-                    hideLoadingIndicator();
-                    if(fail){
-                        alert("Some row failed to update, please see response CSV")
+            const response = await axios.post('/api/jobs/max-jobhr-csv', {jsonData,UpdatedBy}, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            if (response.data) {
+                console.log(response.data)
+                let fail = false;
+                
+                response.data.data.forEach((e)=>{
+                    if(e.Status == "Fail"){
+                        fail= true
                     }
-                    //alert(`Successfully updated : ${response.data?.data?.length} rows`);
-                    //location.reload()
-                    
-                    tempCsvTable.setData(response.data.data);
-                    tempCsvTable.download("csv", "JobHourSettingStatus.csv", {delimiter:","})
-                    location.reload()
+                })
+                $('#file').val('');
+                hideLoadingIndicator();
+                if(fail){
+                    alert("Some row failed to update, please see response CSV")
                 }
-
-            }catch(error){
-                console.error(error);
+                //alert(`Successfully updated : ${response.data?.data?.length} rows`);
+                //location.reload()
+                
+                tempCsvTable.setData(response.data.data);
+                tempCsvTable.download("csv", "JobHourSettingStatus.csv", {delimiter:","})
+                location.reload()
             }
-        })
+
+        }catch(error){
+            console.error(error);
+        }
+    })
+
+    $('#download_existing_csv').click(()=>{
+        showLoadingIndicator();
+        table.download("csv", "JobHourSettingStatus.csv", {delimiter:","});
+    })
+    
+    table.on("downloadComplete", function(){hideLoadingIndicator();});
+
     })
 </script>

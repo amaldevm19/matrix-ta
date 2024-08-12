@@ -509,7 +509,7 @@ const transactionController = {
                 }
                 return res.status(200).json({status:"not ok",error, data:""});
             }else{
-                return res.status(200).json({status:"not ok",error, data:""});
+                return res.status(200).json({status:"not ok",error:"", data:""});
             }
            
            

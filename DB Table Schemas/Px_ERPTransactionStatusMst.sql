@@ -1,0 +1,22 @@
+CREATE TABLE [TNA_PROXY].[dbo].[Px_ERPTransactionMst](
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    HcmWorker_PersonnelNumber NVARCHAR(30) NOT NULL,
+    TransDate DATETIME NOT NULL,
+    projId NVARCHAR(30) NOT NULL,
+    TotalHours decimal(4, 1) ,
+    CategoryId NVARCHAR(30),
+    BranchId NVARCHAR(30) ,
+    DepartmentId NVARCHAR(30) ,
+    UserCategoryId NVARCHAR(30) ,
+    EmployeeCategoryId numeric(6,0),
+    DesignationId  numeric(6,0),
+    SectionId  numeric(6,0),
+    CustomGroup3Id  numeric(6,0),
+    SyncCompleted Bit DEFAULT 0 ,
+    SyncTriggeredBy NVARCHAR(30),
+    SyncTriggeredOn DATETIME,--To be updated in the Table
+    Error Bit DEFAULT 0,
+    ErrorText NVARCHAR(255),
+    CreatedAt DATETIME DEFAULT GETDATE() NOT NULL,
+    UpdatedAt DATETIME DEFAULT GETDATE(),
+)
