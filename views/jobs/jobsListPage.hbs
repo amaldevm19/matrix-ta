@@ -301,7 +301,8 @@
                 existing_table.setData(response.data.data);
                 existing_table.download("csv", "JobHourSettingStatus.csv", {delimiter:","})
             }else{
-                alert(response.data.error)
+                alert(response.data.error);
+                hideLoadingIndicator();
             }
         } 
         catch(error){

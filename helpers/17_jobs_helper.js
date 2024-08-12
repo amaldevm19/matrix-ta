@@ -298,10 +298,10 @@ const jobsHelper = {
         try {
             let whereClause = `
                     WHERE 
-                    ('${departmentId}' IS NULL OR '${departmentId}'='' OR DepartmentId = ${departmentId ? departmentId : 0}) AND
-                    ('${updatedBy}' IS NULL OR '${updatedBy}'='' OR UpdatedBy = ${updatedBy ? updatedBy : ''}) AND
-                    ('${jobCode}' IS NULL OR '${jobCode}'='' OR JobCode = ${jobCode ? jobCode : ''}) AND
-                    ('${projectType}' IS NULL OR '${projectType}'='' OR ProjectType = ${projectType ? projectType : ''})
+                    (${departmentId} IS NULL OR '${departmentId}'='' OR DepartmentId = '${departmentId}') AND
+                    (${updatedBy} IS NULL OR '${updatedBy}'='' OR UpdatedBy = '${updatedBy}') AND
+                    (${jobCode} IS NULL OR '${jobCode}'='' OR JobCode = '${jobCode}') AND
+                    (${projectType} IS NULL OR '${projectType}'='' OR ProjectType = '${projectType}')
                 
                 `
             let existingJobList =await db.query( `
