@@ -4,7 +4,7 @@
         <button class="btn btn-outline-success" type="button" data-bs-toggle="modal" data-bs-target="#upload_modal">Upload CSV</button>
     </div>
     <div class="col-md-3">
-        <button class="btn btn-outline-success" type="button" id="download_existing_csv" >Download CSV</button>
+        <button class="btn btn-outline-success" type="button" data-bs-toggle="modal" data-bs-target="#download_modal">Download CSV</button>
     </div>
     <div class="col-md-3">
         <form class="d-flex flex-row my-2 my-lg-0">
@@ -15,12 +15,13 @@
 </div>
 <div id="loading-indicator">
     <div class="spinner-border text-primary" role="status">
-        <span class="sr-only">Loading...</span>
+        <span class="sr-only"></span>
     </div>
 </div>
 
 <div class="mt-2" id="csvTable"></div>
 <div class="mt-2" id="tempCsvTable" hidden></div>
+
 
 <input type="text" value="{{session.user.EmployeeId}}" id="employeeId" hidden>
 <input type="text" value="{{session.user.Department}}" id="department" hidden>
@@ -47,6 +48,51 @@
   </div>
 </div>
 
+<!-- Filter Modal for Download Existing JobHours setting-->
+<div class="modal fade " id="download_modal" tabindex="-1" aria-labelledby="filter_modal_label" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="filter_modal_label">Apply filter for download </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+            <form class=" my-2 my-lg-0 ">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <input type="text" class="form-control mr-sm-2" id="uploaded_by" placeholder="Uploaded By (eg: SRU01234)">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <input type="text" class="form-control mr-sm-2" id="job_code" placeholder="Job Code (eg: SRU-002494-01)">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <select class="form-select" id="department_id" name="Department">
+                            <option selected value="">Select Department</option>
+                            {{#each Department}}
+                            <option value="{{this.DPTID}}">{{this.Name}}</option>
+                            {{/each}}
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <select class="form-select" id="project_type" name="ProjectType">
+                            <option selected value="">Select Project Type</option>
+                            <option value="camp">Camp</option>
+                            <option value="bus">Bus</option>
+                            <option value="site">Site</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id='close_modal' data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="download_existing_csv" data-bs-dismiss="modal">Apply Filter and Download</button>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
   
 </script>
@@ -199,9 +245,7 @@
                 },
             });
             if (response.data) {
-                console.log(response.data)
                 let fail = false;
-                
                 response.data.data.forEach((e)=>{
                     if(e.Status == "Fail"){
                         fail= true
@@ -225,12 +269,46 @@
         }
     })
 
-    $('#download_existing_csv').click(()=>{
+    let existing_table = new Tabulator("#tempCsvTable", {
+        columns:[ //Define Table Columns
+            {title:"Job Code", field:"JobCode"},
+            {title:"MaxJobHourPerDay", field:"MaxJobHourPerDay"},
+            {title:"BreakHour", field:"BreakHour"},
+            {title:"TravelHour", field:"TravelHour"},
+            {title:"ProjectType", field:"ProjectType"},
+            {title:"Department", field:"DepartmentId"},
+        ],
+    });
+
+    $('#download_existing_csv').click(async ()=>{
         showLoadingIndicator();
-        table.download("csv", "JobHourSettingStatus.csv", {delimiter:","});
+        let updatedBy = $('#uploaded_by').val();
+        let jobCode = $('#job_code').val();
+        let departmentId = $('#department_id').val();
+        let projectType = $('#project_type').val();
+
+        try{
+            const response = await axios.get('/api/jobs/get-existing-jobhrs',  {
+                params: {
+                    updatedBy,
+                    jobCode,
+                    departmentId,
+                    projectType
+                },
+            });
+            if (response.data) {
+                console.log(response.data.data);
+                existing_table.setData(response.data.data);
+                existing_table.download("csv", "JobHourSettingStatus.csv", {delimiter:","})
+            }
+        } 
+        catch(error){
+            alert(error);
+        }
+        
     })
     
-    table.on("downloadComplete", function(){hideLoadingIndicator();});
+    existing_table.on("downloadComplete", function(){hideLoadingIndicator();});
 
     })
 </script>

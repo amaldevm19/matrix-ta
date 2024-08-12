@@ -292,7 +292,34 @@ const jobsHelper = {
         }
         
         
-    }
+    },
+    /* GET Download existing Job Hours assignment*/
+    getExistingJobListFromTnaproxy: async (db,updatedBy,jobCode, departmentId,projectType)=>{
+        try {
+            let whereClause = ''
+            if(searchField){
+                whereClause = `
+                WHERE 
+                ('${departmentId}' IS NULL OR '${departmentId}'='' OR DepartmentId = ${departmentId ? departmentId : 0}) AND
+                ('${updatedBy}' IS NULL OR '${updatedBy}'='' OR UpdatedBy = ${updatedBy ? updatedBy : ''}) AND
+                ('${jobCode}' IS NULL OR '${jobCode}'='' OR JobCode = ${jobCode ? jobCode : ''}) AND
+                ('${projectType}' IS NULL OR '${projectType}'='' OR ProjectType = ${projectType ? projectType : ''})
+                
+                `
+            }
+            let existingJobList =await db.query( `
+                SELECT
+                    JobCode, JobName, MaxJobHourPerDay,BreakHour,TravelHour,ProjectType, DepartmentId, UpdatedBy
+                FROM Px_JPCJobMst ${whereClause}
+            `);
+
+            return {existingJobList, error:null};
+           
+        } catch (error) {
+            return {existingJobList:null, error};
+        }
+        
+    },
 }
 
 module.exports = {jobsHelper};

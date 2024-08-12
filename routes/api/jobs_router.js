@@ -17,6 +17,10 @@ router.get('/joblist', jobsController.getJobList);
 router.post('/joblist', jobsController.updateMaxJobHourPerDay);
 router.post('/max-jobhr-csv',jobsController.maxJobHrCSV)
 router.post('/search-jobs', jobsController.searchJobs);
+
+/* GET Download existing Job Hours assignment*/
+router.get('/get-existing-jobhrs', jobsController.downloadExistingJobList);
+
 /* GET Assigned jobs CSV from tna.  */
 router.get('/get-assigned-jobs',  jobsController.getAssignedJobs );
 
