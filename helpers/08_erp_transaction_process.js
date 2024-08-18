@@ -231,11 +231,7 @@ async function updateReadForERP({sendingCount,DepartmentId,UserCategoryId,FromDa
 async function postAndUpdateTransactionStatus(data){
     let postingResult = await postTransactionToERP(data);
     if(postingResult.status == "ok"){
-        if(check_db_lock_status(updateERPTransactionStatus_lock)) {
-            updateERPTransactionStatus_array.push(postingResult.data);
-        }else{
-            updateERPTransactionStatus(postingResult.data);
-        }
+        updateERPTransactionStatus(postingResult.data);
     }else{
         // Revert updateReadForERP 
     }
@@ -244,16 +240,14 @@ async function postAndUpdateTransactionStatus(data){
 
 // Checked function ## DB-2 Write
 async function updateERPTransactionStatus(postingResult) {
-    updateERPTransactionStatus_lock.status = true;
-    
     try {
         await ProxyDbPool.connect();
         let results = [];
         const message = `Starting updating [TNA_PROXY].[dbo].[Px_ERPTransactionStatusMst] with D365_response in updateERPTransactionStatus function`;
         console.log(message);
         const request = new sql.Request(ProxyDbPool);
-        for (let index = 0; index < postingResult.length;) {
-            const element = postingResult[index];
+
+        let promises = postingResult.map((element)=>{
             let query = "";
             let updatedQuery = {}
             if (element.Error) {
@@ -285,31 +279,42 @@ async function updateERPTransactionStatus(postingResult) {
                     )`;
                 updatedQuery = {...element, SyncCompleted: 1}
             }
-            try {
-                let db_response = await request.query(query);
-                if(db_response?.rowsAffected[0]){
-                    results.push(updatedQuery);
-                    index++;
-                }
-            } catch (error) {
-                let message = `Error in updating status for HcmWorker_PersonnelNumber: ${element.HcmWorker_PersonnelNumber} and Message: ${error.message}`;
-                console.log(message);
-            }
-           
-        }
-
-        if(results){
+            results.push(updatedQuery);
+            return atomicDbWrite(request,query);
+        })
+        try {
+            if(promises.length > 0) await Promise.all(promises);
+        } catch (error) {
+            console.log(error.message)
+        }finally{
+            console.log(results);
             const completionMessage = `Completed updating [TNA_PROXY].[dbo].[Px_ERPTransactionStatusMst] with D365_response in updateERPTransactionStatus function`;
             console.log(completionMessage);
-            console.log(results);
-            dbEventEmitter.emit("updateERPTransactionStatus_unlock")
-            return { data: results, error: "", status: "ok" };
         }
     
     } catch (error) {
         const connectionErrorMessage = `Error connecting to the database in updateERPTransactionStatus function: ${error}`;
         console.log(connectionErrorMessage);
-        return { data: "", error: error, status: "not ok" };
+    }
+    
+}
+
+async function atomicDbWrite(request,query){
+    if(check_db_lock_status(updateERPTransactionStatus_lock)) {
+        updateERPTransactionStatus_array.push({request,query});
+        //Promise.resolve(true)
+    }else{
+        updateERPTransactionStatus_lock.status = true;
+        try {
+            let db_response = await request.query(query);
+            if(db_response?.rowsAffected[0]){
+                dbEventEmitter.emit("updateERPTransactionStatus_unlock")
+            }
+        } catch (error) {
+            let message = `Error in updating status for HcmWorker_PersonnelNumber: ${element.HcmWorker_PersonnelNumber} and Message: ${error.message}`;
+            console.log(message);
+        }
+       
     }
     
 }
@@ -352,11 +357,11 @@ const check_db_lock_status = function(dblock){
     return dblock.status;
 }
 
-dbEventEmitter.on('updateERPTransactionStatus_unlock',()=>{
+dbEventEmitter.on('updateERPTransactionStatus_unlock',async ()=>{
     updateERPTransactionStatus_lock.status = false;
     if(updateERPTransactionStatus_array.length > 0){
-        let data = updateERPTransactionStatus_array.shift()
-        updateERPTransactionStatus(data);
+        let {request,query} = updateERPTransactionStatus_array.shift()
+        await atomicDbWrite(request,query);
     }else{
         console.log(`Done All updateERPTransactionStatus(postingResult.data) pending jobs`)
     }
