@@ -289,7 +289,7 @@ async function updateERPTransactionStatus(postingResult) {
                 let db_response = await request.query(query);
                 if(db_response?.rowsAffected[0]){
                     results.push(updatedQuery);
-                    dbEventEmitter.emit("updateERPTransactionStatus_unlock")
+                    
                 }
             } catch (error) {
                 let message = `Error in updating status for HcmWorker_PersonnelNumber: ${element.HcmWorker_PersonnelNumber} and Message: ${error.message}`;
@@ -302,6 +302,7 @@ async function updateERPTransactionStatus(postingResult) {
             const completionMessage = `Completed updating [TNA_PROXY].[dbo].[Px_ERPTransactionStatusMst] with D365_response in updateERPTransactionStatus function`;
             console.log(completionMessage);
             console.log(results);
+            dbEventEmitter.emit("updateERPTransactionStatus_unlock")
             return { data: results, error: "", status: "ok" };
         }
     
