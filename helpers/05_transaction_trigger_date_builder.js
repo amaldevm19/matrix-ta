@@ -6,6 +6,7 @@ function ERPTransactionTriggerDateBuilder(sqlData) {
     let CurrentMonth = (CurrentDateTime.getMonth()+1).toString().padStart(2,"0");
     let CurrentDate = CurrentDateTime.getDate().toString().padStart(2,"0");
     let CurrentHour = CurrentDateTime.getHours().toString().padStart(2,"0");
+    let CurrentMinute= CurrentDateTime.getMinutes().toString().padStart(2,"0");
     let SqlDateTime = sqlData.TriggerDate.toISOString()
     let triggerMonth = SqlDateTime.split("T")[0].split("-")[1];
     let triggerDay = SqlDateTime.split("T")[0].split("-")[2];
@@ -18,8 +19,9 @@ function ERPTransactionTriggerDateBuilder(sqlData) {
       TriggerMinute:triggerMinute,
       FromDate: formatSQLDatetime(new Date(sqlData.FromDate)),
       ToDate: formatSQLDatetime(new Date(sqlData.ToDate)),
-      CurrentDate,
+      CurrentMinute,
       CurrentHour,
+      CurrentDate,
       CurrentMonth
     };
 }

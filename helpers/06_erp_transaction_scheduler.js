@@ -1,8 +1,8 @@
 const cron = require("node-cron");
 const { ProxyDbPool, sql } = require("../config/db");
 const { ERPTransactionTriggerDateBuilder} = require("./05_transaction_trigger_date_builder");
-const {MiddlewareHistoryLogger,  EventCategory, EventType, EventStatus} = require("../helpers/19_middleware_history_logger");
-const {startERPTransactionAndUpdateERPTransactionSetting} = require("./08_erp_transaction_process");
+const {erp_transaction_process} = require("./08_erp_transaction_process");
+
 async function erpTransactionScheduler() {
   let started = []
   try {
@@ -19,7 +19,7 @@ async function erpTransactionScheduler() {
         `);
         if (db_response?.recordset) {
           try {
-            const promises = db_response.recordset.map(async (element) => {
+            const promises = db_response.recordset.map((element) => {
               let sqlData = {
                 TriggerDate: element.TriggerDate,
                 FromDate: element.FromDate,
@@ -29,27 +29,22 @@ async function erpTransactionScheduler() {
               let UserCategoryId = element.UserCategoryId
               let Id = element.Id
   
-              let { triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentDate, CurrentHour,CurrentMonth } = ERPTransactionTriggerDateBuilder(sqlData);
-              //console.log(triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentMonth, CurrentDate, CurrentHour )
-              if((TriggerDate==CurrentDate) && (triggerMonth == CurrentMonth) && (TriggerHour<=CurrentHour)){
+              let { triggerMonth, TriggerDate, TriggerHour, TriggerMinute, FromDate, ToDate, CurrentDate, CurrentHour,CurrentMonth, CurrentMinute  } = ERPTransactionTriggerDateBuilder(sqlData);
+              if((TriggerDate==CurrentDate) && (triggerMonth == CurrentMonth) && (TriggerHour==CurrentHour) && (TriggerMinute==CurrentMinute)){
                 if(started.indexOf(Id)>=0){
                   console.log("startERPTransaction Already started")
                   return;
                 }else{
                   started.push(Id)
-                  let result = await startERPTransactionAndUpdateERPTransactionSetting({Id,TriggerDate:element.TriggerDate,DepartmentId,UserCategoryId,FromDate, ToDate}); 
-                  if(result){
-                    started.splice(started.indexOf(Id),1)
-                  }else{
-                    started.splice(started.indexOf(Id),1)
-                  }
-                  
+                  return erp_transaction_process({Id,TriggerDate:element.TriggerDate,DepartmentId,UserCategoryId,FromDate, ToDate}); 
                 }
               }
             });
-            await Promise.all(promises);
+            if(promises.length > 0) await Promise.all(promises);  
           } catch (error) {
             console.log(error.message)
+          } finally{
+            started.length = 0;
           }
          
         }

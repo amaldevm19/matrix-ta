@@ -3,7 +3,6 @@ const {ProxyDbPool, sql} = require("../config/db");
 const {MiddlewareHistoryLogger,EventCategory,EventType,EventStatus} = require("../helpers/19_middleware_history_logger");
 
 
-
 async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId='',UserCategoryId=''}) {
     try {
         await ProxyDbPool.connect();
@@ -37,7 +36,7 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
             for Department:${DepartmentId} and User Category:${UserCategoryId} 
             in PxERPTransactionTableBuilder function From ${FromDate} To ${ToDate}\n\n`;
             //console.log(message)
-            await MiddlewareHistoryLogger({EventType:EventType.INFORMATION,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.STARTED,EventText:String(message)});
+    
             const result = await request.query(`
             MERGE INTO [TNA_PROXY].[dbo].[Px_ERPTransactionMst] AS Target
             USING (
@@ -153,260 +152,14 @@ async function PxERPTransactionTableBuilder({FromDate='', ToDate='',DepartmentId
       } catch (error) {
         let message =`Error in PxERPTransactionTableBuilder function : ${error}`;
         console.log(message)
-        await MiddlewareHistoryLogger({EventType:EventType.ERROR,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.FAILED,EventText:String(message)})
         return {status:"not ok",data:"",error};
       }
         
     } catch (error) {
         let message = `Error connecting to the database in PxERPTransactionTableBuilder function : ${error}`;
         console.log(message)
-        await MiddlewareHistoryLogger({EventType:EventType.ERROR,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.FAILED,EventText:String(message)})
         return {status:"not ok",data:"",error};
     }
 }
-// async function getTimesheetFromERPTransactionMstTable({DepartmentId,UserCategoryId,FromDate, ToDate}){
-//     try {
-//         await ProxyDbPool.connect();
-//         const request = new sql.Request(ProxyDbPool);
-//         request.stream = true 
-//         const query = `
-//             SELECT 
-//                 Id,
-//                 HcmWorker_PersonnelNumber,
-//                 TransDate,
-//                 projId,
-//                 TotalHours,
-//                 CategoryId 
-//             FROM [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
-//             WHERE 
-//                 ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR DepartmentId = ${DepartmentId ? DepartmentId : 0}) AND
-//                 ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR UserCategoryId = ${UserCategoryId ? UserCategoryId : 0}) AND
-//                 (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-//                 (SyncCompleted = 0 AND Error = 0 AND readForERP = 0);
-//         `;
-//         request.query(query);
-//         request.on('error', async (err) => {
-//             const message = `Error in getTimesheetFromERPTransactionMstTable function : ${err}`;
-//             console.log(message);
-//             await MiddlewareHistoryLogger({EventType:EventType.ERROR, EventCategory:EventCategory.SYSTEM, EventStatus:EventStatus.FAILED, EventText:String(message)});
-//             throw err;
-//         });
-//         return request;
-//     } catch (error) {
-//         const message = `Error connecting to the database in getTimesheetFromERPTransactionMstTable function : ${error}`;
-//         console.log(message);
-//         await MiddlewareHistoryLogger({EventType:EventType.ERROR, EventCategory:EventCategory.SYSTEM, EventStatus:EventStatus.FAILED, EventText:String(message)});
-//         throw error;
-//     }
-// }
 
-async function updateReadForERP({sendingCount,DepartmentId,UserCategoryId,FromDate, ToDate}){
-    try {
-        await ProxyDbPool.connect();
-        const request = new sql.Request(ProxyDbPool);
-        try {
-            const db_response = await request.query(`
-                UPDATE TOP (${sendingCount})
-                [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
-                SET readForERP = 1
-                WHERE 
-                    ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR DepartmentId = ${DepartmentId ? DepartmentId : 0}) AND
-                    ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR UserCategoryId = ${UserCategoryId ? UserCategoryId : 0}) AND
-                    (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                    (SyncCompleted = 0 AND Error = 0 AND readForERP = 0);
-            `);
-            if(db_response?.rowsAffected[0]){
-               return true
-            }else{
-                return false
-            }
-        } catch (error) {
-            console.log(error.message)
-            return false
-           
-        }
-        
-    } catch (error) {
-        console.log(error.message)
-        return false
-    }
-
-}
-async function getTimesheetFromERPTransactionMstTable({sendingCount,DepartmentId,UserCategoryId,FromDate, ToDate}){
-    try {
-        await ProxyDbPool.connect();
-        const request = new sql.Request(ProxyDbPool);
-        try {
-            let result = await request.query(`
-                SELECT TOP (${sendingCount})[Id]
-                ,[HcmWorker_PersonnelNumber]
-                ,CONVERT(NVARCHAR(10), TransDate, 120) AS TransDate
-                ,[projId]
-                ,[TotalHours]
-                ,[CategoryId]
-                FROM [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
-                WHERE 
-                ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR DepartmentId = ${DepartmentId?DepartmentId:0}) AND
-                ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR UserCategoryId = ${UserCategoryId?UserCategoryId:0}) AND
-                (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                (SyncCompleted = 0 AND Error=0 AND readForERP = 1 );
-            `);
-            if(result?.recordset){
-                let message = `Completed getting Transaction DepartmentId: ${DepartmentId},UserCategoryId: ${UserCategoryId}`;
-                console.log(message)
-                return {data:result.recordset, error:"",status:"ok", request}
-            }else{
-                let message = `Failed getting Transaction DepartmentId: ${DepartmentId},UserCategoryId: ${UserCategoryId}`;
-                console.log(message)
-                setTimeout(async ()=>{
-                    return {data:"", error:message,status:"not ok"}
-                },500)
-                
-            }
-        } catch (error) {
-            let message =`Error in getTimesheetFromERPTransactionMstTable function : ${error}`;
-            console.log(message)
-            return {data:"", error:message,status:"not ok"}
-        }
-    } catch (error) {
-        let message =`Error connecting to the database in getTimesheetFromERPTransactionMstTable function : ${error}`;
-        console.log(message)
-        return {data:"", error:message,status:"not ok"}
-    }
-}
-async function updateERPTransactionStatus(postingResult) {
-    try {
-        await ProxyDbPool.connect();
-        let results = [];
-        const message = `Starting updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
-        console.log(message);
-        await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.STARTED, EventText: String(message) });
-        const request = new sql.Request(ProxyDbPool);
-        
-        for (let index = 0; index < postingResult.length;) {
-            const element = postingResult[index];
-            let query = "";
-            let updatedQuery = {}
-            if (element.Error) {
-                query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
-                         SET Error = 1, ErrorText = '${sanitizeInput(element.ErrorTxt)}'
-                         WHERE HcmWorker_PersonnelNumber = '${sanitizeInput(element.HcmWorker_PersonnelNumber)}' 
-                         AND TransDate = '${element.TransDate.slice(0, 10)} 00:00:00.000'
-                         AND projId = '${sanitizeInput(element.ProjId)}'`;
-                updatedQuery = {...element, SyncCompleted: 0}
-            } else {
-                query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
-                         SET SyncCompleted = 1 
-                         WHERE HcmWorker_PersonnelNumber = '${sanitizeInput(element.HcmWorker_PersonnelNumber)}'
-                         AND TransDate = '${element.TransDate.slice(0, 10)} 00:00:00.000'
-                         AND projId = '${sanitizeInput(element.ProjId)}'`;
-                updatedQuery = {...element, SyncCompleted: 1}
-            }
-            try {
-                let db_response = await request.query(query);
-                if(db_response?.rowsAffected[0]){
-                    results.push(updatedQuery);
-                    index++;
-                }
-            } catch (error) {
-                let message = `Error in updating status for HcmWorker_PersonnelNumber: ${element.HcmWorker_PersonnelNumber} and Message: ${error.message}`;
-                console.log(message);
-            }
-           
-        }
-
-        if(results){
-            const completionMessage = `Completed updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
-            console.log(completionMessage);
-            await MiddlewareHistoryLogger({ EventType: EventType.INFORMATION, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.COMPLETED, EventText: String(completionMessage) });
-            return { data: results, error: "", status: "ok" };
-        }
-    
-    } catch (error) {
-        const connectionErrorMessage = `Error connecting to the database in updateERPTransactionStatus function: ${error}`;
-        console.log(connectionErrorMessage);
-        await MiddlewareHistoryLogger({ EventType: EventType.ERROR, EventCategory: EventCategory.SYSTEM, EventStatus: EventStatus.FAILED, EventText: String(connectionErrorMessage) });
-        return { data: "", error: error, status: "not ok" };
-    }
-    
-}
-
-
-
-// async function updateERPTransactionStatus(pendingD365ResponseArray) {
-//     try {
-//         await ProxyDbPool.connect();
-//         const request = new sql.Request(ProxyDbPool);
-//         try {
-//             let results =[];
-//             let message = `Starting updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
-//             console.log(message)
-//             await MiddlewareHistoryLogger({EventType:EventType.INFORMATION,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.STARTED,EventText:String(message)});
-//             for (let index = pendingD365ResponseArray.length; index > 0; ) {
-//                 const element = pendingD365ResponseArray[index-1]
-//                 let query = "";
-//                 if (element.Error) {
-//                     query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
-//                             SET Error = 1, ErrorText = '${element.ErrorTxt}' 
-//                             WHERE HcmWorker_PersonnelNumber = '${sanitizeInput(element.HcmWorker_PersonnelNumber)}' 
-//                             AND TransDate = '${element.TransDate.slice(0, 10)} 00:00:00.000'
-//                             AND projId = '${sanitizeInput(element.ProjId)}'`;
-//                 } else {
-//                     query = `UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
-//                             SET SyncCompleted = 1 
-//                             WHERE HcmWorker_PersonnelNumber = '${sanitizeInput(element.HcmWorker_PersonnelNumber)}'
-//                             AND TransDate = '${element.TransDate.slice(0, 10)} 00:00:00.000'
-//                             AND projId = '${sanitizeInput(element.ProjId)}'`;
-//                 }
-//                 try {
-//                     const result = await request.query(query);
-//                     if (result?.rowsAffected[0]) {
-//                         console.log({ ...element, SyncCompleted: 1 })
-//                         results.push({ ...element, SyncCompleted: 1 });
-//                         pendingD365ResponseArray.pop();
-//                         index--;
-//                     } else {
-//                         results.push(element);
-//                     }
-//                 } catch (error) {
-//                     let message = `Error in updating status for HcmWorker_PersonnelNumber: ${element.HcmWorker_PersonnelNumber} and Message: ${error.message}`;
-//                     console.log(message);
-//                     await MiddlewareHistoryLogger({EventType:EventType.INFORMATION,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.COMPLETED,EventText:String(message)});
-//                     setTimeout(()=>{},2000)
-//                 }
-//             }
-//             if(results){
-//                 let message = `Completed updating [TNA_PROXY].[dbo].[Px_ERPTransactionMst] with D365_response in updateERPTransactionStatus function`;
-//                 console.log(message)
-//                 await MiddlewareHistoryLogger({EventType:EventType.INFORMATION,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.COMPLETED,EventText:String(message)});
-//             }
-//             return {data:results, error:"", status:"ok"}
-//         } catch (error) {
-//             let message =`Error in updateERPTransactionStatus function : ${error}`;
-//             console.log(message)
-//             await MiddlewareHistoryLogger({EventType:EventType.ERROR,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.FAILED,EventText:String(message)})
-//             return {data:"", error, status:"not ok"}
-//         }
-//     } catch (error) {
-//         let message =`Error connecting to the database in updateERPTransactionStatus function : ${error}`;
-//         console.log(message)
-//         await MiddlewareHistoryLogger({EventType:EventType.ERROR,EventCategory:EventCategory.SYSTEM,EventStatus:EventStatus.FAILED,EventText:String(message)})
-//         return {data:"", error, status:"not ok"}
-//     }
-
-// }
-
- function sanitizeInput(input) {
-    if(!input){
-        return input;
-    }
-    // Use a regular expression to remove characters other than a-zA-Z0-9 and hyphen (-)
-    return input.trim().replace(/[^a-zA-Z0-9-]/g, '');
-}
-
-
-
-
-
-
-module.exports={PxERPTransactionTableBuilder, getTimesheetFromERPTransactionMstTable, updateERPTransactionStatus,updateReadForERP};
+module.exports={PxERPTransactionTableBuilder};
