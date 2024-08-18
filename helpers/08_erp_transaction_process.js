@@ -198,7 +198,7 @@ async function updateReadForERP({sendingCount,DepartmentId,UserCategoryId,FromDa
             const db_response = await request.query(`
                 UPDATE TOP (${sendingCount})
                 [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
-                SET readForERP = 1
+                SET readForERP = 1, SyncCompleted = 1
                 WHERE 
                     ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR DepartmentId = ${DepartmentId ? DepartmentId : 0}) AND
                     ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR UserCategoryId = ${UserCategoryId ? UserCategoryId : 0}) AND
