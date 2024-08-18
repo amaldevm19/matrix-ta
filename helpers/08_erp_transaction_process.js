@@ -289,7 +289,7 @@ async function updateERPTransactionStatus(postingResult) {
                 let db_response = await request.query(query);
                 if(db_response?.rowsAffected[0]){
                     results.push(updatedQuery);
-                    
+                    index++;
                 }
             } catch (error) {
                 let message = `Error in updating status for HcmWorker_PersonnelNumber: ${element.HcmWorker_PersonnelNumber} and Message: ${error.message}`;
