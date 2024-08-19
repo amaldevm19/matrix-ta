@@ -131,7 +131,8 @@ const erpTransactionPageController = {
     pushSelectedTimesheetPage:async(req, res)=>{
         try {
             await controllerLogger(req);
-            return res.render("erpTransaction/selection_page", {page_header:"Push Selected Timesheet to ERP"});
+            let selectedServer = global.d365_server;
+            return res.render("erpTransaction/selection_page", {page_header:"Push Selected Timesheet to ERP",selectedServer});
         } catch (error) {
             console.log("Error in pushSelectedTimesheetPage function : ",error);
             await controllerLogger(req,error);

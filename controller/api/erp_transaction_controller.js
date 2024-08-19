@@ -540,7 +540,7 @@ const transactionController = {
     },
     selectServer:(req,res)=>{
         try {
-            global.d365_server = req.body;
+            global.d365_server = req.body.selectedServer;
             return res.status(200).json({status:"ok",error:"", data: global.d365_server})
         } catch (error) {
             let message = (`Error in selectServer function, Message: ${error.message} `)
