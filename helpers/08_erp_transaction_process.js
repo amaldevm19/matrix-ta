@@ -283,7 +283,7 @@ async function updateERPTransactionStatus(postingResult) {
                         )
                         VALUES (
                             source.HcmWorker_PersonnelNumber, source.TransDate, source.TotalHours, source.ProjId, 1, source.ErrorText,
-                            source.SyncCompleted = CASE 
+                            CASE 
                                 WHEN source.ErrorText LIKE '%TimesheetisalreadycreatedinD365forthespecifieddateprojectandcategory%' 
                                 THEN 1 
                                 ELSE 0 
@@ -298,8 +298,7 @@ async function updateERPTransactionStatus(postingResult) {
                             '${sanitizeInput(element.HcmWorker_PersonnelNumber)}' AS HcmWorker_PersonnelNumber,
                             '${element.TransDate.slice(0, 10)}' AS TransDate,
                             '${element.TotalHours}' AS TotalHours,
-                            '${sanitizeInput(element.ProjId)}' AS ProjId,
-                            '' AS ErrorText
+                            '${sanitizeInput(element.ProjId)}' AS ProjId
                     ) AS source
                     ON (
                         target.HcmWorker_PersonnelNumber = source.HcmWorker_PersonnelNumber AND
@@ -310,14 +309,14 @@ async function updateERPTransactionStatus(postingResult) {
                         UPDATE SET 
                             target.TotalHours = source.TotalHours,
                             target.Error = 0,
-                            target.ErrorText = source.ErrorText,
+                            target.ErrorText = '',
                             target.SyncCompleted = 1
                     WHEN NOT MATCHED THEN
                         INSERT (
                             HcmWorker_PersonnelNumber, TransDate, TotalHours, projId, Error, ErrorText, SyncCompleted
                         )
                         VALUES (
-                            source.HcmWorker_PersonnelNumber, source.TransDate, source.TotalHours, source.ProjId, 0, source.ErrorText, 1
+                            source.HcmWorker_PersonnelNumber, source.TransDate, source.TotalHours, source.ProjId, 0, '', 1
                         );`;
                 updatedQuery = {...element, SyncCompleted: 1}
             }
