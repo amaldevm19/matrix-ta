@@ -55,7 +55,7 @@
                         if(response.status == 'ok'){
                             alert(`Synchronized ${response.data} items with ERP`)
                         }else{
-                            alert(`Failed to push data DepartmentId:${DepartmentId} and UserCategoryId:${UserCategoryId}`)
+                            alert(`Failed to push data DepartmentId:${DepartmentId} and UserCategoryId:${UserCategoryId}, Error: ${response.error}`)
                         }
                     }
                 },},

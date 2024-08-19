@@ -516,7 +516,7 @@ const transactionController = {
         } catch (error) {
             console.log("Error in postSelectedErpTimesheet function : ", error.message)
             await controllerLogger(req, error)
-            return res.status(200).json({status:"not ok",error, data:""})
+            return res.status(200).json({status:"not ok",error:error.message, data:""})
         }
     },
     downloadException:async(req,res)=>{
