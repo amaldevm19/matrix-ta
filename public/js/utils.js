@@ -35,6 +35,11 @@ let sendIcon = function(cell, formatterParams, onRendered){
     return `<button type=button" class="btn btn-primary" ${status?"":"disabled"}>Start ERP Sync</button>`;
 };
 
+let clearIcon = function(cell, formatterParams, onRendered){
+    let status = cell.getData().Status;
+    return `<button type=button" class="btn btn-danger" ${status?"":"disabled"}>Clear ERP Data</button>`;
+};
+
 
 function showLoadingIndicator() {
     $("#loading-indicator").fadeIn();
