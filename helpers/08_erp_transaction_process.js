@@ -112,6 +112,7 @@ function invokeUpdateTransactionTriggerSettings(data){
 async function startERPTransaction({pendingCount,DepartmentId,UserCategoryId,FromDate, ToDate}) {
     try {
         let sendingCount = pendingCount < 100 ? pendingCount : 100;
+        let initialCount = pendingCount;
         while (pendingCount > 0) {    
             try {
                 console.log(`Starting getTimesheetFromERPTransactionMstTable for ${sendingCount}`);
@@ -139,7 +140,7 @@ async function startERPTransaction({pendingCount,DepartmentId,UserCategoryId,Fro
             } 
 
         }
-        return {status:"ok",data:"",error:""};
+        return {status:"ok",data:initialCount,error:""};
     } catch (error) {
         let message=`Error in startERPTransaction function : ${error}`;
         console.log(message)
@@ -252,31 +253,63 @@ async function updateERPTransactionStatus(postingResult) {
             let updatedQuery = {}
             if (element.Error) {
                 query = `
-                    INSERT INTO [TNA_PROXY].[dbo].[Px_ERPTransactionStatusMst]
-                    (HcmWorker_PersonnelNumber,TransDate,TotalHours,projId,Error,ErrorText, SyncCompleted) 
-                    VALUES (
-                        '${sanitizeInput(element.HcmWorker_PersonnelNumber)}',
-                        '${element.TransDate.slice(0, 10)}',
-                        '${element.TotalHours}',
-                        '${sanitizeInput(element.ProjId)}',
-                        1,
-                        '${sanitizeInput(element.ErrorTxt)}',
-                        0
-                    )`;
+                    MERGE INTO [TNA_PROXY].[dbo].[Px_ERPTransactionStatusMst] AS target
+                    USING (
+                        SELECT 
+                            '${sanitizeInput(element.HcmWorker_PersonnelNumber)}' AS HcmWorker_PersonnelNumber,
+                            '${element.TransDate.slice(0, 10)}' AS TransDate,
+                            '${element.TotalHours}' AS TotalHours,
+                            '${sanitizeInput(element.ProjId)}' AS ProjId,
+                            '${sanitizeInput(element.ErrorTxt)}' AS ErrorText
+                    ) AS source
+                    ON (
+                        target.HcmWorker_PersonnelNumber = source.HcmWorker_PersonnelNumber AND
+                        target.TransDate = source.TransDate AND
+                        target.projId = source.ProjId
+                    )
+                    WHEN MATCHED THEN
+                        UPDATE SET 
+                            target.TotalHours = source.TotalHours,
+                            target.Error = 1,
+                            target.ErrorText = source.ErrorText,
+                            target.SyncCompleted = 0
+                    WHEN NOT MATCHED THEN
+                        INSERT (
+                            HcmWorker_PersonnelNumber, TransDate, TotalHours, projId, Error, ErrorText, SyncCompleted
+                        )
+                        VALUES (
+                            source.HcmWorker_PersonnelNumber, source.TransDate, source.TotalHours, source.ProjId, 1, source.ErrorText, 0
+                        );`;
                 updatedQuery = {...element, SyncCompleted: 0}
             } else {
                 query = `
-                    INSERT INTO [TNA_PROXY].[dbo].[Px_ERPTransactionStatusMst]
-                    (HcmWorker_PersonnelNumber,TransDate,TotalHours,projId,Error,ErrorText, SyncCompleted) 
-                    VALUES (
-                        '${sanitizeInput(element.HcmWorker_PersonnelNumber)}',
-                        '${element.TransDate.slice(0, 10)}',
-                        '${element.TotalHours}',
-                        '${sanitizeInput(element.ProjId)}',
-                        0,
-                        '',
-                        1
-                    )`;
+                     MERGE INTO [TNA_PROXY].[dbo].[Px_ERPTransactionStatusMst] AS target
+                    USING (
+                        SELECT 
+                            '${sanitizeInput(element.HcmWorker_PersonnelNumber)}' AS HcmWorker_PersonnelNumber,
+                            '${element.TransDate.slice(0, 10)}' AS TransDate,
+                            '${element.TotalHours}' AS TotalHours,
+                            '${sanitizeInput(element.ProjId)}' AS ProjId,
+                            '' AS ErrorText
+                    ) AS source
+                    ON (
+                        target.HcmWorker_PersonnelNumber = source.HcmWorker_PersonnelNumber AND
+                        target.TransDate = source.TransDate AND
+                        target.projId = source.ProjId
+                    )
+                    WHEN MATCHED THEN
+                        UPDATE SET 
+                            target.TotalHours = source.TotalHours,
+                            target.Error = 0,
+                            target.ErrorText = source.ErrorText,
+                            target.SyncCompleted = 1
+                    WHEN NOT MATCHED THEN
+                        INSERT (
+                            HcmWorker_PersonnelNumber, TransDate, TotalHours, projId, Error, ErrorText, SyncCompleted
+                        )
+                        VALUES (
+                            source.HcmWorker_PersonnelNumber, source.TransDate, source.TotalHours, source.ProjId, 0, source.ErrorText, 1
+                        );`;
                 updatedQuery = {...element, SyncCompleted: 1}
             }
             results.push(updatedQuery);

@@ -53,7 +53,9 @@
                     if(response){
                         hideLoadingIndicator();
                         if(response.status == 'ok'){
-                            alert(`Synchronized ${response.data.length} items with ERP`)
+                            alert(`Synchronized ${response.data} items with ERP`)
+                        }else{
+                            alert(`Failed to push data DepartmentId:${DepartmentId} and UserCategoryId:${UserCategoryId}`)
                         }
                     }
                 },},
