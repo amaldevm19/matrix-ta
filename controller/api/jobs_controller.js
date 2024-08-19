@@ -655,6 +655,33 @@ const jobsController = {
             return res.status(200).json({status:"failed",error:error.message});
         }
     },
+    /* GET Download existing Job Hours assignment*/
+    downloadExistingJobList:async(req,res)=>{
+        try {
+            let db = req.app.locals.db;
+            let {
+                updatedBy,
+                jobCode,
+                departmentId,
+                projectType
+            } = req.query;
+
+            let {existingJobList,error} = await jobsHelper.getExistingJobListFromTnaproxy(db,updatedBy,jobCode, departmentId,projectType);
+            
+            if(error){
+                throw new Error(`Error in getExistingJobListFromTnaproxy function, message is : ${error.message}`)
+            }
+            
+            if(existingJobList){
+                return res.status(200).json({status:"OK", data:existingJobList.recordset})
+            }
+            
+        } catch (error) {
+            console.error(`Error in downloadExistingJobList function, message is : ${error.message}`)
+            return res.status(200).json({status:"failed", data:"",error:error.message})
+        }
+
+    },
 }
 
 module.exports = jobsController

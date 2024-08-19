@@ -73,8 +73,13 @@ const jobsController = {
     },
     JobsListPage:async(req, res)=>{
         try {
+            let db = req.app.locals.db;
+            let Department = await db.query(`
+                SELECT DPTID, Name
+                FROM [COSEC].[dbo].[Mx_DepartmentMst]
+            `);
             await controllerLogger(req);
-            return res.render('jobs/jobsListPage',{page_header:"Edit Maximum Allowed Job Hours Per Day"})
+            return res.render('jobs/jobsListPage',{page_header:"Edit Maximum Allowed Job Hours Per Day",Department:Department.recordset})
         } catch (error) {
             console.log("Error in JobsListPage function : ", error);
             await controllerLogger(req, error);
