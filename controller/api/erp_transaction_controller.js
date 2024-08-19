@@ -487,9 +487,9 @@ const transactionController = {
     },
     postSelectedErpTimesheet:async(req,res)=>{
         try {
-            let {Id,DepartmentId, UserCategoryId, FromDate, ToDate,UpdatedBy} = req.body;
+            let {Id,DepartmentId, UserCategoryId, FromDate, ToDate} = req.body;
             if(!DepartmentId || !UserCategoryId || !FromDate || !ToDate){
-                return res.status(200).json({status:"not ok",error:"Required data missing", data:""});
+                throw new Error("Required data missing");
             }
             let pendingCountObj = await checkPendingCount({
                 DepartmentId,
@@ -498,20 +498,20 @@ const transactionController = {
                 ToDate,
               });
               if(pendingCountObj.error){
-                return res.status(200).json({status:"not ok",error:"Required data missing", data:""});
+                throw new Error("Could not retrieve Pending count in postSelectedErpTimesheet function ");
               }
             // console.log(Id, DepartmentId, UserCategoryId, FromDate, ToDate,UpdatedBy);
             if(pendingCountObj.pendingCount){
-                let {status,error,data} = await startERPTransaction({pendingCount:pendingCountObj.pendingCount,FromDate,ToDate,DepartmentId,UserCategoryId})
+                let {status,error,data} = await startERPTransaction({pendingCount:pendingCountObj.pendingCount,DepartmentId,UserCategoryId,FromDate,ToDate})
                 if(status == "ok"){
                     await controllerLogger(req)
                     return res.status(200).json({status,error, data})
                 }
-                return res.status(200).json({status:"not ok",error, data:""});
+                throw new Error(error);
+                
             }else{
-                return res.status(200).json({status:"not ok",error, data:""});
+                throw new Error(`No pending erp data for this Department ID: ${DepartmentId} and User Category ID: ${UserCategoryId}`);
             }
-           
            
         } catch (error) {
             console.log("Error in postSelectedErpTimesheet function : ", error.message)

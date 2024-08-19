@@ -377,4 +377,4 @@ dbEventEmitter.on('updateTransactionTriggerSettings_unlock',()=>{
     }
 })
 
-module.exports = {erp_transaction_process};
+module.exports = {erp_transaction_process, checkPendingCount, startERPTransaction};
