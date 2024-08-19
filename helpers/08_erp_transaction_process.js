@@ -272,18 +272,27 @@ async function updateERPTransactionStatus(postingResult) {
                             target.TotalHours = source.TotalHours,
                             target.Error = 1,
                             target.ErrorText = source.ErrorText,
-                            target.SyncCompleted = 0
+                            target.SyncCompleted = CASE 
+                                WHEN source.ErrorText LIKE '%TimesheetisalreadycreatedinD365forthespecifieddateprojectandcategory%' 
+                                THEN 1 
+                                ELSE 0 
+                            END
                     WHEN NOT MATCHED THEN
                         INSERT (
                             HcmWorker_PersonnelNumber, TransDate, TotalHours, projId, Error, ErrorText, SyncCompleted
                         )
                         VALUES (
-                            source.HcmWorker_PersonnelNumber, source.TransDate, source.TotalHours, source.ProjId, 1, source.ErrorText, 0
+                            source.HcmWorker_PersonnelNumber, source.TransDate, source.TotalHours, source.ProjId, 1, source.ErrorText,
+                            source.SyncCompleted = CASE 
+                                WHEN source.ErrorText LIKE '%TimesheetisalreadycreatedinD365forthespecifieddateprojectandcategory%' 
+                                THEN 1 
+                                ELSE 0 
+                            END
                         );`;
                 updatedQuery = {...element, SyncCompleted: 0}
             } else {
                 query = `
-                     MERGE INTO [TNA_PROXY].[dbo].[Px_ERPTransactionStatusMst] AS target
+                    MERGE INTO [TNA_PROXY].[dbo].[Px_ERPTransactionStatusMst] AS target
                     USING (
                         SELECT 
                             '${sanitizeInput(element.HcmWorker_PersonnelNumber)}' AS HcmWorker_PersonnelNumber,
@@ -313,14 +322,14 @@ async function updateERPTransactionStatus(postingResult) {
                 updatedQuery = {...element, SyncCompleted: 1}
             }
             results.push(updatedQuery);
-            return atomicDbWrite(request,query);
+            return atomicDbWrite(request,query,updatedQuery);
         })
         try {
             if(promises.length > 0) await Promise.all(promises);
         } catch (error) {
             console.log(error.message)
         }finally{
-            console.log(results);
+            //console.log(results);
             const completionMessage = `Completed updating [TNA_PROXY].[dbo].[Px_ERPTransactionStatusMst] with D365_response in updateERPTransactionStatus function`;
             console.log(completionMessage);
         }
@@ -332,15 +341,16 @@ async function updateERPTransactionStatus(postingResult) {
     
 }
 
-async function atomicDbWrite(request,query){
+async function atomicDbWrite(request,query,updatedQuery){
     if(check_db_lock_status(updateERPTransactionStatus_lock)) {
-        updateERPTransactionStatus_array.push({request,query});
+        updateERPTransactionStatus_array.push({request,query,updatedQuery});
         //Promise.resolve(true)
     }else{
         updateERPTransactionStatus_lock.status = true;
         try {
             let db_response = await request.query(query);
             if(db_response?.rowsAffected[0]){
+                console.log(updatedQuery);
                 dbEventEmitter.emit("updateERPTransactionStatus_unlock")
             }
         } catch (error) {
@@ -393,8 +403,8 @@ const check_db_lock_status = function(dblock){
 dbEventEmitter.on('updateERPTransactionStatus_unlock',async ()=>{
     updateERPTransactionStatus_lock.status = false;
     if(updateERPTransactionStatus_array.length > 0){
-        let {request,query} = updateERPTransactionStatus_array.shift()
-        await atomicDbWrite(request,query);
+        let {request,query,updatedQuery} = updateERPTransactionStatus_array.shift()
+        await atomicDbWrite(request,query,updatedQuery);
     }else{
         console.log(`Done All updateERPTransactionStatus(postingResult.data) pending jobs`)
     }

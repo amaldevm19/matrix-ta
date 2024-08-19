@@ -8,8 +8,8 @@ async function erpTransactionScheduler() {
   try {
     let erpTransSchedule = cron.schedule(process.env.ERP_TRANSACTION_CRON_STRING,async function () {
       try {
-        let message = `Starting ERP Synchronization`
-        console.log(message)
+        //let message = `Starting ERP Synchronization`
+        //console.log(message)
         await ProxyDbPool.connect();
         const request = new sql.Request(ProxyDbPool);
         let db_response = await request.query(`
