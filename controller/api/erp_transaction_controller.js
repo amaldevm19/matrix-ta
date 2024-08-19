@@ -538,6 +538,17 @@ const transactionController = {
             return res.status(200).json({status:"not ok",error:message, data:""})
         }
     },
+    selectServer:(req,res)=>{
+        try {
+            global.d365_server = req.body;
+            return res.status(200).json({status:"ok",error:"", data: global.d365_server})
+        } catch (error) {
+            let message = (`Error in selectServer function, Message: ${error.message} `)
+            console.log(message)
+            return res.status(200).json({status:"not ok",error:message, data:""})
+        }
+       
+    },
     downloadException:async(req,res)=>{
         try {
             await ProxyDbPool.connect();

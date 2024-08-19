@@ -6,7 +6,21 @@ async function postTransactionToERP(transactionData) {
     try {
         let accessToken = await getAccessToken();
         console.log("Called postTransactionToERP")
-        const response = await fetch(process.env.D365_ENDPOINT,
+        let d365_end_point;
+        switch (global.d365_server) {
+            case "dev":
+                d365_end_point = process.env.D365_DEV_ENDPOINT
+                break;
+            case "uat":
+                d365_end_point = process.env.D365_UAT_ENDPOINT
+                break;
+            case "prod":
+                d365_end_point = process.env.D365_PROD_ENDPOINT
+                break;
+            default:
+                break;
+        }
+        const response = await fetch(d365_end_point,
             {
                 method: "POST",
                 headers: {

@@ -147,4 +147,6 @@ console.log( "Current DateTime: ",new Date().toLocaleString())
 
 ScheduleCreator();
 
+global.d365_server = "prod"
+
 module.exports = app;

@@ -1,11 +1,21 @@
 
 async function getAccessToken(params) {
-    const tokenEndpoint = process.env.TOKEN_ENDPOINT;
-    const clientId = process.env.CLIENT_ID;
-    const clientSecret = process.env.CLIENT_SECRET;
-    const resourceUrl = process.env.RESOURCE_URL;
+    let d365_resource_url;
+    switch (global.d365_server) {
+        case "dev":
+            d365_resource_url = process.env.DEV_RESOURCE_URL
+            break;
+        case "uat":
+            d365_resource_url = process.env.UAT_RESOURCE_URL
+            break;
+        case "prod":
+            d365_resource_url = process.env.PROD_RESOURCE_URL
+            break;
+        default:
+            break;
+    }
     try {
-        const response = await fetch(tokenEndpoint,
+        const response = await fetch(process.env.TOKEN_ENDPOINT,
             {
                 method: "POST",
                 headers: {
@@ -13,9 +23,9 @@ async function getAccessToken(params) {
                     },
                 body:new URLSearchParams({
                     grant_type:'client_credentials',
-                    client_id: clientId,
-                    client_secret: clientSecret,
-                    resource: resourceUrl
+                    client_id: process.env.CLIENT_ID,
+                    client_secret: process.env.CLIENT_SECRET,
+                    resource: d365_resource_url
                 })
             }
         )

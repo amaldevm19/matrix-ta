@@ -1,4 +1,20 @@
 
+<div class="row justify-content-start">
+    <div class="col-md-6 ml-auto">
+       <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="serverSelection" id="inlineRadio1" value="dev">
+            <label class="form-check-label" for="inlineRadio1">Dev Server</label>
+            </div>
+            <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="serverSelection" id="inlineRadio2" value="uat">
+            <label class="form-check-label" for="inlineRadio2">UAT Server</label>
+            </div>
+            <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="serverSelection" id="inlineRadio3" value="prod" >
+            <label class="form-check-label" for="inlineRadio3">Production Server</label>
+        </div>
+    </div>
+</div>
 <div id="loading-indicator">
   <div class="spinner-border text-primary" role="status">
     <span class="sr-only"></span>
@@ -90,6 +106,22 @@
         flatpickr("#trigger_date", {enableTime: true, dateFormat: "Y-m-d H:i",});
         flatpickr("#from_date", {dateFormat: "Y-m-d"});
         flatpickr("#to_date", {dateFormat: "Y-m-d"});
+
+
+         $('input[name="serverSelection"]').on('change', function() {
+            const selectedServer = $(this).val();
+            showLoadingIndicator();
+            let response = await fetchHandler(`/api/erp-transaction/server-selected`,selectedServer,"POST")
+            if(response){
+                hideLoadingIndicator();
+                if(response.status == 'ok'){
+                    alert(`Changed Server to ${response.data}`)
+                }else{
+                    alert(`Failed to change Server to ${selectedServer} Error: ${response.error}`)
+                }
+            }
+            
+        });
 
     })
     
