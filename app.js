@@ -21,7 +21,7 @@ const session = require('express-session');
 const timeout = require('connect-timeout')
 
 
-
+const helpers = require('handlebars-helpers')();
 
 
 // Project specifc modules
