@@ -354,7 +354,7 @@ async function atomicDbWrite(request,query,updatedQuery){
                 dbEventEmitter.emit("updateERPTransactionStatus_unlock")
             }
         } catch (error) {
-            let message = `Error in updating status for HcmWorker_PersonnelNumber: ${element.HcmWorker_PersonnelNumber} and Message: ${error.message}`;
+            let message = `Error in updating status for HcmWorker_PersonnelNumber: ${updatedQuery.HcmWorker_PersonnelNumber} and Message: ${error.message}`;
             console.log(message);
         }
        
