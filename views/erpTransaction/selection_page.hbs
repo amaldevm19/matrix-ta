@@ -59,6 +59,22 @@
                         }
                     }
                 },},
+                 {title:"Clear Data",formatter:sendIcon, hozAlign:"center", cellClick:async function(e, cell){
+                    let {DepartmentId, UserCategoryId, FromDate, ToDate, Status} = cell.getData();
+                    if(!Status){
+                        return
+                    }
+                    showLoadingIndicator();
+                    let response = await fetchHandler(`/api/erp-transaction/clear-selected`,{DepartmentId, UserCategoryId, FromDate, ToDate},"POST")
+                    if(response){
+                        hideLoadingIndicator();
+                        if(response.status == 'ok'){
+                            alert(`Reverted ${response.data} items for ERP`)
+                        }else{
+                            alert(`Failed to revert data for DepartmentId:${DepartmentId} and UserCategoryId:${UserCategoryId}, Error: ${response.error}`)
+                        }
+                    }
+                },},
                 {title:"Created By", field:"CreatedBy",hozAlign:"center",resizable:true},
                 {title:"Created At", field:"CreatedAt",hozAlign:"center",resizable:true,mutator:function(value, data){
                     return value.split("T")[0];

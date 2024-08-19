@@ -12,6 +12,7 @@ router.get("/copy-timesheet", transactionController.copyTimesheetToErpTable)
 router.get("/download-erptimesheet", transactionController.downloadERPTimesheet)
 router.get("/download-exception", transactionController.downloadException)
 router.post("/post-selected", transactionController.postSelectedErpTimesheet)
+router.post("/clear-selected", transactionController.clearSelectedErpTimesheet)
 
 router.post("/settings", transactionController.postErpSettings)
 router.put("/settings/:Id", transactionController.updateErpSettings)

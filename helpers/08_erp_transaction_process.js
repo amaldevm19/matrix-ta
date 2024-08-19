@@ -419,4 +419,26 @@ dbEventEmitter.on('updateTransactionTriggerSettings_unlock',()=>{
     }
 })
 
-module.exports = {erp_transaction_process, checkPendingCount, startERPTransaction};
+async function revertERPData({DepartmentId,UserCategoryId,FromDate,ToDate}){
+    try {
+        await ProxyDbPool.connect();
+        const request = new sql.Request(ProxyDbPool);
+        let db_response =await request.query( `
+            UPDATE [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
+            SET readForERP=0, SyncCompleted=0, Error=0, ErrorText=NULL
+            WHERE DepartmentId = '${DepartmentId}' AND UserCategoryId = '${UserCategoryId}' AND TransDate BETWEEN '${FromDate}' AND '${ToDate}'
+        `);
+        if(db_response.rowsAffected[0] > 0){
+            return {status:"ok",data:db_response.rowsAffected[0],error:""};
+        }else{
+            throw new Error(`Failed to revert DepartmentId = '${DepartmentId}' AND UserCategoryId = '${UserCategoryId}' AND TransDate BETWEEN '${FromDate}' AND '${ToDate}'`);
+        }
+    } catch (error) {
+        let message = `Error in revertERPData function, Message: ${error.message}`
+        console.log(message)
+        return {status:"not ok",data:"",error};
+    }
+    
+}
+
+module.exports = {erp_transaction_process, checkPendingCount, startERPTransaction, revertERPData};

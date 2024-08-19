@@ -1,5 +1,5 @@
 const {sql,ProxyDbPool} = require('../../config/db');
-const {startERPTransaction,checkPendingCount} = require('../../helpers/08_erp_transaction_process');
+const {startERPTransaction,checkPendingCount,revertERPData} = require('../../helpers/08_erp_transaction_process');
 const {controllerLogger} = require("../../helpers/19_middleware_history_logger");
 const {PxERPTransactionTableBuilder} = require("../../helpers/04_erp_transaction_copier");
 let {PxERPTransactionTableBuilderScheduler,PxERPTransactionTableBuilderScheduleHandleArray} = require("../../helpers/03_erp_transaction_table_scheduler");
@@ -496,7 +496,7 @@ const transactionController = {
                 UserCategoryId,
                 FromDate,
                 ToDate,
-              });
+            });
               if(pendingCountObj.error){
                 throw new Error("Could not retrieve Pending count in postSelectedErpTimesheet function ");
               }
@@ -517,6 +517,25 @@ const transactionController = {
             console.log("Error in postSelectedErpTimesheet function : ", error.message)
             await controllerLogger(req, error)
             return res.status(200).json({status:"not ok",error:error.message, data:""})
+        }
+    },
+    clearSelectedErpTimesheet:async(req, res)=>{
+        try {
+            let {DepartmentId, UserCategoryId, FromDate, ToDate} = req.body;
+            if(!DepartmentId || !UserCategoryId || !FromDate || !ToDate){
+                throw new Error("DepartmentId, UserCategoryId, FromDate, ToDate, data is missing");
+            }
+            let {status,data,error} = await revertERPData({DepartmentId, UserCategoryId, FromDate, ToDate});
+            if(status == "ok"){
+                return res.status(200).json({status, data,error})
+            }else{
+                throw new Error(error);
+            }
+
+        } catch (error) {
+            let message = (`Error in clearSelectedErpTimesheet function, Message: ${error.message} `)
+            console.log(message)
+            return res.status(200).json({status:"not ok",error:message, data:""})
         }
     },
     downloadException:async(req,res)=>{
