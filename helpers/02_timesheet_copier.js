@@ -40,7 +40,7 @@ async function copyTimesheetFromCosecToProxyDbFunction( {fromDate, toDate}) {
             CROSS JOIN (
                 SELECT UserID, Name, BRCID, DPTID, CG1ID, CTGID,DSGID,SECID,CG3ID
                 FROM [COSEC].[dbo].[Mx_UserMst]
-                WHERE BRCID = '1' AND UserIDEnbl = '1' 
+                WHERE (BRCID = '1' OR BRCID = '5' OR BRCID = '8') AND UserIDEnbl = '1' 
             ) AS MxUser
             LEFT JOIN
                 [COSEC].[dbo].[Mx_JPCTimeSheet] JTS ON DateRangeCTE.PDate = JTS.PDate AND MxUser.UserID = JTS.UserID
