@@ -8,6 +8,9 @@ const bioTimesheetController ={
             await ProxyDbPool.connect();
             const transaction = new sql.Transaction(ProxyDbPool);
             try {
+                let EmployeeBranch = req.session.user.Branch;
+                let IsAdmin = req.session.user.IsAdmin;
+                let EmployeeDepartment = req.session.user.Department
                 let {page,size, EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId} = req.query;
                 let firstRow = ((page-1) * size)+1
                 let lastRow = page * size;
@@ -34,7 +37,8 @@ const bioTimesheetController ={
                         ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId?EmployeeCategoryId:0}) AND
                         ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
                         ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
-                        (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}')
+                        (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}') AND 
+                        ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
                 ) AS Subquery
                 JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
                 JOIN [COSEC].[dbo].[Mx_CustomGroup1Mst] AS CustomGroup1Mst ON Subquery.UserCategoryId = CustomGroup1Mst.CG1ID
@@ -57,7 +61,8 @@ const bioTimesheetController ={
                     ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId?EmployeeCategoryId:0}) AND
                     ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
                     ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
-                    (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}')
+                    (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}') AND
+                    ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
                 `)
                 await transaction.commit();
                 let last_page = Math.ceil(totalCount.recordset[0].TotalRowCount / size);
@@ -106,6 +111,8 @@ const bioTimesheetController ={
             await ProxyDbPool.connect();
             try {
                 const request = new sql.Request(ProxyDbPool);
+                let EmployeeBranch = req.session.user.Branch;
+                let IsAdmin = req.session.user.IsAdmin;
                 let {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId} = req.query;
                 let response = await request.query(`
                 SELECT 
@@ -128,7 +135,8 @@ const bioTimesheetController ={
                         ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId?EmployeeCategoryId:0}) AND
                         ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
                         ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
-                        (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}')
+                        (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}') AND
+                        ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
                 ) AS Subquery
                 JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
                 JOIN [COSEC].[dbo].[Mx_CustomGroup1Mst] AS CustomGroup1Mst ON Subquery.UserCategoryId = CustomGroup1Mst.CG1ID
@@ -152,6 +160,8 @@ const bioTimesheetController ={
     bioTimesheetReportHorizontalPageData:async(req, res)=>{
             try {
                 let db = req.app.locals.db;
+                let EmployeeBranch = req.session.user.Branch;
+                let IsAdmin = req.session.user.IsAdmin;
                 let {page,size, EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId} = req.query;
                 let firstRow = ((page-1) * size)+1
                 let lastRow = page * size;
@@ -169,7 +179,8 @@ const bioTimesheetController ={
                             ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId ? EmployeeCategoryId : 0}) AND
                             ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId ? DesignationId : 0}) AND
                             ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId ? SectionId : 0}) AND
-                            (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}')
+                            (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}') AND 
+                            ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
                     )
                     SELECT 
                         OrderedSubquery.*,
@@ -201,7 +212,8 @@ const bioTimesheetController ={
                     ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId?EmployeeCategoryId:0}) AND
                     ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
                     ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
-                    (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}')
+                    (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}') AND
+                    ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
                 `)
                 let last_page = Math.ceil(totalCount.recordset[0].TotalRowCount / size);
                 await controllerLogger(req);
@@ -292,6 +304,8 @@ const bioTimesheetController ={
     downloadHorizontalTimesheetData: async (req, res)=>{
         try {
             let db = req.app.locals.db;
+            let EmployeeBranch = req.session.user.Branch;
+            let IsAdmin = req.session.user.IsAdmin;
             let {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId} = req.query;
             let result = await db.query(`
                 SELECT 
@@ -314,7 +328,9 @@ const bioTimesheetController ={
                         ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId?EmployeeCategoryId:0}) AND
                         ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
                         ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
-                        (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}')
+                        (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}') AND
+                        ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
+
                 ) AS Subquery
                 JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
                 JOIN [COSEC].[dbo].[Mx_CustomGroup1Mst] AS CustomGroup1Mst ON Subquery.UserCategoryId = CustomGroup1Mst.CG1ID
@@ -411,6 +427,8 @@ const bioTimesheetController ={
     getBioTimesheetComparePageData:async (req, res)=>{
         try {
             let db = req.app.locals.db;
+            let EmployeeBranch = req.session.user.Branch;
+            let IsAdmin = req.session.user.IsAdmin;
             let {page,size, EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId} = req.query;
             // console.log(page,size, EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId)
             let firstRow = ((page-1) * size)+1
@@ -438,7 +456,9 @@ const bioTimesheetController ={
                     ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId?EmployeeCategoryId:0}) AND
                     ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
                     ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
-                    (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}')
+                    (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}') AND
+                    ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
+
             ) AS Subquery
             JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
             JOIN [COSEC].[dbo].[Mx_CustomGroup1Mst] AS CustomGroup1Mst ON Subquery.UserCategoryId = CustomGroup1Mst.CG1ID
@@ -467,7 +487,8 @@ const bioTimesheetController ={
                 ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId?EmployeeCategoryId:0}) AND
                 ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
                 ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
-                (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}')
+                (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}') AND
+                ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
             `)
             let last_page = Math.ceil(totalCount.recordset[0].TotalRowCount / size);
             await controllerLogger(req)
@@ -482,6 +503,8 @@ const bioTimesheetController ={
     downloadBioTimesheetCompareData:async(req,res)=>{
         try {
             let db = req.app.locals.db;
+            let EmployeeBranch = req.session.user.Branch;
+            let IsAdmin = req.session.user.IsAdmin;
             let {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId} = req.query;
             // console.log(page,size, EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId)
             let result = await db.query(`
@@ -507,7 +530,8 @@ const bioTimesheetController ={
                     ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId?EmployeeCategoryId:0}) AND
                     ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
                     ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
-                    (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}')
+                    (('${FromDate}'='' AND '${ToDate}'='') OR PDate BETWEEN '${FromDate}' AND '${ToDate}') AND
+                    ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
             ) AS Subquery
             JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
             JOIN [COSEC].[dbo].[Mx_CustomGroup1Mst] AS CustomGroup1Mst ON Subquery.UserCategoryId = CustomGroup1Mst.CG1ID

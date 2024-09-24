@@ -7,7 +7,7 @@
             <div class="mb-md-5 mt-md-4 pb-3">
               <h2 class="fw-bold mb-2 text-uppercase">Signup</h2>
               <div class="form-outline form-white mb-4">
-                <input type="text" id="typeName" class="form-control form-control-lg" placeholder="Employee Name" />
+                <input type="text" id="employeeName" class="form-control form-control-lg" placeholder="Employee Name" />
               </div>
               <div class="form-outline form-white mb-4">
                 <input type="text" id="empId" class="form-control form-control-lg" placeholder="Employee Id"  />
@@ -15,8 +15,16 @@
               <div class="form-outline form-white mb-4">
                 <input type="email" id="email" class="form-control form-control-lg" placeholder="Employee Email"  />
               </div>
+              <div class="form-outline form-white mb-4"></div>
+                <select class="form-select" id="branch_id" name="Branch">
+                    <option selected value="">Select Branch</option>
+                    {{#each Branch}}
+                    <option value="{{this.BRCID}}">{{this.Name}}</option>
+                    {{/each}}
+                </select>
+              </div>
               <div class="form-outline form-white mb-4">
-                <select class="form-select" id="department_id" name="Section">
+                <select class="form-select" id="department_id" name="Department">
                     <option selected value="">Select Department</option>
                     {{#each Department}}
                     <option value="{{this.DPTID}}">{{this.Name}}</option>
@@ -51,10 +59,10 @@
             let password = $("#pass").val();
             let confPassword = $("#confPass").val();
             let departmentId = $("#department_id").val();
+            let branchId = $("#branch_id").val();
 
-
-            if(!employeeID || !password || !employeeEmail || !departmentId){
-                return alert("Please enter valid Employee id and password")
+            if(!employeeID || !password || !employeeEmail || !departmentId || !branchId){
+                return alert("Please enter valid Employee id, Branch, Department and Password")
             }
             if(password != confPassword ){
               return alert("Password and Repeat password do not match")
@@ -63,6 +71,7 @@
                 employeeID,
                 employeeEmail,
                 departmentId,
+                branchId,
                 password
             };
 

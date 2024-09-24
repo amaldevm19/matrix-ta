@@ -20,8 +20,16 @@ const jobsController = {
         try {
             let {jsonData,CreatedBy,DepartmentId} = req.body;
             let jobAssignmentResponse = [];
+            let EmployeeId = req.session.user.EmployeeId;
+            let first3CharOfEmployee = EmployeeId.substring(0, 3);
             for (let index = 0; index < jsonData?.length; index++) {
                 const {FromDate, ToDate, JobCode, UserID} = jsonData[index];
+                let first3CharOfUser = UserID.substring(0, 3);
+                if(first3CharOfEmployee != first3CharOfUser){
+                    let data = {FromDate, ToDate, JobCode, UserID,Status:"Failed",Message:`Employee deosn't belongs to your Branch`};
+                    jobAssignmentResponse.push(data);
+                    continue;
+                }
                 let response = await jobsHelper.assignJobsToEmployees({FromDate, ToDate, JobCode, UserID,db});
                 jobAssignmentResponse.push(response)
                 await db.query(`
@@ -153,6 +161,8 @@ const jobsController = {
     addAttendanceCorrection:async(req,res)=>{
         try {
             let db = req.app.locals.db;
+            let EmployeeId = req.session.user.EmployeeId;
+            let first3CharOfEmployee = EmployeeId.substring(0, 3);
             let {jsonData,CreatedBy, DepartmentId} = req.body;
             let attendanceResponse =[];
             let attendanceError = false;
@@ -162,6 +172,13 @@ const jobsController = {
                 let outTime = null;
                 let inHour = parseInt(jsonData[i].InTime.substr(0, 2))
                 let outHour = parseInt(jsonData[i].OutTime.substr(0, 2))
+                let first3CharOfUser = userID.substring(0, 3);
+                if(first3CharOfEmployee != first3CharOfUser){
+                    attendanceError = true;
+                    let data = {Index:i+1,UserID:userID,AttendanceDate:jsonData[i].AttendanceDate,InTime:jsonData[i].InTime,OutTime:jsonData[i].OutTime, Status:"failed", Message:`Employee deosn't belongs to your Branch`,CreatedBy, DepartmentId}
+                    attendanceResponse.push(data);
+                    continue;
+                }
                 if(inHour > outHour){
                     let dateString = jsonData[i].AttendanceDate.replaceAll("/","");
                     let day = parseInt(dateString.substr(0, 2));

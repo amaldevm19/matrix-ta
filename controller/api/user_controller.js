@@ -1,5 +1,7 @@
 const bcrypt = require('bcryptjs');
+const Joi = require('joi');
 const {controllerLogger} = require("../../helpers/19_middleware_history_logger");
+
 
 const userApiController = {
     loginFunction: async (req, res) => {
@@ -11,7 +13,7 @@ const userApiController = {
         }
         try {
             const result = await db.query(
-                `SELECT EmployeeId, Email, Department, Password, IsValid,IsCoordinator, IsAdmin, IsSuperAdmin FROM [TNA_PROXY].[dbo].[Px_Users] WHERE EmployeeId = '${employeeID}'`
+                `SELECT EmployeeId, Email, Department,Branch, Password, IsValid,IsCoordinator, IsAdmin, IsSuperAdmin FROM [TNA_PROXY].[dbo].[Px_Users] WHERE EmployeeId = '${employeeID}'`
             );
           
             if (result.recordset.length === 0) {
@@ -41,12 +43,35 @@ const userApiController = {
         
     },
     signupFunction: async (req, res) => {
-        const {employeeID,employeeEmail, password, departmentId} = req.body;
-        if(!employeeID || !password || !employeeEmail || !departmentId){
-            throw ({message:"Please provide valid EmployeeID, employeeEmail, and Password"})
-        }
-        let db = req.app.locals.db;
+        
         try {
+            const schema = Joi.object({
+                employeeID: Joi.string()
+                    .alphanum()
+                    .min(3)
+                    .max(30)
+                    .required(),
+                password: Joi.string()
+                    .alphanum()
+                    .min(3)
+                    .max(30)
+                    .required(),
+                departmentId: Joi.string().required(),
+                branchId: Joi.string().required(),
+                employeeEmail: Joi.string()
+                    .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net','ae'] } }),
+    
+            })
+            
+            const {employeeID,employeeEmail, password, departmentId, branchId} = req.body;
+            console.log(employeeID,employeeEmail, password, departmentId, branchId)
+            let {value, error} = schema.validate({employeeID,employeeEmail, password, departmentId, branchId},{});
+
+            if(error){
+                throw ({message:"Please provide valid EmployeeID, EmployeeEmail,Department, Branch and Password"})
+            }
+
+            let db = req.app.locals.db;
             let validUser = await db.query(`
             SELECT 1
                 FROM [COSEC].[dbo].[Mx_UserMst]
@@ -57,8 +82,8 @@ const userApiController = {
             }
             const hashedPassword = await bcrypt.hash(password, 10);
             let db_response = await db.query(`
-            INSERT INTO [TNA_PROXY].[dbo].[Px_Users] (EmployeeId,Email, Password, Department) 
-            VALUES ('${employeeID}','${employeeEmail}', '${hashedPassword}', '${departmentId}')
+            INSERT INTO [TNA_PROXY].[dbo].[Px_Users] (EmployeeId,Email, Password, Department, Branch) 
+            VALUES ('${employeeID}','${employeeEmail}', '${hashedPassword}', '${departmentId}', '${branchId}')
             `);
             if(db_response.rowsAffected > 0){
                 await controllerLogger(req)

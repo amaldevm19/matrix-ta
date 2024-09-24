@@ -2,8 +2,6 @@ const {sql,ProxyDbPool} = require('../../config/db');
 const {startERPTransaction,checkPendingCount,revertERPData} = require('../../helpers/08_erp_transaction_process');
 const {controllerLogger} = require("../../helpers/19_middleware_history_logger");
 const {PxERPTransactionTableBuilder} = require("../../helpers/04_erp_transaction_copier");
-let {PxERPTransactionTableBuilderScheduler,PxERPTransactionTableBuilderScheduleHandleArray} = require("../../helpers/03_erp_transaction_table_scheduler");
-let {erpTransactionScheduler,erpTransactionScheduleHandleArray} = require("../../helpers/06_erp_transaction_scheduler");
 
 const transactionController = {
     getErpPendingData:async(req,res)=>{
@@ -11,6 +9,8 @@ const transactionController = {
             await ProxyDbPool.connect();
             const transaction = new sql.Transaction(ProxyDbPool);
             try {
+                let EmployeeBranch = req.session.user.Branch;
+                let IsAdmin = req.session.user.IsAdmin;
                 let {page,size, EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,Error} = req.query;
                 let firstRow = ((page-1) * size)+1
                 let lastRow = page * size;
@@ -39,7 +39,7 @@ const transactionController = {
                         ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                         ('${Error}' IS NULL OR '${Error}'='' OR Error = ${Error?Error:0}) AND
                         (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                        SyncCompleted=0
+                        SyncCompleted=0 AND ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
 
                 ) AS Subquery
                 JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
@@ -65,7 +65,7 @@ const transactionController = {
                     ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                     ('${Error}' IS NULL OR '${Error}'='' OR Error = ${Error?Error:0}) AND
                     (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                    SyncCompleted=0
+                    SyncCompleted=0 AND ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
                 `)
                 await transaction.commit();
                 let last_page = Math.ceil(totalCount.recordset[0].TotalRowCount / size);
@@ -87,6 +87,8 @@ const transactionController = {
             await ProxyDbPool.connect();
             const transaction = new sql.Transaction(ProxyDbPool);
             try {
+                let EmployeeBranch = req.session.user.Branch;
+                let IsAdmin = req.session.user.IsAdmin;
                 let {page,size, EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId} = req.query;
                 let firstRow = ((page-1) * size)+1
                 let lastRow = page * size;
@@ -114,7 +116,7 @@ const transactionController = {
                         ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
                         ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                         (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                        SyncCompleted=1
+                        SyncCompleted=1 AND ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
 
                 ) AS Subquery
                 JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
@@ -139,7 +141,7 @@ const transactionController = {
                     ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
                     ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                     (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                    SyncCompleted=1
+                    SyncCompleted=1 AND ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
                 `)
                 await transaction.commit();
                 let last_page = Math.ceil(totalCount.recordset[0].TotalRowCount / size);
@@ -159,6 +161,8 @@ const transactionController = {
         try {
             await ProxyDbPool.connect();
             try {
+                let EmployeeBranch = req.session.user.Branch;
+                let IsAdmin = req.session.user.IsAdmin;
                 const request = new sql.Request(ProxyDbPool);
                 let {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId} = req.query;
                 let response = await request.query(`
@@ -195,7 +199,7 @@ const transactionController = {
                         ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
                         ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                         (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                        SyncCompleted=1
+                        SyncCompleted=1 AND ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
                 ) AS Subquery
                 JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
                 JOIN [COSEC].[dbo].[Mx_CustomGroup1Mst] AS CustomGroup1Mst ON Subquery.UserCategoryId = CustomGroup1Mst.CG1ID
@@ -318,14 +322,6 @@ const transactionController = {
                 `);
                 await transaction.commit();
                 if(result.rowsAffected > 0){
-                    let erpTransactionSchedulerHandle = await erpTransactionScheduler(true);
-                    let PxERPTransactionTableBuilderSchedulerHandle = await PxERPTransactionTableBuilderScheduler(true);
-                    if(erpTransactionSchedulerHandle && PxERPTransactionTableBuilderSchedulerHandle){
-                        for (let index = 0; index < erpTransactionSchedulerHandle.length; index++) {
-                        erpTransactionSchedulerHandle[index].start();
-                        PxERPTransactionTableBuilderSchedulerHandle[index].start();
-                        }
-                    }
                     await controllerLogger(req);
                     return res.status(200).json({status:"ok",data:"",error:""});
                 }
@@ -353,14 +349,6 @@ const transactionController = {
                 `);
                 await transaction.commit();
                 if(result.rowsAffected[0] > 0){
-                    let erpTransactionSchedulerHandle = await erpTransactionScheduler(true);
-                    let PxERPTransactionTableBuilderSchedulerHandle = await PxERPTransactionTableBuilderScheduler(true);
-                    if(erpTransactionSchedulerHandle && PxERPTransactionTableBuilderSchedulerHandle){
-                        for (let index = 0; index < erpTransactionSchedulerHandle.length; index++) {
-                        erpTransactionSchedulerHandle[index].start();
-                        PxERPTransactionTableBuilderSchedulerHandle[index].start();
-                        }
-                    }
                     await controllerLogger(req)
                     return res.status(200).json({status:"ok",data:"",error:""});
                 }
@@ -426,6 +414,8 @@ const transactionController = {
             await ProxyDbPool.connect();
             try {
                 const request = new sql.Request(ProxyDbPool);
+                let EmployeeBranch = req.session.user.Branch;
+                let IsAdmin = req.session.user.IsAdmin;
                 let {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,Error} = req.query;
                 let response = await request.query(`
                 SELECT 
@@ -464,7 +454,7 @@ const transactionController = {
                         ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                         ('${Error}' IS NULL OR '${Error}'='' OR Error = ${Error?Error:0}) AND
                         (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                        SyncCompleted=0
+                        SyncCompleted=0 AND ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
                 ) AS Subquery
                 JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
                 JOIN [COSEC].[dbo].[Mx_CustomGroup1Mst] AS CustomGroup1Mst ON Subquery.UserCategoryId = CustomGroup1Mst.CG1ID
@@ -553,6 +543,8 @@ const transactionController = {
         try {
             await ProxyDbPool.connect();
             try {
+                let EmployeeBranch = req.session.user.Branch;
+                let IsAdmin = req.session.user.IsAdmin;
                 const request = new sql.Request(ProxyDbPool);
                 let {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId} = req.query;
                 console.log(EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId)
@@ -593,7 +585,7 @@ const transactionController = {
                         ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
                         ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                         (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}')AND
-                        SyncCompleted=0
+                        SyncCompleted=0 AND ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
                 ) AS Subquery
                 JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
                 JOIN [COSEC].[dbo].[Mx_CustomGroup1Mst] AS CustomGroup1Mst ON Subquery.UserCategoryId = CustomGroup1Mst.CG1ID
@@ -618,6 +610,8 @@ const transactionController = {
         try {
             let db = req.app.locals.db;
             try {
+                let EmployeeBranch = req.session.user.Branch;
+                let IsAdmin = req.session.user.IsAdmin;
                 let {page,size, EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,Error} = req.query;
                 let firstRow = ((page-1) * size)+1
                 let lastRow = page * size;
@@ -645,7 +639,7 @@ const transactionController = {
                         ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                         ('${Error}' IS NULL OR '${Error}'='' OR Error = ${Error?Error:0}) AND
                         (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                        SyncCompleted=0
+                        SyncCompleted=0 AND ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
 
                 ) AS Subquery
                 JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
@@ -670,7 +664,7 @@ const transactionController = {
                     ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                     ('${Error}' IS NULL OR '${Error}'='' OR Error = ${Error?Error:0}) AND
                     (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                    SyncCompleted=0
+                    SyncCompleted=0 AND ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
                 `)
                 let last_page = Math.ceil(totalCount.recordset[0].TotalRowCount / size);
                 await controllerLogger(req);
@@ -741,7 +735,9 @@ const transactionController = {
     },
     downloadErpTransactionPendingHorizontalData:async(req,res)=>{
         try {
-            let db = req.app.locals.db;    
+            let db = req.app.locals.db;   
+            let EmployeeBranch = req.session.user.Branch;
+            let IsAdmin = req.session.user.IsAdmin; 
             let {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,Error} = req.query;
             let result = await db.query(`
             SELECT 
@@ -767,7 +763,7 @@ const transactionController = {
                     ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                     ('${Error}' IS NULL OR '${Error}'='' OR Error = ${Error?Error:0}) AND
                     (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                    SyncCompleted=0
+                    SyncCompleted=0 AND ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
 
             ) AS Subquery
             JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
@@ -844,7 +840,9 @@ const transactionController = {
     },
     downloadExceptionHorizontal:async(req,res)=>{
         try {
-            let db = req.app.locals.db;    
+            let db = req.app.locals.db;  
+            let EmployeeBranch = req.session.user.Branch;
+            let IsAdmin = req.session.user.IsAdmin;  
             let {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId} = req.query;
             let result = await db.query(`
             SELECT 
@@ -883,7 +881,7 @@ const transactionController = {
                         ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
                         ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                         (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                        SyncCompleted=0
+                        SyncCompleted=0 AND ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
                 ) AS Subquery
                 JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
                 JOIN [COSEC].[dbo].[Mx_CustomGroup1Mst] AS CustomGroup1Mst ON Subquery.UserCategoryId = CustomGroup1Mst.CG1ID
@@ -961,6 +959,8 @@ const transactionController = {
         try {
             let db = req.app.locals.db;
             try {
+                let EmployeeBranch = req.session.user.Branch;
+                let IsAdmin = req.session.user.IsAdmin;
                 let {page,size, EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,Error} = req.query;
                 let firstRow = ((page-1) * size)+1
                 let lastRow = page * size;
@@ -988,7 +988,7 @@ const transactionController = {
                         ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                         ('${Error}' IS NULL OR '${Error}'='' OR Error = ${Error?Error:0}) AND
                         (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                        SyncCompleted=1
+                        SyncCompleted=1 AND ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
 
                 ) AS Subquery
                 JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
@@ -1013,7 +1013,7 @@ const transactionController = {
                     ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                     ('${Error}' IS NULL OR '${Error}'='' OR Error = ${Error?Error:0}) AND
                     (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                    SyncCompleted=1
+                    SyncCompleted=1 AND ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
                 `)
                 let last_page = Math.ceil(totalCount.recordset[0].TotalRowCount / size);
                 await controllerLogger(req);
@@ -1084,7 +1084,9 @@ const transactionController = {
     },
     downloadErpTransactionCompletedHorizontalData:async(req,res)=>{
         try {
-            let db = req.app.locals.db;    
+            let db = req.app.locals.db;  
+            let EmployeeBranch = req.session.user.Branch;
+            let IsAdmin = req.session.user.IsAdmin;  
             let {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,Error} = req.query;
             let result = await db.query(`
             SELECT 
@@ -1110,7 +1112,7 @@ const transactionController = {
                     ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                     ('${Error}' IS NULL OR '${Error}'='' OR Error = ${Error?Error:0}) AND
                     (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                    SyncCompleted=1
+                    SyncCompleted=1 AND ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
 
             ) AS Subquery
             JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID

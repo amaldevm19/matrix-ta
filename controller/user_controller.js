@@ -16,23 +16,23 @@ const userController = {
     },
     getSignupPage: async (req, res) => {
         try {
-            await ProxyDbPool.connect();
-            const transaction = new sql.Transaction(ProxyDbPool);
+            let db = req.app.locals.db;
             try {
-                await transaction.begin();
-                let Department = await ProxyDbPool.request().query(`
+                let DepartmentData = await db.query(`
                 SELECT DPTID, Name
                 FROM [COSEC].[dbo].[Mx_DepartmentMst]
                 `);
-                await transaction.commit();
+                let BranchData = await db.query(`
+                SELECT BRCID, Name
+                FROM [COSEC].[dbo].[Mx_BranchMst]
+                `);
                 await controllerLogger(req);
-                return res.render('users/signup',{layout: 'login',Department:Department.recordset});
+                return res.render('users/signup',{layout: 'login',Department:DepartmentData.recordset, Branch:BranchData.recordset});
             } catch (error) {
-                await transaction.rollback()
                 throw error
             }
         } catch (error) {
-            console.log("Error in erpTransactionPendingDataPage function : ",error)
+            console.log("Error in getSignupPage function : ",error)
             await controllerLogger(req,error);
         }
         
