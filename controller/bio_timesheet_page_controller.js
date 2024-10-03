@@ -44,13 +44,28 @@ const bioTimesheetPageController = {
     bioTimesheetReportHorizontalPage:async(req, res)=>{
         try {
             let db = req.app.locals.db;
+            let IsAdmin = req.session.user.IsAdmin;
+            let EmployeeBranch = req.session.user.Branch;
+            let whereclause=''
+            if(!IsAdmin){
+                switch (EmployeeBranch) {
+                    case '1':
+                        whereclause="WHERE Name LIKE 'SRU%'"
+                        break;
+                    case '5':
+                        whereclause="WHERE Name LIKE 'TFO%'"
+                        break;
+                }
+            }
             let Department = await db.query(`
             SELECT DPTID, Name
             FROM [COSEC].[dbo].[Mx_DepartmentMst]
+            ${whereclause}
             `);
             let UserCategory = await db.query(`
             SELECT CG1ID, Name
             FROM [COSEC].[dbo].[Mx_CustomGroup1Mst]
+            ${whereclause}
             `);
             let Designation = await db.query(`
             SELECT DSGID, Name
@@ -65,7 +80,7 @@ const bioTimesheetPageController = {
             FROM [COSEC].[dbo].[Mx_CategoryMst]
             `);
             await controllerLogger(req);
-            return res.render("bioTimesheet/biotimesheet_horizontal_report", {page_header:"Biometric Timesheet Report",
+            return res.render("bioTimesheet/biotimesheet_horizontal_report", {page_header:"Biometric Timesheet Horizontal Report",
                 Department:Department.recordset,
                 UserCategory:UserCategory.recordset,
                 Designation:Designation.recordset,
@@ -75,7 +90,7 @@ const bioTimesheetPageController = {
         } catch (error) {
             console.log("Error in bioTimesheetReportHorizontalPage function : ",error)
             await controllerLogger(req,error);
-            return res.render("bioTimesheet/biotimesheet_horizontal_report", {page_header:"Biometric Timesheet Report"});
+            return res.render("bioTimesheet/biotimesheet_horizontal_report", {page_header:"Biometric Timesheet Horizontal Report"});
         }
     },
     bioTimesheetComparePage:async(req,res)=>{
