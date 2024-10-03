@@ -74,18 +74,14 @@ const bioTimesheetPageController = {
             let Section = await db.query(`
             SELECT SECID, Name
             FROM [COSEC].[dbo].[Mx_SectionMst]
-            `);
-            let Category = await db.query(`
-            SELECT CTGID, Name
-            FROM [COSEC].[dbo].[Mx_CategoryMst]
+            ${whereclause}
             `);
             await controllerLogger(req);
             return res.render("bioTimesheet/biotimesheet_horizontal_report", {page_header:"Biometric Timesheet Horizontal Report",
                 Department:Department.recordset,
                 UserCategory:UserCategory.recordset,
                 Designation:Designation.recordset,
-                Section:Section.recordset,
-                Category:Category.recordset
+                Section:Section.recordset
             });
         } catch (error) {
             console.log("Error in bioTimesheetReportHorizontalPage function : ",error)

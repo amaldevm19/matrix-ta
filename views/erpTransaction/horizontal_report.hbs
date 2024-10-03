@@ -3,7 +3,7 @@
         <button class="btn btn-outline-success" type="button" id="copy_timesheet">Update Timesheet For ERP Sync</button>
     </div>
     <div class="col-2">
-        <button type="button" class="btn btn-primary mx-3" data-bs-toggle="modal" data-bs-target="#filter_modal">Apply Filter</button>
+        <button type="button" class="btn btn-primary mx-3" id="show_modal" data-bs-toggle="modal" data-bs-target="#filter_modal">Apply Filter</button>
     </div>
     <div class="col-2">
         <button class="btn btn-outline-success " type="button" id="download_table">Download Table</button>
@@ -25,6 +25,7 @@
 
 <input type="text" value="{{session.user.EmployeeId}}" id="employeeId" hidden>
 <input type="text" value="{{session.user.Department}}" id="department" hidden>
+<input type="text" value="{{session.user.Branch}}" id="branch" hidden>
 
 <!-- Modal -->
 <div class="modal fade " id="filter_modal" tabindex="-1" aria-labelledby="filter_modal_label" aria-hidden="true">
@@ -67,14 +68,7 @@
                             {{/each}}
                         </select>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <select class="form-select" id="employee_category" name="Category">
-                            <option selected value="">Select Category</option>
-                            {{#each Category}}
-                            <option value="{{this.CTGID}}">{{this.Name}}</option>
-                            {{/each}}
-                        </select>
-                    </div>
+
                     <div class="col-md-3 mb-3">
                         <select class="form-select" id="designation_id" name="Category">
                             <option selected value="">Select Designation</option>
@@ -115,78 +109,32 @@
 
 <script>
     $(document).ready(async function (){
+        let EmployeeBranch = $("#branch").val()
+        $("#show_modal").click();
         let pendingErpTable = new Tabulator("#pendingErpTable", {
             pagination:true, //enable pagination
             paginationMode:"remote", //enable remote pagination
             ajaxURL:"/api/erp-transaction/horizontal-report/pending-data", //ajax URL
             ajaxParams: function(){
                 let EmployeeId = $("#emp_id").val()
-                let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":''
-                let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":''
+                let FromDate=$("#from_date").val()
+                let ToDate=$("#to_date").val()
                 let JobCode=$('#job_code').val()
                 let DepartmentId=$('#department_id').val()
                 let UserCategoryId=$('#user_category').val()
-                let EmployeeCategoryId=$('#employee_category').val()
                 let DesignationId=$('#designation_id').val()
                 let SectionId=$('#section_id').val()
                 let Error = $("#error").val()
-                return {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,Error};
+                return {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,DesignationId,SectionId,Error};
+            },
+            ajaxResponse:function(url, params, response){
+                $("#timeDateDisplaySpan").text(`From: ${response.FromDate} To: ${response.ToDate}`)
+                return response; //return the response data to tabulator
             },
             paginationSize:31, //optional parameter to request a certain number of rows per page
             paginationInitialPage:1,
             paginationSizeSelector:[10, 25, 30,31, 50, 100, 500, 1000, 5000],
-            columns:[
-                {title:"Sl#", field:"example", formatter:"rownum"},
-                {title:"Employee ID", field:"HcmWorker_PersonnelNumber"},
-                {title:"Job Code", field:"projId", hozAlign:"center"},
-                {title:"26", field:"26"},
-                {title:"27", field:"27"},
-                {title:"28", field:"28"},
-                {title:"29", field:"29"},
-                {title:"30", field:"30"},
-                {title:"31", field:"31"},
-                {title:"01", field:"01"},
-                {title:"02", field:"02"},
-                {title:"03", field:"03"},
-                {title:"04", field:"04"},
-                {title:"05", field:"05"},
-                {title:"06", field:"06"},
-                {title:"07", field:"07"},
-                {title:"08", field:"08"},
-                {title:"09", field:"09"},
-                {title:"10", field:"10"},
-                {title:"11", field:"11"},
-                {title:"12", field:"12"},
-                {title:"13", field:"13"},
-                {title:"14", field:"14"},
-                {title:"15", field:"15"},
-                {title:"16", field:"16"},
-                {title:"17", field:"17"},
-                {title:"18", field:"18"},
-                {title:"19", field:"19"},
-                {title:"20", field:"20"},
-                {title:"21", field:"21"},
-                {title:"22", field:"22"},
-                {title:"23", field:"23"},
-                {title:"24", field:"21"},
-                {title:"25", field:"25"},
-                {title:"Total", field:"total",mutatorData:function(value, data){
-                    let totalWorkHours = 0.0;
-                    for (const property in data) {
-                        let workHours = parseFloat(data[property])
-                        if(parseInt(property) && workHours ){
-                            totalWorkHours = totalWorkHours + workHours;
-                        }
-                    }
-
-                    return totalWorkHours;
-                },},
-                {title:"Department", field:"DepartmentName"},
-                {title:"User Category", field:"UserCategoryName"},
-                {title:"Designation", field:"DesignationName"},
-                {title:"Section", field:"SectionName"},
-
-            ],
+            columns:generateColumns(EmployeeBranch)
         });
 
         function daysInCurrentMonth() {
@@ -217,20 +165,47 @@
         
         $("#search_submit").click(function(e){
             e.preventDefault();
-            let EmployeeId = $("#emp_id").val();
-            let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":''
-            let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":''
-            let JobCode=$('#job_code').val()
-            let DepartmentId=$('#department_id').val()
-            let UserCategoryId=$('#user_category').val()
-            let EmployeeCategoryId=$('#employee_category').val()
-            let DesignationId=$('#designation_id').val()
-            let SectionId=$('#section_id').val()
-            let Error = $("#error").val()
-            console.log(EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId, Error)
-            pendingErpTable.setData("/api/erp-transaction/horizontal-report/pending-data", 
-                {page:"1", pageSize:"31",EmployeeId:EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId, Error}
-            );
+            pendingErpTable = new Tabulator("#pendingErpTable", {
+                pagination:true, //enable pagination
+                paginationMode:"remote", //enable remote pagination
+                ajaxURL:"/api/erp-transaction/horizontal-report/pending-data", //ajax URL
+                ajaxParams: function(){
+                    let EmployeeId = $("#emp_id").val()
+                    let FromDate=$("#from_date").val()
+                    let ToDate=$("#to_date").val()
+                    let JobCode=$('#job_code').val()
+                    let DepartmentId=$('#department_id').val()
+                    let UserCategoryId=$('#user_category').val()
+                    let DesignationId=$('#designation_id').val()
+                    let SectionId=$('#section_id').val()
+                    let Error = $("#error").val()
+                    return {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,DesignationId,SectionId,Error};
+                },
+                ajaxResponse:function(url, params, response){
+                    $("#timeDateDisplaySpan").text(`From: ${response.FromDate} To: ${response.ToDate}`)
+                    return response; //return the response data to tabulator
+                },
+                paginationSize:31, //optional parameter to request a certain number of rows per page
+                paginationInitialPage:1,
+                paginationSizeSelector:[10, 25, 30,31, 50, 100, 500, 1000, 5000],
+                columns:generateColumns(EmployeeBranch)
+            });
+            pendingErpTable.on("tableBuilt", function(){
+                switch (daysInCurrentMonth()){
+                    case 30:
+                        pendingErpTable.hideColumn("31")
+                        break;
+                    case 29:
+                        pendingErpTable.hideColumn("31")
+                        pendingErpTable.hideColumn("30")
+                        break;
+                    case 28:
+                        pendingErpTable.hideColumn("31")
+                        pendingErpTable.hideColumn("30")
+                        pendingErpTable.hideColumn("29")
+                        break;
+                }
+            });
         });
 
         $("#copy_timesheet").click(async(e)=>{
@@ -252,56 +227,7 @@
         })
         
         let temppendingErpTable = new Tabulator("#temppendingErpTable", {
-            columns:[
-                {title:"Sl#", field:"rownum"},
-                {title:"Employee ID", field:"HcmWorker_PersonnelNumber"},
-                {title:"Job Code", field:"projId", hozAlign:"center"},
-                {title:"26", field:"26"},
-                {title:"27", field:"27"},
-                {title:"28", field:"28"},
-                {title:"29", field:"29"},
-                {title:"30", field:"30"},
-                {title:"31", field:"31"},
-                {title:"01", field:"01"},
-                {title:"02", field:"02"},
-                {title:"03", field:"03"},
-                {title:"04", field:"04"},
-                {title:"05", field:"05"},
-                {title:"06", field:"06"},
-                {title:"07", field:"07"},
-                {title:"08", field:"08"},
-                {title:"09", field:"09"},
-                {title:"10", field:"10"},
-                {title:"11", field:"11"},
-                {title:"12", field:"12"},
-                {title:"13", field:"13"},
-                {title:"14", field:"14"},
-                {title:"15", field:"15"},
-                {title:"16", field:"16"},
-                {title:"17", field:"17"},
-                {title:"18", field:"18"},
-                {title:"19", field:"19"},
-                {title:"20", field:"20"},
-                {title:"21", field:"21"},
-                {title:"22", field:"22"},
-                {title:"23", field:"23"},
-                {title:"24", field:"21"},
-                {title:"25", field:"25"},
-                {title:"Total", field:"total",mutatorData:function(value, data){
-                    let totalWorkHours = 0.0;
-                    for (const property in data) {
-                        let workHours = parseFloat(data[property])
-                        if(parseInt(property) && workHours ){
-                            totalWorkHours = totalWorkHours + workHours;
-                        }
-                    }
-                    return totalWorkHours;
-                },},
-                {title:"Department", field:"DepartmentName"},
-                {title:"User Category", field:"UserCategoryName"},
-                {title:"Designation", field:"DesignationName"},
-                {title:"Section", field:"SectionName"},
-            ],
+            columns:generateColumns(EmployeeBranch)
         });
 
          temppendingErpTable.on("tableBuilt", function(){
@@ -326,18 +252,17 @@
             e.preventDefault();
             showLoadingIndicator();
             let EmployeeId = $("#emp_id").val()
-            let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":''
-            let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":''
+            let FromDate=$("#from_date").val()
+            let ToDate=$("#to_date").val()
             let JobCode=$('#job_code').val()
             let DepartmentId=$('#department_id').val()
             let UserCategoryId=$('#user_category').val()
-            let EmployeeCategoryId=$('#employee_category').val()
             let DesignationId=$('#designation_id').val()
             let SectionId=$('#section_id').val()
             let Error = $("#error").val()
             $.ajax({
                 url: '/api/erp-transaction/horizontal-report/download-erptimesheet',
-                data:{EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,Error}
+                data:{EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,DesignationId,SectionId,Error}
             }).done(function (data) {
                  hideLoadingIndicator();
                 if(data.status =="ok"){
@@ -363,50 +288,11 @@
             $('#employee_category').val('')
             $('#designation_id').val('')
             $('#section_id').val('')
-            $("#search_submit").click()
+            
         })
         
         let tempExceptionTable = new Tabulator("#tempExceptionTable", {
-            columns:[
-                {title:"Sl#", field:"rownum"},
-                {title:"Employee ID", field:"HcmWorker_PersonnelNumber"},
-                {title:"Job Code", field:"projId", hozAlign:"center"},
-                {title:"26", field:"26"},
-                {title:"27", field:"27"},
-                {title:"28", field:"28"},
-                {title:"29", field:"29"},
-                {title:"30", field:"30"},
-                {title:"31", field:"31"},
-                {title:"01", field:"01"},
-                {title:"02", field:"02"},
-                {title:"03", field:"03"},
-                {title:"04", field:"04"},
-                {title:"05", field:"05"},
-                {title:"06", field:"06"},
-                {title:"07", field:"07"},
-                {title:"08", field:"08"},
-                {title:"09", field:"09"},
-                {title:"10", field:"10"},
-                {title:"11", field:"11"},
-                {title:"12", field:"12"},
-                {title:"13", field:"13"},
-                {title:"14", field:"14"},
-                {title:"15", field:"15"},
-                {title:"16", field:"16"},
-                {title:"17", field:"17"},
-                {title:"18", field:"18"},
-                {title:"19", field:"19"},
-                {title:"20", field:"20"},
-                {title:"21", field:"21"},
-                {title:"22", field:"22"},
-                {title:"23", field:"23"},
-                {title:"24", field:"21"},
-                {title:"25", field:"25"},
-                {title:"Department", field:"DepartmentName"},
-                {title:"User Category", field:"UserCategoryName"},
-                {title:"Designation", field:"DesignationName"},
-                {title:"Section", field:"SectionName"},
-            ],
+            columns:generateColumns(EmployeeBranch)
         });
 
          tempExceptionTable.on("tableBuilt", function(){
@@ -431,17 +317,16 @@
             e.preventDefault();
             showLoadingIndicator();
             let EmployeeId = $("#emp_id").val()
-            let FromDate=$("#from_date").val()?$("#from_date").val()+" 00:00:00.000":''
-            let ToDate=$("#to_date").val()?$("#to_date").val()+" 00:00:00.000":''
+            let FromDate=$("#from_date").val()
+            let ToDate=$("#to_date").val()
             let JobCode=$('#job_code').val()
             let DepartmentId=$('#department_id').val()
             let UserCategoryId=$('#user_category').val()
-            let EmployeeCategoryId=$('#employee_category').val()
             let DesignationId=$('#designation_id').val()
             let SectionId=$('#section_id').val()
             $.ajax({
                 url: '/api/erp-transaction/horizontal-report/download-exception',
-                data:{EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId}
+                data:{EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,DesignationId,SectionId}
             }).done(function (data) {
                  hideLoadingIndicator();
                 if(data.status =="ok"){
@@ -454,7 +339,102 @@
             });
         });
         
-
+        function generateColumns(branch) {
+            let columns = [
+                { title: "Sl#", field: "rownum"},
+                { title: "Employee ID", field: "UserID" },
+                { title: "Name", field: "Name" },
+                { title: "Job Code", field: "JobCode", hozAlign: "center" }
+            ];
+            switch(branch){
+                case "1":
+                    columns = [...columns,{title:"26", field:"26"},
+                        {title:"27", field:"27"},
+                        {title:"28", field:"28"},
+                        {title:"29", field:"29"},
+                        {title:"30", field:"30"},
+                        {title:"31", field:"31"},
+                        {title:"01", field:"01"},
+                        {title:"02", field:"02"},
+                        {title:"03", field:"03"},
+                        {title:"04", field:"04"},
+                        {title:"05", field:"05"},
+                        {title:"06", field:"06"},
+                        {title:"07", field:"07"},
+                        {title:"08", field:"08"},
+                        {title:"09", field:"09"},
+                        {title:"10", field:"10"},
+                        {title:"11", field:"11"},
+                        {title:"12", field:"12"},
+                        {title:"13", field:"13"},
+                        {title:"14", field:"14"},
+                        {title:"15", field:"15"},
+                        {title:"16", field:"16"},
+                        {title:"17", field:"17"},
+                        {title:"18", field:"18"},
+                        {title:"19", field:"19"},
+                        {title:"20", field:"20"},
+                        {title:"21", field:"21"},
+                        {title:"22", field:"22"},
+                        {title:"23", field:"23"},
+                        {title:"24", field:"24"},
+                        {title:"25", field:"25"}]
+                    break;
+                case "5":
+                    columns = [...columns,
+                        {title:"16", field:"16"},
+                        {title:"17", field:"17"},
+                        {title:"18", field:"18"},
+                        {title:"19", field:"19"},
+                        {title:"20", field:"20"},
+                        {title:"21", field:"21"},
+                        {title:"22", field:"22"},
+                        {title:"23", field:"23"},
+                        {title:"24", field:"24"},
+                        {title:"25", field:"25"},
+                        {title:"26", field:"26"},
+                        {title:"27", field:"27"},
+                        {title:"28", field:"28"},
+                        {title:"29", field:"29"},
+                        {title:"30", field:"30"},
+                        {title:"31", field:"31"},
+                        {title:"01", field:"01"},
+                        {title:"02", field:"02"},
+                        {title:"03", field:"03"},
+                        {title:"04", field:"04"},
+                        {title:"05", field:"05"},
+                        {title:"06", field:"06"},
+                        {title:"07", field:"07"},
+                        {title:"08", field:"08"},
+                        {title:"09", field:"09"},
+                        {title:"10", field:"10"},
+                        {title:"11", field:"11"},
+                        {title:"12", field:"12"},
+                        {title:"13", field:"13"},
+                        {title:"14", field:"14"},
+                        {title:"15", field:"15"}
+                    ]
+                    break;
+            }
+            columns = [...columns,
+                {title:"Total", field:"total",mutatorData:function(value, data){
+                        let totalWorkHours = 0.0;
+                        for (const property in data) {
+                            let workHours = parseFloat(data[property])
+                            if(parseInt(property) && workHours ){
+                                totalWorkHours = totalWorkHours + workHours;
+                            }
+                        }
+                        return totalWorkHours;
+                    },
+                },
+                {title:"Department", field:"DepartmentName"},
+                {title:"User Category", field:"UserCategoryName"},
+                {title:"Designation", field:"DesignationName"},
+                {title:"Section", field:"SectionName"}
+            ]
+            return columns;
+        }
     })
     
 </script>
