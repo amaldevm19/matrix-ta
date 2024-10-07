@@ -70,7 +70,7 @@
                     </div>
 
                     <div class="col-md-3 mb-3">
-                        <select class="form-select" id="designation_id" name="Category">
+                        <select class="form-select" id="designation_id" name="Designation">
                             <option selected value="">Select Designation</option>
                             {{#each Designation}}
                             <option value="{{this.DSGID}}">{{this.Name}}</option>
@@ -110,59 +110,9 @@
 <script>
     $(document).ready(async function (){
         let EmployeeBranch = $("#branch").val()
+        let pendingErpTable;
         $("#show_modal").click();
-        let pendingErpTable = new Tabulator("#pendingErpTable", {
-            pagination:true, //enable pagination
-            paginationMode:"remote", //enable remote pagination
-            ajaxURL:"/api/erp-transaction/horizontal-report/pending-data", //ajax URL
-            ajaxParams: function(){
-                let EmployeeId = $("#emp_id").val()
-                let FromDate=$("#from_date").val()
-                let ToDate=$("#to_date").val()
-                let JobCode=$('#job_code').val()
-                let DepartmentId=$('#department_id').val()
-                let UserCategoryId=$('#user_category').val()
-                let DesignationId=$('#designation_id').val()
-                let SectionId=$('#section_id').val()
-                let Error = $("#error").val()
-                return {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,DesignationId,SectionId,Error};
-            },
-            ajaxResponse:function(url, params, response){
-                $("#timeDateDisplaySpan").text(`From: ${response.FromDate} To: ${response.ToDate}`)
-                return response; //return the response data to tabulator
-            },
-            paginationSize:31, //optional parameter to request a certain number of rows per page
-            paginationInitialPage:1,
-            paginationSizeSelector:[10, 25, 30,31, 50, 100, 500, 1000, 5000],
-            columns:generateColumns(EmployeeBranch)
-        });
 
-        function daysInCurrentMonth() {
-            const now = new Date();
-            const year = now.getFullYear();
-             let month = now.getMonth(); // getMonth() returns 0-based month index, so add 1
-            month = month==0?12:month;
-            return new Date(year, month, 0).getDate();
-        }
-        pendingErpTable.on("tableBuilt", function(){
-            switch (daysInCurrentMonth()){
-                case 30:
-                    pendingErpTable.hideColumn("31")
-                    break;
-                case 29:
-                    pendingErpTable.hideColumn("31")
-                    pendingErpTable.hideColumn("30")
-                    break;
-                case 28:
-                    pendingErpTable.hideColumn("31")
-                    pendingErpTable.hideColumn("30")
-                    pendingErpTable.hideColumn("29")
-                    break;
-            }
-
-        });
-
-        
         $("#search_submit").click(function(e){
             e.preventDefault();
             pendingErpTable = new Tabulator("#pendingErpTable", {
@@ -208,6 +158,7 @@
             });
         });
 
+
         $("#copy_timesheet").click(async(e)=>{
             showLoadingIndicator();
             let DepartmentId=$('#department').val()
@@ -229,23 +180,21 @@
         let temppendingErpTable = new Tabulator("#temppendingErpTable", {
             columns:generateColumns(EmployeeBranch)
         });
-
-         temppendingErpTable.on("tableBuilt", function(){
+        temppendingErpTable.on("tableBuilt", function(){
             switch (daysInCurrentMonth()){
                 case 30:
-                    pendingErpTable.hideColumn("31")
+                    temppendingErpTable.deleteColumn("31")
                     break;
                 case 29:
-                    pendingErpTable.hideColumn("31")
-                    pendingErpTable.hideColumn("30")
+                    temppendingErpTable.deleteColumn("31")
+                    temppendingErpTable.deleteColumn("30")
                     break;
                 case 28:
-                    pendingErpTable.hideColumn("31")
-                    pendingErpTable.hideColumn("30")
-                    pendingErpTable.hideColumn("29")
+                    temppendingErpTable.deleteColumn("31")
+                    temppendingErpTable.deleteColumn("30")
+                    temppendingErpTable.deleteColumn("29")
                     break;
             }
-
         });
 
         $("#download_table").click(function(e){
@@ -271,9 +220,9 @@
                 }else{
                     alert("Failed to download")
                 }
-                
             });
         });
+        
         flatpickr("#from_date", {dateFormat: "Y-m-d"});
         flatpickr("#to_date", {dateFormat: "Y-m-d"});
 
@@ -288,31 +237,29 @@
             $('#employee_category').val('')
             $('#designation_id').val('')
             $('#section_id').val('')
-            
+            $("#search_submit").click();
         })
         
         let tempExceptionTable = new Tabulator("#tempExceptionTable", {
             columns:generateColumns(EmployeeBranch)
         });
-
-         tempExceptionTable.on("tableBuilt", function(){
+        tempExceptionTable.on("tableBuilt", function(){
             switch (daysInCurrentMonth()){
                 case 30:
-                    pendingErpTable.hideColumn("31")
+                    tempExceptionTable.hideColumn("31")
                     break;
                 case 29:
-                    pendingErpTable.hideColumn("31")
-                    pendingErpTable.hideColumn("30")
+                    tempExceptionTable.hideColumn("31")
+                    tempExceptionTable.hideColumn("30")
                     break;
                 case 28:
-                    pendingErpTable.hideColumn("31")
-                    pendingErpTable.hideColumn("30")
-                    pendingErpTable.hideColumn("29")
+                    tempExceptionTable.hideColumn("31")
+                    tempExceptionTable.hideColumn("30")
+                    tempExceptionTable.hideColumn("29")
                     break;
             }
-
         });
-
+        
          $("#download_exception").click(function(e){
             e.preventDefault();
             showLoadingIndicator();
@@ -335,16 +282,22 @@
                 }else{
                     alert("Failed to download")
                 }
-                
             });
         });
+
+        function daysInCurrentMonth() {
+            const now = new Date();
+            const year = now.getFullYear();
+            let month = now.getMonth();
+            month = month==0?12:month;
+            return new Date(year, month, 0).getDate();
+        }
         
         function generateColumns(branch) {
             let columns = [
                 { title: "Sl#", field: "rownum"},
-                { title: "Employee ID", field: "UserID" },
-                { title: "Name", field: "Name" },
-                { title: "Job Code", field: "JobCode", hozAlign: "center" }
+                {title:"Employee ID", field:"HcmWorker_PersonnelNumber"},
+                { title: "Job Code", field: "projId", hozAlign: "center" }
             ];
             switch(branch){
                 case "1":

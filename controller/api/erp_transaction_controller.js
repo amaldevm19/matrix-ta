@@ -612,29 +612,38 @@ const transactionController = {
             try {
                 let EmployeeBranch = req.session.user.Branch;
                 let IsAdmin = req.session.user.IsAdmin;
-                let {page,size, EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,Error} = req.query;
-                let firstRow = ((page-1) * size)+1
+                let {page,size, EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,DesignationId,SectionId,Error} = req.query;
+                if(!FromDate && !ToDate){
+                    switch (EmployeeBranch) {
+                        case '1':
+                            FromDate = getFromDate(26)
+                            ToDate = getToDate(25)
+                            break;
+                        case '5':
+                            FromDate = getFromDate(16)
+                            ToDate = getToDate(15)
+                            break;
+                    }
+                }
+                let firstRow = ((page-1) * size)
                 let lastRow = page * size;
                 let result = await db.query(`
                 SELECT 
                     Subquery.*,
                     DepartmentMst.Name AS DepartmentName,
                     CustomGroup1Mst.Name AS UserCategoryName,
-                    CategoryMst.Name AS EmployeeCategoryName,
                     DesignationMst.Name AS DesignationName,
                     SectionMst.Name AS SectionName,
                     BranchMst.Name AS BranchName
                 FROM (
                     SELECT
-                        Id, HcmWorker_PersonnelNumber, TransDate, projId,Error,ErrorText, TotalHours, BranchId, DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,SyncCompleted,CreatedAt,UpdatedAt,
-                        ROW_NUMBER() OVER (ORDER BY Id) AS RowNum
+                        Id, HcmWorker_PersonnelNumber, TransDate, projId,Error,ErrorText, TotalHours, BranchId, DepartmentId,UserCategoryId,DesignationId,SectionId,SyncCompleted,CreatedAt,UpdatedAt
                     FROM [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
                     WHERE 
                         ('${EmployeeId}' IS NULL OR '${EmployeeId}'='' OR HcmWorker_PersonnelNumber = '${EmployeeId}') AND
                         ('${JobCode}' IS NULL OR '${JobCode}'='' OR projId ='${JobCode}') AND
                         ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR DepartmentId = ${DepartmentId?DepartmentId:0}) AND
                         ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR UserCategoryId = ${UserCategoryId?UserCategoryId:0}) AND
-                        ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId?EmployeeCategoryId:0}) AND
                         ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
                         ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                         ('${Error}' IS NULL OR '${Error}'='' OR Error = ${Error?Error:0}) AND
@@ -644,29 +653,12 @@ const transactionController = {
                 ) AS Subquery
                 JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
                 JOIN [COSEC].[dbo].[Mx_CustomGroup1Mst] AS CustomGroup1Mst ON Subquery.UserCategoryId = CustomGroup1Mst.CG1ID
-                JOIN [COSEC].[dbo].[Mx_CategoryMst] AS CategoryMst ON Subquery.EmployeeCategoryId = CategoryMst.CTGID
                 JOIN [COSEC].[dbo].[Mx_DesignationMst] AS DesignationMst ON Subquery.DesignationId = DesignationMst.DSGID
                 JOIN [COSEC].[dbo].[Mx_SectionMst] AS SectionMst ON Subquery.SectionId = SectionMst.SECID
                 JOIN [COSEC].[dbo].[Mx_BranchMst] AS BranchMst ON Subquery.BranchId = BranchMst.BRCID
-                WHERE RowNum BETWEEN ${firstRow} AND ${lastRow}
                 `);
                
-                let totalCount = await db.query( `
-                SELECT COUNT(*) AS TotalRowCount 
-                FROM [TNA_PROXY].[dbo].[Px_ERPTransactionMst] 
-                WHERE 
-                    ('${EmployeeId}' IS NULL OR '${EmployeeId}'='' OR HcmWorker_PersonnelNumber = '${EmployeeId}') AND
-                    ('${JobCode}' IS NULL OR '${JobCode}'='' OR projId ='${JobCode}') AND
-                    ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR DepartmentId = ${DepartmentId?DepartmentId:0}) AND
-                    ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR UserCategoryId = ${UserCategoryId?UserCategoryId:0}) AND
-                    ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId?EmployeeCategoryId:0}) AND
-                    ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
-                    ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
-                    ('${Error}' IS NULL OR '${Error}'='' OR Error = ${Error?Error:0}) AND
-                    (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
-                    SyncCompleted=0 AND ('${IsAdmin}' = 'true' OR BranchId = '${EmployeeBranch}')
-                `)
-                let last_page = Math.ceil(totalCount.recordset[0].TotalRowCount / size);
+                
                 await controllerLogger(req);
                 let horizontalData = new Map();
                 //console.log(result.recordset)
@@ -708,6 +700,7 @@ const transactionController = {
                     for (let index = 0; index < value.projectIds.length; index++) {
                         const element = value.projectIds[index];
                         finalData.push({
+                            rownum:finalData.length+1,
                             HcmWorker_PersonnelNumber:key,
                             projId:element.projId,
                             DepartmentName:value.DepartmentName,
@@ -721,8 +714,13 @@ const transactionController = {
                         }
                     }
                 }
-               // console.log(finalData)
-                return res.status(200).json({status:"ok", last_page, data:finalData });
+                // console.log(finalData)
+                let last_page = Math.ceil(finalData.length / size);
+                if(lastRow > finalData.length){
+                    lastRow = finalData.length;
+                }
+                let results = finalData.slice(firstRow,lastRow)
+                return res.status(200).json({status:"ok", last_page, data:results,FromDate,ToDate });
 
             } catch (error) {
                 throw error;
@@ -738,27 +736,36 @@ const transactionController = {
             let db = req.app.locals.db;   
             let EmployeeBranch = req.session.user.Branch;
             let IsAdmin = req.session.user.IsAdmin; 
-            let {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,Error} = req.query;
+            let {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,DesignationId,SectionId,Error} = req.query;
+            if(!FromDate && !ToDate){
+                switch (EmployeeBranch) {
+                    case '1':
+                        FromDate = getFromDate(26)
+                        ToDate = getToDate(25)
+                        break;
+                    case '5':
+                        FromDate = getFromDate(16)
+                        ToDate = getToDate(15)
+                        break;
+                }
+            }
             let result = await db.query(`
             SELECT 
                 Subquery.*,
                 DepartmentMst.Name AS DepartmentName,
                 CustomGroup1Mst.Name AS UserCategoryName,
-                CategoryMst.Name AS EmployeeCategoryName,
                 DesignationMst.Name AS DesignationName,
                 SectionMst.Name AS SectionName,
                 BranchMst.Name AS BranchName
             FROM (
                 SELECT
-                    Id, HcmWorker_PersonnelNumber, TransDate, projId,Error,ErrorText, TotalHours, BranchId, DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId,SyncCompleted,CreatedAt,UpdatedAt,
-                    ROW_NUMBER() OVER (ORDER BY Id) AS RowNum
+                    Id, HcmWorker_PersonnelNumber, TransDate, projId,Error,ErrorText, TotalHours, BranchId, DepartmentId,UserCategoryId,DesignationId,SectionId,SyncCompleted,CreatedAt,UpdatedAt
                 FROM [TNA_PROXY].[dbo].[Px_ERPTransactionMst]
                 WHERE 
                     ('${EmployeeId}' IS NULL OR '${EmployeeId}'='' OR HcmWorker_PersonnelNumber = '${EmployeeId}') AND
                     ('${JobCode}' IS NULL OR '${JobCode}'='' OR projId ='${JobCode}') AND
                     ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR DepartmentId = ${DepartmentId?DepartmentId:0}) AND
                     ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR UserCategoryId = ${UserCategoryId?UserCategoryId:0}) AND
-                    ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId?EmployeeCategoryId:0}) AND
                     ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
                     ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                     ('${Error}' IS NULL OR '${Error}'='' OR Error = ${Error?Error:0}) AND
@@ -768,7 +775,6 @@ const transactionController = {
             ) AS Subquery
             JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
             JOIN [COSEC].[dbo].[Mx_CustomGroup1Mst] AS CustomGroup1Mst ON Subquery.UserCategoryId = CustomGroup1Mst.CG1ID
-            JOIN [COSEC].[dbo].[Mx_CategoryMst] AS CategoryMst ON Subquery.EmployeeCategoryId = CategoryMst.CTGID
             JOIN [COSEC].[dbo].[Mx_DesignationMst] AS DesignationMst ON Subquery.DesignationId = DesignationMst.DSGID
             JOIN [COSEC].[dbo].[Mx_SectionMst] AS SectionMst ON Subquery.SectionId = SectionMst.SECID
             JOIN [COSEC].[dbo].[Mx_BranchMst] AS BranchMst ON Subquery.BranchId = BranchMst.BRCID
@@ -843,7 +849,19 @@ const transactionController = {
             let db = req.app.locals.db;  
             let EmployeeBranch = req.session.user.Branch;
             let IsAdmin = req.session.user.IsAdmin;  
-            let {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,EmployeeCategoryId,DesignationId,SectionId} = req.query;
+            let {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,DesignationId,SectionId} = req.query;
+            if(!FromDate && !ToDate){
+                switch (EmployeeBranch) {
+                    case '1':
+                        FromDate = getFromDate(26)
+                        ToDate = getToDate(25)
+                        break;
+                    case '5':
+                        FromDate = getFromDate(16)
+                        ToDate = getToDate(15)
+                        break;
+                }
+            }
             let result = await db.query(`
             SELECT 
                     Subquery.HcmWorker_PersonnelNumber,
@@ -852,7 +870,6 @@ const transactionController = {
                     Subquery.TotalHours,
                     DepartmentMst.Name AS DepartmentName,
                     CustomGroup1Mst.Name AS UserCategoryName,
-                    CategoryMst.Name AS EmployeeCategoryName,
                     DesignationMst.Name AS DesignationName,
                     SectionMst.Name AS SectionName,
                     BranchMst.Name AS BranchName
@@ -865,7 +882,6 @@ const transactionController = {
                         BranchId,
                         t.DepartmentId ,
                         UserCategoryId ,
-                        EmployeeCategoryId,
                         DesignationId,
                         SectionId
                     FROM [TNA_PROXY].[dbo].[Px_ERPTransactionMst] t
@@ -877,7 +893,6 @@ const transactionController = {
                         ('${JobCode}' IS NULL OR '${JobCode}'='' OR projId ='${JobCode}') AND
                         ('${DepartmentId}' IS NULL OR '${DepartmentId}'='' OR t.DepartmentId = ${DepartmentId?DepartmentId:0}) AND
                         ('${UserCategoryId}' IS NULL OR '${UserCategoryId}'='' OR UserCategoryId = ${UserCategoryId?UserCategoryId:0}) AND
-                        ('${EmployeeCategoryId}' IS NULL OR '${EmployeeCategoryId}'='' OR EmployeeCategoryId = ${EmployeeCategoryId?EmployeeCategoryId:0}) AND
                         ('${DesignationId}' IS NULL OR '${DesignationId}'='' OR DesignationId = ${DesignationId?DesignationId:0}) AND
                         ('${SectionId}' IS NULL OR '${SectionId}'='' OR SectionId = ${SectionId?SectionId:0}) AND
                         (('${FromDate}'='' AND '${ToDate}'='') OR TransDate BETWEEN '${FromDate}' AND '${ToDate}') AND
@@ -885,7 +900,6 @@ const transactionController = {
                 ) AS Subquery
                 JOIN [COSEC].[dbo].[Mx_DepartmentMst] AS DepartmentMst ON Subquery.DepartmentId = DepartmentMst.DPTID
                 JOIN [COSEC].[dbo].[Mx_CustomGroup1Mst] AS CustomGroup1Mst ON Subquery.UserCategoryId = CustomGroup1Mst.CG1ID
-                JOIN [COSEC].[dbo].[Mx_CategoryMst] AS CategoryMst ON Subquery.EmployeeCategoryId = CategoryMst.CTGID
                 JOIN [COSEC].[dbo].[Mx_DesignationMst] AS DesignationMst ON Subquery.DesignationId = DesignationMst.DSGID
                 JOIN [COSEC].[dbo].[Mx_SectionMst] AS SectionMst ON Subquery.SectionId = SectionMst.SECID
                 JOIN [COSEC].[dbo].[Mx_BranchMst] AS BranchMst ON Subquery.BranchId = BranchMst.BRCID
@@ -1190,3 +1204,42 @@ const transactionController = {
 }
 
 module.exports=transactionController;
+
+function getFromDate(cutoffDate) {
+    const today = new Date();
+    let year = today.getFullYear();
+    let month = today.getMonth(); // January is 0!
+  
+    // If today is after the 16th, keep the current month. Otherwise, go to last month.
+    if (today.getDate() > cutoffDate) {
+      month += 1; // Current month, so increment by 1 since `getMonth()` is zero-indexed.
+    } else {
+      if (month === 0) { // If current month is January, go to last year December.
+        year -= 1;
+        month = 12;
+      }
+    }
+  
+    // Return the date in yyyy-mm-dd format
+    return `${year}-${String(month).padStart(2, '0')}-${cutoffDate}`;
+}
+
+function getToDate(cutoffDate) {
+    const today = new Date();
+    let year = today.getFullYear();
+    let month = today.getMonth(); // January is 0!
+  
+    // If today is after the 16th, keep the current month. Otherwise, go to last month.
+    if (today.getDate() > cutoffDate) {
+        if(month == 11){
+            month=1
+            year += 1;
+        }
+        month += 2; // Next month, so increment by 2 since `getMonth()` is zero-indexed.
+    } else {
+        month += 1; // Current month, so increment by 1 since `getMonth()` is zero-indexed.
+    }
+  
+    // Return the date in yyyy-mm-dd format
+    return `${year}-${String(month).padStart(2, '0')}-${cutoffDate}`;
+}

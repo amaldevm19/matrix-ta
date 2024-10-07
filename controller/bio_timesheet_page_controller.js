@@ -4,26 +4,41 @@ const {controllerLogger} = require("../helpers/19_middleware_history_logger");
 const bioTimesheetPageController = {
     bioTimesheetHomePage:async (req, res)=>{
         try {
-            await ProxyDbPool.connect();
-            const transaction = new sql.Transaction(ProxyDbPool);
-            await transaction.begin();
-            let Department = await ProxyDbPool.request().query(`
+            let db = req.app.locals.db;
+            let IsAdmin = req.session.user.IsAdmin;
+            let EmployeeBranch = req.session.user.Branch;
+            let whereclause=''
+            if(!IsAdmin){
+                switch (EmployeeBranch) {
+                    case '1':
+                        whereclause="WHERE Name LIKE 'SRU%'"
+                        break;
+                    case '5':
+                        whereclause="WHERE Name LIKE 'TFO%'"
+                        break;
+                }
+            }
+            
+            let Department = await db.query(`
             SELECT DPTID, Name
             FROM [COSEC].[dbo].[Mx_DepartmentMst]
+            ${whereclause}
             `);
-            let UserCategory = await ProxyDbPool.request().query(`
+            let UserCategory = await db.query(`
             SELECT CG1ID, Name
             FROM [COSEC].[dbo].[Mx_CustomGroup1Mst]
+            ${whereclause}
             `);
-            let Designation = await ProxyDbPool.request().query(`
+            let Designation = await db.query(`
             SELECT DSGID, Name
             FROM [COSEC].[dbo].[Mx_DesignationMst]
             `);
-            let Section = await ProxyDbPool.request().query(`
+            let Section = await db.query(`
             SELECT SECID, Name
             FROM [COSEC].[dbo].[Mx_SectionMst]
+            ${whereclause}
             `);
-            let Category = await ProxyDbPool.request().query(`
+            let Category = await db.query(`
             SELECT CTGID, Name
             FROM [COSEC].[dbo].[Mx_CategoryMst]
             `);

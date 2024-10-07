@@ -102,62 +102,7 @@
     $(document).ready(async function (){
         let EmployeeBranch = $("#branch").val()
         $("#show_modal").click();
-        let bioTimesheetTable = new Tabulator("#bioTimesheetTable", {
-            pagination:true,
-            paginationMode:"remote", 
-            ajaxURL:"/api/bio-timesheet/horizontal-report/pending-data",
-            ajaxParams: function(){
-                let EmployeeId = $("#emp_id").val()
-                let FromDate=$("#from_date").val()
-                let ToDate=$("#to_date").val()
-                let JobCode=$('#job_code').val()
-                let DepartmentId=$('#department_id').val()
-                let UserCategoryId=$('#user_category').val()
-                let DesignationId=$('#designation_id').val()
-                let SectionId=$('#section_id').val()
-                
-                return {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,DesignationId,SectionId};
-            },
-            ajaxResponse:function(url, params, response){
-                //url - the URL of the request
-                //params - the parameters passed with the request
-                //response - the JSON object returned in the body of the response.
-                console.log(response)
-                $("#timeDateDisplaySpan").text(`From: ${response.FromDate} To: ${response.ToDate}`)
-                return response; //return the response data to tabulator
-            },
-            paginationSize:10,
-            paginationInitialPage:1,
-            paginationSizeSelector:[10, 25, 30,31, 50, 100, 500, 1000, 5000],
-            columns:generateColumns(EmployeeBranch)
-        });
-        
-        function daysInCurrentMonth() {
-            const now = new Date();
-            const year = now.getFullYear();
-            let month = now.getMonth(); // getMonth() returns 0-based month index, so add 1
-            month = month==0?12:month;
-            return new Date(year, month, 0).getDate();
-        }
-        
-       bioTimesheetTable.on("tableBuilt", function(){
-            switch (daysInCurrentMonth()){
-                case 30:
-                    bioTimesheetTable.hideColumn("31")
-                    break;
-                case 29:
-                    bioTimesheetTable.hideColumn("31")
-                    bioTimesheetTable.hideColumn("30")
-                    break;
-                case 28:
-                    bioTimesheetTable.hideColumn("31")
-                    bioTimesheetTable.hideColumn("30")
-                    bioTimesheetTable.hideColumn("29")
-                    break;
-            }
-
-        }); 
-        
+        let bioTimesheetTable;
         $("#search_submit").click(function(e){
             e.preventDefault();
             bioTimesheetTable = new Tabulator("#bioTimesheetTable", {
@@ -176,10 +121,6 @@
                     return {EmployeeId,FromDate,ToDate,JobCode,DepartmentId,UserCategoryId,DesignationId,SectionId};
                 },
                 ajaxResponse:function(url, params, response){
-                    //url - the URL of the request
-                    //params - the parameters passed with the request
-                    //response - the JSON object returned in the body of the response.
-                    console.log(response)
                     $("#timeDateDisplaySpan").text(`From: ${response.FromDate} To: ${response.ToDate}`)
                     return response; //return the response data to tabulator
                 },
@@ -203,7 +144,6 @@
                         bioTimesheetTable.hideColumn("29")
                         break;
                 }
-
             }); 
         });
 
@@ -213,6 +153,22 @@
 
         let TempbioTimesheetTable = new Tabulator("#tempbioTimesheetTable", {
             columns:generateColumns(EmployeeBranch)
+        });
+        TempbioTimesheetTable.on("tableBuilt", function(){
+            switch (daysInCurrentMonth()){
+                case 30:
+                    TempbioTimesheetTable.hideColumn("31")
+                    break;
+                case 29:
+                    TempbioTimesheetTable.hideColumn("31")
+                    TempbioTimesheetTable.hideColumn("30")
+                    break;
+                case 28:
+                    TempbioTimesheetTable.hideColumn("31")
+                    TempbioTimesheetTable.hideColumn("30")
+                    TempbioTimesheetTable.hideColumn("29")
+                    break;
+            }
         });
 
         $("#download_table").click(function(e){
@@ -240,6 +196,7 @@
                 
         });
         });
+        
         flatpickr("#from_date", {dateFormat: "Y-m-d"});
         flatpickr("#to_date", {dateFormat: "Y-m-d"});
 
@@ -253,8 +210,8 @@
             $('#user_category').val('')
             $('#designation_id').val('')
             $('#section_id').val('')
+            $("#search_submit").click()
         })
-    
         function generateColumns(branch) {
             let columns = [
                 { title: "Sl#", field: "rownum"},
@@ -332,27 +289,32 @@
                     ]
                     break;
             }
-            
-                
             columns = [...columns,
-            {title:"Total", field:"total",mutatorData:function(value, data){
-                    let totalWorkHours = 0.0;
-                    for (const property in data) {
-                        let workHours = parseFloat(data[property])
-                        if(parseInt(property) && workHours ){
-                            totalWorkHours = totalWorkHours + workHours;
+                {title:"Total", field:"total",mutatorData:function(value, data){
+                        let totalWorkHours = 0.0;
+                        for (const property in data) {
+                            let workHours = parseFloat(data[property])
+                            if(parseInt(property) && workHours ){
+                                totalWorkHours = totalWorkHours + workHours;
+                            }
                         }
-                    }
-                    return totalWorkHours;
+                        return totalWorkHours;
+                    },
                 },
-            },
-            {title:"Department", field:"DepartmentName"},
-            {title:"User Category", field:"UserCategoryName"},
-            {title:"Designation", field:"DesignationName"},
-            {title:"Section", field:"SectionName"}
-        ]
-         return columns;
-    }
+                {title:"Department", field:"DepartmentName"},
+                {title:"User Category", field:"UserCategoryName"},
+                {title:"Designation", field:"DesignationName"},
+                {title:"Section", field:"SectionName"}
+            ]
+            return columns;
+        }
+        function daysInCurrentMonth() {
+            const now = new Date();
+            const year = now.getFullYear();
+            let month = now.getMonth(); // getMonth() returns 0-based month index, so add 1
+            month = month==0?12:month;
+            return new Date(year, month, 0).getDate();
+        }
+
     })
-    
 </script>
